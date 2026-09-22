@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Gym Tracker Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3.5 pb-28 font-sans select-none">
+
+  <!-- 1. 頂部資訊列：日期、實時時間、自選部位、時長與控制按鈕 -->
+  <header class="mb-4 bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+    <!-- 第一行：日期與實時跳動時間 -->
+    <div class="flex justify-between items-center text-xs text-slate-400">
+      <div class="flex items-center gap-1.5 font-medium">
+        <span id="displayDate">--</span>
+        <span id="displayDayName" class="text-slate-500 font-mono">--</span>
+      </div>
+      <span id="liveClock" class="font-mono font-semibold bg-slate-950 px-2.5 py-0.5 rounded text-sky-400 border border-slate-800">
+        00:00:00
+      </span>
+    </div>
+
+    <!-- 第二行：今日主題自選區 (頂部中央，字體大 1.5 倍) -->
+    <div class="flex flex-col items-center justify-center py-1">
+      <div class="text-[10px] text-slate-500 uppercase tracking-widest mb-1">今日訓練部位</div>
+      <div class="relative">
+        <select id="muscleGroupSelect" class="appearance-none bg-slate-950 text-indigo-400 font-black text-2xl tracking-wider border-2 border-indigo-500/40 rounded-2xl px-6 py-1.5 text-center focus:outline-none focus:border-indigo-400 shadow-lg shadow-indigo-950/40 cursor-pointer pr-10">
+          <option value="操胸">操胸 (Chest)</option>
+          <option value="背">背 (Back)</option>
+          <option value="二頭">二頭 (Biceps)</option>
+          <option value="三頭">三頭 (Triceps)</option>
+          <option value="腳">腳 (Legs)</option>
+          <option value="腹">腹 (Abs)</option>
+          <option value="帶氧">帶氧 (Cardio)</option>
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-indigo-400">
+          ▼
+        </div>
+      </div>
+    </div>
+
+    <!-- 第三行：印上開始時間與結束時間 -->
+    <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1.5 border-t border-slate-800/80 font-mono">
+      <div>開始時間: <span id="startTimeStamp" class="text-slate-200 font-semibold">--:--:--</span></div>
+      <div>結束時間: <span id="endTimeStamp" class="text-slate-200 font-semibold">--:--:--</span></div>
+    </div>
+
+    <!-- 第四行：訓練時長與控制按鈕 (完全置中) -->
+    <div class="pt-2 border-t border-slate-800/60 flex flex-col items-center justify-center space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">訓練時間</span>
+        <span id="totalWorkoutTimer" class="text-2xl font-bold font-mono text-emerald-400">00:00:00</span>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button id="btnStartWorkout" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-6 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40">
+          開始訓練
+        </button>
+        <button id="btnPauseWorkout" class="hidden bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-6 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40">
+          暫停
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 核心操作主區 -->
+  <main class="space-y-4">
+
+    <!-- 2. 圖文並茂機種選擇 (橫向滑動卡片 + 快速新增按鈕) -->
+    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">選擇機種 (圖文並茂)</label>
+          <span class="text-[10px] text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-800/50">點⚙️可改設定</span>
+        </div>
+        
+        <button onclick="openAddNewMachineModal()" class="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-700/50 active:scale-95 font-bold">
+          <span>+</span>
+          <span>新增器材</span>
+        </button>
+      </div>
+
+      <!-- 圖文滑動卡片列表 (第一張預設為新增按鈕) -->
+      <div id="machineCardsSlider" class="flex gap-3 overflow-x-auto no-scrollbar py-1"></div>
+
+      <!-- 當前選定器材的詳細 Default Setting 顯示 -->
+      <div id="activeMachineSettingBanner" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400 font-semibold">當前器材: <span id="currentMachineLabel" class="text-white font-bold">未選擇</span></span>
+          <button id="btnEditCurrentSetting" class="text-indigo-400 hover:underline text-[11px] font-bold">修改此機設定</button>
+        </div>
+        <div id="currentMachineSettingDetails" class="text-slate-400 text-[11px] flex flex-wrap gap-x-3 gap-y-0.5">
+          <span>💺 坐位: --</span>
+          <span>↔️ 扶手: --</span>
+          <span>📐 角度: --</span>
+          <span class="text-slate-500">📝 備註: --</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 此機使用時間 -->
+    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+      <div class="flex items-center">
+        <span class="text-slate-400 text-xs font-semibold">使用時間:</span>
+        <span id="machineTimerDisplay" class="text-xl font-mono font-bold text-sky-400 ml-2">00:00</span>
+      </div>
+      <button id="btnToggleMachine" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-md">
+        開始此機
+      </button>
+    </div>
+
+    <!-- 4. 組數記錄面板 (智能接續進度、KG/LB滑塊、多級按鍵) -->
+    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <span class="font-bold text-base">第 <span id="currentSetNum" class="text-indigo-400 text-lg">1</span> 組</span>
+          <span id="historyHint" class="text-[11px] text-slate-500 block">載入歷史紀錄中...</span>
+        </div>
+
+        <!-- KG / LB Slide Bar Toggle -->
+        <div id="unitToggleTrack" class="relative w-24 h-8 bg-slate-950 rounded-full p-1 flex items-center cursor-pointer border border-slate-800">
+          <div id="unitSlider" class="absolute left-1 top-1 w-[calc(50%-4px)] h-6 bg-indigo-600 rounded-full transition-transform duration-200"></div>
+          <span id="labelKg" class="relative z-10 w-1/2 text-center text-xs font-bold text-white">KG</span>
+          <span id="labelLb" class="relative z-10 w-1/2 text-center text-xs font-bold text-slate-400">LB</span>
+        </div>
+      </div>
+
+      <!-- 重量調節 (-10, -5, -1, input, +1, +5, +10) -->
+      <div>
+        <div class="text-xs text-slate-400 mb-1.5 flex justify-between">
+          <span>重量 (<span id="unitText">KG</span>)</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button type="button" class="flex-1 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-90 text-xs font-bold text-slate-300" onclick="stepValue('weight', -10)">-10</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-90 text-xs font-bold text-slate-300" onclick="stepValue('weight', -5)">-5</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-90 text-xs font-bold text-slate-300" onclick="stepValue('weight', -1)">-1</button>
+          
+          <input type="number" id="inputWeight" value="20" step="0.5" class="w-16 h-10 text-center bg-slate-950 border border-slate-800 rounded-lg font-mono text-base font-bold text-white focus:outline-none focus:border-indigo-500">
+          
+          <button type="button" class="flex-1 h-10 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-xs font-bold text-indigo-300" onclick="stepValue('weight', 1)">+1</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-xs font-bold text-indigo-300" onclick="stepValue('weight', 5)">+5</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-xs font-bold text-indigo-300" onclick="stepValue('weight', 10)">+10</button>
+        </div>
+      </div>
+
+      <!-- 次數調節 (-10, -5, -1, input, +1, +5, +10) -->
+      <div>
+        <div class="text-xs text-slate-400 mb-1.5 flex justify-between">
+          <span>次數 (Reps)</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button type="button" class="flex-1 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-90 text-xs font-bold text-slate-300" onclick="stepValue('reps', -10)">-10</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-90 text-xs font-bold text-slate-300" onclick="stepValue('reps', -5)">-5</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-90 text-xs font-bold text-slate-300" onclick="stepValue('reps', -1)">-1</button>
+          
+          <input type="number" id="inputReps" value="10" class="w-16 h-10 text-center bg-slate-950 border border-slate-800 rounded-lg font-mono text-base font-bold text-white focus:outline-none focus:border-indigo-500">
+          
+          <button type="button" class="flex-1 h-10 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-xs font-bold text-indigo-300" onclick="stepValue('reps', 1)">+1</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-xs font-bold text-indigo-300" onclick="stepValue('reps', 5)">+5</button>
+          <button type="button" class="flex-1 h-10 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-xs font-bold text-indigo-300" onclick="stepValue('reps', 10)">+10</button>
+        </div>
+      </div>
+
+      <button id="btnLogSet" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all">
+        記錄此組 (Log Set)
+      </button>
+    </div>
+
+    <!-- 5. 今日 Checklist -->
+    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+      <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">該部位清單與完成進度</div>
+      <ul id="checklistContainer" class="space-y-2"></ul>
+    </div>
+
+    <!-- 6. 訓練月曆 (回顧之前操過乜) -->
+    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">訓練月曆 (點選回顧)</span>
+        <div class="flex items-center gap-2">
+          <button id="btnPrevMonth" class="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2 font-mono">&lt;</button>
+          <span id="calendarMonthYear" class="text-xs font-bold text-white font-mono min-w-[70px] text-center">2026-09</span>
+          <button id="btnNextMonth" class="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2 font-mono">&gt;</button>
+          <button id="btnTodayMonth" class="text-[10px] bg-indigo-950 border border-indigo-700/50 text-indigo-300 px-2 py-0.5 rounded-lg font-bold">今天</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-7 text-center text-[10px] font-bold text-slate-500 py-1 border-b border-slate-800">
+        <span class="text-rose-400">日</span>
+        <span>一</span>
+        <span>二</span>
+        <span>三</span>
+        <span>四</span>
+        <span>五</span>
+        <span class="text-sky-400">六</span>
+      </div>
+
+      <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center"></div>
+
+      <div id="calendarDetailPanel" class="hidden bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+        <div class="flex justify-between items-center border-b border-slate-800/80 pb-1.5">
+          <span id="calDetailDate" class="font-bold text-indigo-400 font-mono">2026-09-22</span>
+          <span id="calDetailMuscle" class="bg-indigo-600/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold">操胸</span>
+        </div>
+        <div id="calDetailSummary" class="text-slate-400 text-[11px] leading-relaxed"></div>
+        <div id="calDetailLogs" class="space-y-1 text-slate-300 max-h-36 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 底部固定按鈕：完成訓練 -->
+  <div class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent">
+    <div class="max-w-md mx-auto">
+      <button id="btnFinishWorkout" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-98 text-white py-3.5 rounded-xl font-bold text-sm shadow-xl shadow-rose-900/40 transition-all flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <span>完成今日訓練 & AI 分析</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 浮動組間休息倒數器 (90 秒) -->
+  <div id="restTimerOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 hidden">
+    <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
+      <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">組間休息 (Rest)</div>
+      <div id="restTimerNumber" class="text-6xl font-mono font-black text-indigo-400 my-4">90</div>
+      
+      <div class="w-full bg-slate-950 rounded-full h-2 mb-6 overflow-hidden border border-slate-800">
+        <div id="restProgressBar" class="bg-indigo-500 h-full w-full transition-all duration-1000 ease-linear"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="btnRestAdd30" class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs font-bold text-slate-200 py-3 rounded-xl border border-slate-700">
+          +30 秒
+        </button>
+        <button id="btnRestSkip" class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-xs font-bold text-white py-3 rounded-xl shadow-md">
+          跳過休息
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 器械設定與「新增器材」通用 Modal -->
+  <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="font-bold text-base text-white flex items-center gap-1.5">
+          <span id="modalTitleIcon">⚙️</span> <span id="modalMainTitle">器材設定</span>
+        </h3>
+        <button onclick="closeMachineSettingModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+
+      <!-- 器材名稱 (若是新增模式可手打，若是編輯模式則唯讀) -->
+      <div>
+        <label class="text-[11px] text-slate-400 block mb-1">器材名稱 (Name)</label>
+        <input type="text" id="modalMachineNameInput" placeholder="例如: 雙槓臂屈伸機 / 史密斯機" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 text-xs">
+      </div>
+
+      <!-- 相片上載預覽 (點選調用手機相機影相) -->
+      <div class="space-y-1.5">
+        <label class="text-[11px] text-slate-400 font-semibold block">影相或上載相片 (點框拍照)</label>
+        <div class="relative w-full h-36 bg-slate-950 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500 overflow-hidden flex items-center justify-center cursor-pointer transition-all">
+          <img id="modalMachineImgPreview" src="" class="w-full h-full object-cover hidden">
+          <div id="modalMachineImgPlaceholder" class="text-slate-500 text-xs flex flex-col items-center">
+            <span class="text-3xl mb-1">📷</span>
+            <span>點擊打開相機拍攝器材</span>
+          </div>
+          <input type="file" id="modalPhotoInput" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer">
+        </div>
+      </div>
+
+      <!-- 參數設定表格 -->
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">💺 坐位高度 / 距離 (Seat)</label>
+          <input type="text" id="settingSeat" placeholder="例: 3號孔 / 刻度4" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">↔️ 扶手距離 / 握距 (Handle)</label>
+          <input type="text" id="settingHandle" placeholder="例: 闊握第2格 / 角度B" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">📐 靠背角度 / 檔位 (Backrest)</label>
+          <input type="text" id="settingBackrest" placeholder="例: 直角 / 倒數第2段" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">📝 個人備註 (Notes)</label>
+          <input type="text" id="settingNotes" placeholder="例: 手柄對準胸骨中線" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeMachineSettingModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">
+          取消
+        </button>
+        <button id="btnSaveMachineSetting" onclick="saveMachineSettingsFromModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-md shadow-indigo-900/30 flex items-center justify-center gap-1">
+          <span>儲存並同步雲端</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 分析結果 Modal -->
+  <div id="aiModalOverlay" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-lg text-emerald-400 flex items-center gap-2">
+          <span>🤖</span> Local AI 成長建議
+        </h3>
+        <button onclick="closeAiModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+      <div id="aiAdviceContent" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
+        分析中...
+      </div>
+      <button onclick="closeAiModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-xs">
+        確認並完成
+      </button>
+    </div>
+  </div>
+
+  <canvas id="compressCanvas" class="hidden"></canvas>
+
+  <script>
+    // ==========================================
+    // 1. 環境設定與器材快取
+    // ==========================================
+    const CONFIG = {
+      N8N_TUNNEL_URL: "https://gym-api.yourdomain.com/webhook",
+      GAS_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbzCG1aWVi4tOSzcebh-dklZFgqsiuqlm6SrqSAKPI6tdPVdmKjpu79qj-gxK47OpdAxHg/exec",
+      DEFAULT_WEIGHT_KG: 20,
+      DEFAULT_REPS: 10,
+      DEFAULT_REST_SECONDS: 90
+    };
+
+    // 預設各部位器材清單 (當雲端尚無紀錄時使用)
+    const DEFAULT_EQUIPMENT_DATA = {
+      "操胸": ["推胸機 (Incline Chest Press)", "啞鈴臥推", "蝴蝶機夾胸", "史密斯推胸"],
+      "背": ["高位下拉機 (Lat Pulldown)", "坐姿划船機", "T-Bar 划船機"],
+      "二頭": ["二頭彎舉機 (Bicep Curl)", "繩索二頭彎舉", "牧師椅彎舉"],
+      "三頭": ["三頭下壓繩索 (Tricep Pushdown)", "雙槓臂屈伸機", "法式推舉"],
+      "腳": ["腿舉機 (Leg Press)", "坐姿腿屈伸", "俯臥腿彎舉"],
+      "腹": ["器械捲腹 (Ab Crunch)", "繩索跪姿捲腹", "懸垂舉腿架"],
+      "帶氧": ["跑步機 (Treadmill)", "樓梯機", "划船機"]
+    };
+
+    let currentMuscleGroup = "操胸";
+    let currentSelectedMachine = "";
+    let currentUnit = 'KG';
+    let workoutLogs = [];
+    let machineProgress = {};
+
+    // 雲端器材清單暫存 (包含相片 URL 與 Setting)
+    let cloudEquipmentList = [];
+
+    // 互鎖與計時狀態
+    let isWorkoutStarted = false;
+    let isWorkoutPaused = false;
+    let totalWorkoutSeconds = 0;
+    let totalWorkoutTimerInterval = null;
+
+    // 器械使用計時
+    let isMachineActive = false;
+    let machineSeconds = 0;
+    let machineTimerInterval = null;
+
+    // 休息倒數器
+    let restRemaining = CONFIG.DEFAULT_REST_SECONDS;
+    let restTotalDuration = CONFIG.DEFAULT_REST_SECONDS;
+    let restTimerInterval = null;
+
+    // 月曆檢視狀態
+    let calViewYear = 2026;
+    let calViewMonth = 8; // 8 = 9月
+
+    // ==========================================
+    // 2. 初始化與從 Google Sheets 載入器材
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      initCurrentDate();
+      updateLiveClock();
+      setInterval(updateLiveClock, 1000);
+
+      // 監聽組別切換
+      const muscleSelect = document.getElementById('muscleGroupSelect');
+      muscleSelect.addEventListener('change', (e) => {
+        changeMuscleGroup(e.target.value);
+      });
+
+      // 讀取本地離線快取器材
+      const cached = localStorage.getItem('gym_cached_cloud_machines');
+      if (cached) {
+        try { cloudEquipmentList = JSON.parse(cached); } catch(e){}
+      }
+
+      // 初始化當前組別
+      changeMuscleGroup(currentMuscleGroup);
+      initCalendarUI();
+
+      // 向 Google Sheets 同步最新器材
+      fetchMachineSettingsFromSheets();
+    });
+
+    function initCurrentDate() {
+      const now = new Date();
+      calViewYear = now.getFullYear();
+      calViewMonth = now.getMonth();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      document.getElementById('displayDate').innerText = `${yyyy}-${mm}-${dd}`;
+
+      const days = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+      document.getElementById('displayDayName').innerText = days[now.getDay()];
+    }
+
+    function updateLiveClock() {
+      const now = new Date();
+      document.getElementById('liveClock').innerText = now.toTimeString().split(' ')[0];
+    }
+
+    // 透過 GAS doGet 撈取 Google Sheet 的 Machine_Settings
+    async function fetchMachineSettingsFromSheets() {
+      try {
+        const res = await fetch(CONFIG.GAS_WEBAPP_URL);
+        const data = await res.json();
+        if (data.status === "success" && data.machines && data.machines.length > 0) {
+          cloudEquipmentList = data.machines;
+          localStorage.setItem('gym_cached_cloud_machines', JSON.stringify(cloudEquipmentList));
+          changeMuscleGroup(currentMuscleGroup);
+        }
+      } catch (err) {
+        console.warn("無法連線 Sheets API，使用快取或預設資料", err);
+      }
+    }
+
+    // ==========================================
+    // 3. 切換部位與圖文卡片渲染
+    // ==========================================
+    function changeMuscleGroup(groupName) {
+      currentMuscleGroup = groupName;
+      document.getElementById('muscleGroupSelect').value = groupName;
+
+      const machines = getMachinesForGroup(groupName);
+      renderMachineVisualCards(machines);
+      renderChecklist(machines);
+
+      if (machines.length > 0) {
+        selectMachine(machines[0]);
+      } else {
+        currentSelectedMachine = "";
+        document.getElementById('currentMachineLabel').innerText = "未選擇";
+      }
+    }
+
+    function getMachinesForGroup(groupName) {
+      // 1. 篩選來自 Google Sheets 該組別的器材
+      const fromCloud = cloudEquipmentList.filter(m => m.muscle_group === groupName).map(m => m.machine_name);
+      // 2. 預設清單
+      const defaults = DEFAULT_EQUIPMENT_DATA[groupName] || [];
+      // 合併去重
+      return Array.from(new Set([...fromCloud, ...defaults]));
+    }
+
+    function renderMachineVisualCards(machines) {
+      const slider = document.getElementById('machineCardsSlider');
+      
+      // 第一張永遠是「+ 新增器材」大按鈕
+      let html = `
+        <div onclick="openAddNewMachineModal()" class="flex-shrink-0 w-32 bg-slate-900 border-2 border-dashed border-emerald-600/50 hover:border-emerald-500 rounded-2xl flex flex-col items-center justify-center text-center p-3 cursor-pointer active:scale-95 transition-all text-emerald-400">
+          <span class="text-3xl mb-1 font-bold">+</span>
+          <span class="text-xs font-bold">新增此部位<br>新器材</span>
+        </div>
+      `;
+
+      html += machines.map(name => {
+        const meta = getMachineMetadata(name);
+        const hasImg = meta.img && meta.img.length > 30;
+        const seatText = meta.settings.seat || '--';
+        const handleText = meta.settings.handle || '--';
+
+        return `
+          <div class="machine-card relative flex-shrink-0 w-36 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer transition-all active:scale-95"
+               id="card-${encodeURIComponent(name)}"
+               onclick="selectMachine('${name.replace(/'/g, "\\'")}')">
+            
+            <!-- 齒輪修改設定按鈕 -->
+            <button type="button" 
+                    onclick="event.stopPropagation(); openEditMachineModal('${name.replace(/'/g, "\\'")}')"
+                    class="absolute top-1.5 right-1.5 z-10 bg-slate-900/80 hover:bg-indigo-600 text-slate-300 hover:text-white p-1 rounded-lg border border-slate-700/60 backdrop-blur-sm text-[10px]">
+              ⚙️
+            </button>
+
+            <!-- 縮圖 (若有 Drive 網址或 Base64 則展示) -->
+            <div class="w-full h-24 bg-slate-900 flex items-center justify-center overflow-hidden border-b border-slate-800">
+              ${hasImg 
+                ? `<img src="${meta.img}" class="w-full h-full object-cover">` 
+                : `<div class="text-slate-600 flex flex-col items-center text-[10px]"><span class="text-xl mb-0.5">🏋️</span><span>無相片</span></div>`
+              }
+            </div>
+
+            <!-- 名稱與 Setting -->
+            <div class="p-2 space-y-0.5">
+              <div class="text-xs font-bold text-slate-200 truncate">${name}</div>
+              <div class="text-[10px] text-slate-400 font-mono truncate">
+                💺${seatText} ↔️${handleText}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      slider.innerHTML = html;
+    }
+
+    function selectMachine(machineName) {
+      currentSelectedMachine = machineName;
+      document.getElementById('currentMachineLabel').innerText = machineName;
+
+      // 高亮當前卡片
+      document.querySelectorAll('.machine-card').forEach(c => {
+        c.className = "machine-card relative flex-shrink-0 w-36 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer transition-all active:scale-95";
+      });
+      const activeCard = document.getElementById(`card-${encodeURIComponent(machineName)}`);
+      if (activeCard) {
+        activeCard.className = "machine-card relative flex-shrink-0 w-36 bg-indigo-950/40 border-2 border-indigo-500 rounded-2xl overflow-hidden cursor-pointer transition-all shadow-lg shadow-indigo-950/50";
+        activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+
+      updateActiveMachineSettingBanner(machineName);
+      resetMachineTimerUI();
+
+      // 計算該機組數
+      const completedSets = machineProgress[machineName] || 0;
+      document.getElementById('currentSetNum').innerText = completedSets + 1;
+
+      loadMachineHistory(machineName);
+    }
+
+    function updateActiveMachineSettingBanner(machineName) {
+      const meta = getMachineMetadata(machineName);
+      const details = document.getElementById('currentMachineSettingDetails');
+      details.innerHTML = `
+        <span>💺 坐位: <b class="text-slate-200">${meta.settings.seat || '未設定'}</b></span>
+        <span>↔️ 扶手: <b class="text-slate-200">${meta.settings.handle || '未設定'}</b></span>
+        <span>📐 角度: <b class="text-slate-200">${meta.settings.backrest || '未設定'}</b></span>
+        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${meta.settings.notes || '無'}</b></span>
+      `;
+    }
+
+    function getMachineMetadata(name) {
+      // 優先從 cloudEquipmentList 撈
+      const found = cloudEquipmentList.find(m => m.machine_name === name);
+      if (found) {
+        return {
+          img: found.image_url || "",
+          settings: {
+            seat: found.seat || "",
+            handle: found.handle || "",
+            backrest: found.backrest || "",
+            notes: found.notes || ""
+          }
+        };
+      }
+      return { img: "", settings: { seat: "", handle: "", backrest: "", notes: "" } };
+    }
+
+    // ==========================================
+    // 4. 新增器材 / 編輯器材 Modal 控制
+    // ==========================================
+    let isCreatingNewMachine = false;
+    let tempModalImgBase64 = "";
+
+    // 點擊「+ 新增器材」打開 Modal
+    function openAddNewMachineModal() {
+      isCreatingNewMachine = true;
+      tempModalImgBase64 = "";
+
+      document.getElementById('modalMainTitle').innerText = `新增器材 (${currentMuscleGroup})`;
+      document.getElementById('modalTitleIcon').innerText = "➕";
+      
+      const nameInput = document.getElementById('modalMachineNameInput');
+      nameInput.value = "";
+      nameInput.disabled = false;
+      nameInput.placeholder = "輸入新器材名稱 (例: 雙槓臂屈伸機)";
+
+      document.getElementById('settingSeat').value = "";
+      document.getElementById('settingHandle').value = "";
+      document.getElementById('settingBackrest').value = "";
+      document.getElementById('settingNotes').value = "";
+
+      resetModalImgPreview("");
+      document.getElementById('machineSettingModal').classList.remove('hidden');
+    }
+
+    // 點擊卡片右上角「⚙️」打開編輯 Modal
+    function openEditMachineModal(machineName) {
+      isCreatingNewMachine = false;
+      const meta = getMachineMetadata(machineName);
+      tempModalImgBase64 = meta.img || "";
+
+      document.getElementById('modalMainTitle').innerText = "修改器材設定";
+      document.getElementById('modalTitleIcon').innerText = "⚙️";
+
+      const nameInput = document.getElementById('modalMachineNameInput');
+      nameInput.value = machineName;
+      nameInput.disabled = true; // 編輯現有器材時鎖定名稱
+
+      document.getElementById('settingSeat').value = meta.settings.seat || "";
+      document.getElementById('settingHandle').value = meta.settings.handle || "";
+      document.getElementById('settingBackrest').value = meta.settings.backrest || "";
+      document.getElementById('settingNotes').value = meta.settings.notes || "";
+
+      resetModalImgPreview(tempModalImgBase64);
+      document.getElementById('machineSettingModal').classList.remove('hidden');
+    }
+
+    document.getElementById('btnEditCurrentSetting').addEventListener('click', () => {
+      if (currentSelectedMachine) openEditMachineModal(currentSelectedMachine);
+    });
+
+    function closeMachineSettingModal() {
+      document.getElementById('machineSettingModal').classList.add('hidden');
+    }
+
+    function resetModalImgPreview(urlOrBase64) {
+      const preview = document.getElementById('modalMachineImgPreview');
+      const placeholder = document.getElementById('modalMachineImgPlaceholder');
+      if (urlOrBase64 && urlOrBase64.length > 20) {
+        preview.src = urlOrBase64;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      } else {
+        preview.src = "";
+        preview.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+      }
+    }
+
+    // 影相拍照轉壓縮 Base64
+    document.getElementById('modalPhotoInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const base64 = await compressImageToBase64(file, 640, 0.75);
+        tempModalImgBase64 = `data:image/jpeg;base64,${base64}`;
+        resetModalImgPreview(tempModalImgBase64);
+      } catch (err) {
+        alert("相片壓縮失敗，請重試");
+      }
+    });
+
+    // 儲存按鈕：立即更新前端畫面，並發送 POST 至 GAS 自動寫入 Google Sheet & Google Drive
+    async function saveMachineSettingsFromModal() {
+      const nameInput = document.getElementById('modalMachineNameInput');
+      const machineName = nameInput.value.trim();
+
+      if (!machineName) {
+        alert("請輸入器材名稱！");
+        return;
+      }
+
+      const seatVal = document.getElementById('settingSeat').value.trim();
+      const handleVal = document.getElementById('settingHandle').value.trim();
+      const backrestVal = document.getElementById('settingBackrest').value.trim();
+      const notesVal = document.getElementById('settingNotes').value.trim();
+
+      // 1. 立即更新前端本機記憶，零延遲反映在畫面上
+      let found = cloudEquipmentList.find(m => m.machine_name === machineName);
+      if (!found) {
+        found = { machine_name: machineName, muscle_group: currentMuscleGroup };
+        cloudEquipmentList.push(found);
+      }
+      found.seat = seatVal;
+      found.handle = handleVal;
+      found.backrest = backrestVal;
+      found.notes = notesVal;
+      if (tempModalImgBase64) found.image_url = tempModalImgBase64;
+
+      localStorage.setItem('gym_cached_cloud_machines', JSON.stringify(cloudEquipmentList));
+
+      // 立即刷新卡片與選定
+      renderMachineVisualCards(getMachinesForGroup(currentMuscleGroup));
+      renderChecklist(getMachinesForGroup(currentMuscleGroup));
+      selectMachine(machineName);
+      closeMachineSettingModal();
+
+      // 2. 背景非同步發送給 Google Apps Script 自動存到 Drive 與 Sheet
+      const saveBtn = document.getElementById('btnSaveMachineSetting');
+      const payload = {
+        muscle_group: currentMuscleGroup,
+        machine_name: machineName,
+        seat: seatVal,
+        handle: handleVal,
+        backrest: backrestVal,
+        notes: notesVal,
+        image_base64: tempModalImgBase64.startsWith('data:image') ? tempModalImgBase64 : ""
+      };
+
+      fetch(CONFIG.GAS_WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "saveMachineSetting", data: payload })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.image_url) {
+          found.image_url = res.image_url;
+          localStorage.setItem('gym_cached_cloud_machines', JSON.stringify(cloudEquipmentList));
+          renderMachineVisualCards(getMachinesForGroup(currentMuscleGroup));
+        }
+      })
+      .catch(e => console.warn("Google Sheet 背景備份出錯 (不影響當前操作):", e));
+    }
+
+    // ==========================================
+    // 5. 訓練計時控制 (互鎖與碼錶)
+    // ==========================================
+    const btnStartWorkout = document.getElementById('btnStartWorkout');
+    const btnPauseWorkout = document.getElementById('btnPauseWorkout');
+    const startTimeStamp = document.getElementById('startTimeStamp');
+    const endTimeStamp = document.getElementById('endTimeStamp');
+
+    btnStartWorkout.addEventListener('click', () => {
+      if (!isWorkoutStarted) {
+        isWorkoutStarted = true;
+        isWorkoutPaused = false;
+        startTimeStamp.innerText = new Date().toTimeString().split(' ')[0];
+
+        btnStartWorkout.classList.add('hidden');
+        btnPauseWorkout.classList.remove('hidden');
+
+        startTimerInterval();
+      }
+    });
+
+    btnPauseWorkout.addEventListener('click', () => {
+      if (!isWorkoutPaused) {
+        isWorkoutPaused = true;
+        clearInterval(totalWorkoutTimerInterval);
+        btnPauseWorkout.innerText = "繼續";
+        btnPauseWorkout.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-6 py-2 rounded-xl text-xs font-bold transition-all shadow-md";
+        document.getElementById('totalWorkoutTimer').classList.replace('text-emerald-400', 'text-amber-400');
+      } else {
+        isWorkoutPaused = false;
+        startTimerInterval();
+        btnPauseWorkout.innerText = "暫停";
+        btnPauseWorkout.className = "bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-6 py-2 rounded-xl text-xs font-bold transition-all shadow-md";
+        document.getElementById('totalWorkoutTimer').classList.replace('text-amber-400', 'text-emerald-400');
+      }
+    });
+
+    function startTimerInterval() {
+      totalWorkoutTimerInterval = setInterval(() => {
+        totalWorkoutSeconds++;
+        const hrs = String(Math.floor(totalWorkoutSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((totalWorkoutSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(totalWorkoutSeconds % 60).padStart(2, '0');
+        document.getElementById('totalWorkoutTimer').innerText = `${hrs}:${mins}:${secs}`;
+      }, 1000);
+    }
+
+    // ==========================================
+    // 6. 此機使用時間介面控制 (開始此機/結束此機)
+    // ==========================================
+    const btnToggleMachine = document.getElementById('btnToggleMachine');
+    btnToggleMachine.addEventListener('click', () => {
+      if (!isWorkoutStarted) {
+        alert("⚠️【互鎖提醒】尚未開始訓練！\n請先點擊最上方「開始訓練」按鈕。");
+        return;
+      }
+      if (isWorkoutPaused) {
+        alert("⚠️【互鎖提醒】訓練處於暫停狀態，請先按繼續！");
+        return;
+      }
+
+      if (!isMachineActive) {
+        isMachineActive = true;
+        machineSeconds = 0;
+        btnToggleMachine.innerText = "結束此機";
+        btnToggleMachine.className = "bg-rose-600 hover:bg-rose-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-md";
+        
+        machineTimerInterval = setInterval(() => {
+          machineSeconds++;
+          const m = String(Math.floor(machineSeconds / 60)).padStart(2, '0');
+          const s = String(machineSeconds % 60).padStart(2, '0');
+          document.getElementById('machineTimerDisplay').innerText = `${m}:${s}`;
+        }, 1000);
+      } else {
+        clearInterval(machineTimerInterval);
+        isMachineActive = false;
+        btnToggleMachine.innerText = "開始此機";
+        btnToggleMachine.className = "bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-md";
+      }
+    });
+
+    function resetMachineTimerUI() {
+      if (isMachineActive) {
+        clearInterval(machineTimerInterval);
+        isMachineActive = false;
+      }
+      machineSeconds = 0;
+      document.getElementById('machineTimerDisplay').innerText = "00:00";
+      btnToggleMachine.innerText = "開始此機";
+      btnToggleMachine.className = "bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-md";
+    }
+
+    // ==========================================
+    // 7. 組數記錄 (Log Set)
+    // ==========================================
+    document.getElementById('btnLogSet').addEventListener('click', () => {
+      if (!isWorkoutStarted) {
+        alert("⚠️【互鎖提醒】尚未開始訓練！請先點擊「開始訓練」。");
+        return;
+      }
+      if (isWorkoutPaused) {
+        alert("⚠️【互鎖提醒】訓練處於暫停狀態，請先按繼續！");
+        return;
+      }
+      if (!currentSelectedMachine) {
+        alert("請先選擇器材！");
+        return;
+      }
+
+      const w = parseFloat(document.getElementById('inputWeight').value) || 0;
+      const r = parseInt(document.getElementById('inputReps').value, 10) || 0;
+      const wKg = currentUnit === 'LB' ? (w * 0.453592).toFixed(1) : w;
+
+      const currentDone = machineProgress[currentSelectedMachine] || 0;
+      const setNumberBeingSaved = currentDone + 1;
+
+      workoutLogs.push({
+        date: document.getElementById('displayDate').innerText,
+        timestamp: new Date().toLocaleTimeString(),
+        muscle_group: currentMuscleGroup,
+        exercise_name: currentSelectedMachine,
+        set_num: setNumberBeingSaved,
+        weight: w,
+        unit: currentUnit,
+        weight_kg: Number(wKg),
+        reps: r,
+        duration_sec: machineSeconds
+      });
+
+      machineProgress[currentSelectedMachine] = setNumberBeingSaved;
+      saveMachineHistory(currentSelectedMachine, w, r, currentUnit);
+
+      document.getElementById('currentSetNum').innerText = setNumberBeingSaved + 1;
+      document.getElementById('historyHint').innerText = `已存第 ${setNumberBeingSaved} 組 (${w}${currentUnit} × ${r}下)`;
+
+      updateChecklistUI();
+      startRestTimer(CONFIG.DEFAULT_REST_SECONDS);
+    });
+
+    // ==========================================
+    // 8. 單位 Slide Bar 與步進調節
+    // ==========================================
+    const unitToggleTrack = document.getElementById('unitToggleTrack');
+    const unitSlider = document.getElementById('unitSlider');
+    const labelKg = document.getElementById('labelKg');
+    const labelLb = document.getElementById('labelLb');
+    const unitText = document.getElementById('unitText');
+
+    unitToggleTrack.addEventListener('click', () => {
+      setUnit(currentUnit === 'KG' ? 'LB' : 'KG');
+    });
+
+    function setUnit(unit) {
+      currentUnit = unit;
+      unitText.innerText = unit;
+      if (unit === 'LB') {
+        unitSlider.classList.add('translate-x-full');
+        labelLb.classList.replace('text-slate-400', 'text-white');
+        labelKg.classList.replace('text-white', 'text-slate-400');
+      } else {
+        unitSlider.classList.remove('translate-x-full');
+        labelKg.classList.replace('text-slate-400', 'text-white');
+        labelLb.classList.replace('text-white', 'text-slate-400');
+      }
+    }
+
+    function stepValue(type, amount) {
+      if (type === 'weight') {
+        const el = document.getElementById('inputWeight');
+        let val = parseFloat(el.value) || 0;
+        el.value = Math.max(0, val + amount);
+      } else {
+        const el = document.getElementById('inputReps');
+        let val = parseInt(el.value, 10) || 0;
+        el.value = Math.max(1, val + amount);
+      }
+    }
+
+    function loadMachineHistory(name) {
+      const hint = document.getElementById('historyHint');
+      const raw = localStorage.getItem(`gym_hist_${name}`);
+      if (raw) {
+        try {
+          const item = JSON.parse(raw);
+          document.getElementById('inputWeight').value = item.weight;
+          document.getElementById('inputReps').value = item.reps;
+          setUnit(item.unit || 'KG');
+          const done = machineProgress[name] || 0;
+          hint.innerText = done > 0 ? `今日已做 ${done} 組 | 上次: ${item.weight}${item.unit} × ${item.reps}下` : `上次紀錄: ${item.weight}${item.unit} × ${item.reps}下`;
+          return;
+        } catch (e) {}
+      }
+      document.getElementById('inputWeight').value = CONFIG.DEFAULT_WEIGHT_KG;
+      document.getElementById('inputReps').value = CONFIG.DEFAULT_REPS;
+      setUnit('KG');
+      hint.innerText = "首次做此動作，已填入預設值";
+    }
+
+    function saveMachineHistory(name, weight, reps, unit) {
+      localStorage.setItem(`gym_hist_${name}`, JSON.stringify({ weight, reps, unit }));
+    }
+
+    // ==========================================
+    // 9. Checklist 與月曆
+    // ==========================================
+    function renderChecklist(exercises) {
+      const container = document.getElementById('checklistContainer');
+      container.innerHTML = exercises.map(ex => `
+        <li id="check-item-${encodeURIComponent(ex)}" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+          <span class="text-slate-300 font-medium">${ex}</span>
+          <span class="status-badge text-slate-500 font-mono">0 組</span>
+        </li>
+      `).join('');
+    }
+
+    function updateChecklistUI() {
+      for (const [ex, sets] of Object.entries(machineProgress)) {
+        const item = document.getElementById(`check-item-${encodeURIComponent(ex)}`);
+        if (item && sets > 0) {
+          item.classList.replace('border-slate-800', 'border-emerald-500/30');
+          const badge = item.querySelector('.status-badge');
+          badge.className = "status-badge text-emerald-400 font-bold font-mono";
+          badge.innerText = `✅ ${sets} 組`;
+        }
+      }
+    }
+
+    function initCalendarUI() {
+      document.getElementById('btnPrevMonth').addEventListener('click', () => {
+        calViewMonth--;
+        if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+        renderCalendar();
+      });
+      document.getElementById('btnNextMonth').addEventListener('click', () => {
+        calViewMonth++;
+        if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+        renderCalendar();
+      });
+      document.getElementById('btnTodayMonth').addEventListener('click', () => {
+        const now = new Date();
+        calViewYear = now.getFullYear();
+        calViewMonth = now.getMonth();
+        renderCalendar();
+      });
+      renderCalendar();
+    }
+
+    function getHistoryRecords() {
+      const raw = localStorage.getItem('gym_calendar_history');
+      if (raw) {
+        try { return JSON.parse(raw); } catch(e){}
+      }
+      return {};
+    }
+
+    function saveHistoryRecord(dateStr, record) {
+      const records = getHistoryRecords();
+      records[dateStr] = record;
+      localStorage.setItem('gym_calendar_history', JSON.stringify(records));
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const label = document.getElementById('calendarMonthYear');
+      label.innerText = `${calViewYear}-${String(calViewMonth + 1).padStart(2, '0')}`;
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = "";
+
+      const firstDayIndex = new Date(calViewYear, calViewMonth, 1).getDay();
+      const totalDays = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+      const records = getHistoryRecords();
+
+      const today = new Date();
+      const isCurrentMonth = today.getFullYear() === calViewYear && today.getMonth() === calViewMonth;
+      const todayDate = today.getDate();
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = "h-11 rounded-lg bg-slate-950/30 opacity-20";
+        grid.appendChild(emptyCell);
+      }
+
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${calViewYear}-${String(calViewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const record = records[dateStr];
+        const isToday = isCurrentMonth && d === todayDate;
+
+        const cell = document.createElement('div');
+        cell.className = `h-11 rounded-xl p-1 flex flex-col justify-between items-center cursor-pointer transition-all border ${
+          isToday ? 'border-indigo-500 bg-indigo-950/30' : 'border-slate-800/80 bg-slate-950'
+        } hover:border-slate-600`;
+
+        let badgeHtml = "";
+        if (record) {
+          badgeHtml = `<span class="w-full text-[9px] truncate rounded bg-indigo-600/40 text-indigo-300 font-bold px-1">${record.muscle_group}</span>`;
+        } else {
+          badgeHtml = `<span class="w-1.5 h-1.5 rounded-full ${isToday ? 'bg-indigo-500' : 'bg-transparent'}"></span>`;
+        }
+
+        cell.innerHTML = `
+          <span class="text-[10px] font-mono ${isToday ? 'text-indigo-400 font-bold' : 'text-slate-400'}">${d}</span>
+          ${badgeHtml}
+        `;
+
+        cell.onclick = () => showCalendarDayDetail(dateStr, record);
+        grid.appendChild(cell);
+      }
+    }
+
+    function showCalendarDayDetail(dateStr, record) {
+      const panel = document.getElementById('calendarDetailPanel');
+      panel.classList.remove('hidden');
+
+      document.getElementById('calDetailDate').innerText = dateStr;
+
+      if (!record) {
+        document.getElementById('calDetailMuscle').innerText = "無訓練紀錄";
+        document.getElementById('calDetailMuscle').className = "bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px]";
+        document.getElementById('calDetailSummary').innerText = "此日無訓練組數記錄。";
+        document.getElementById('calDetailLogs').innerHTML = "";
+        return;
+      }
+
+      document.getElementById('calDetailMuscle').innerText = record.muscle_group;
+      document.getElementById('calDetailMuscle').className = "bg-indigo-600/40 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold";
+      document.getElementById('calDetailSummary').innerHTML = `
+        時段: <span class="font-mono text-slate-300">${record.start_time || '--'} ~ ${record.end_time || '--'}</span> | 
+        總時長: <span class="font-mono text-emerald-400 font-bold">${Math.round(record.total_duration_sec / 60)} 分鐘</span>
+        ${record.ai_advice ? `<div class="mt-1 p-2 rounded bg-slate-900 border border-slate-800 text-slate-300">💡 <b>AI 建議:</b> ${record.ai_advice}</div>` : ''}
+      `;
+
+      const logsHtml = (record.logs || []).map(l => `
+        <div class="flex justify-between items-center bg-slate-900 px-2 py-1 rounded border border-slate-800/80 text-[11px]">
+          <span class="font-medium text-slate-200">${l.exercise_name} (第${l.set_num}組)</span>
+          <span class="font-mono text-indigo-300">${l.weight}${l.unit} × ${l.reps}下</span>
+        </div>
+      `).join('');
+      document.getElementById('calDetailLogs').innerHTML = logsHtml;
+    }
+
+    // 輔助相機壓縮圖片為 Base64
+    function compressImageToBase64(file, maxDimension, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width, height = img.height;
+            if (width > height && width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+            const canvas = document.getElementById('compressCanvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
+          };
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ==========================================
+    // 10. 組間休息計時器 (90 秒)
+    // ==========================================
+    function startRestTimer(seconds) {
+      clearInterval(restTimerInterval);
+      restRemaining = seconds;
+      restTotalDuration = seconds;
+
+      const overlay = document.getElementById('restTimerOverlay');
+      const numDisplay = document.getElementById('restTimerNumber');
+      const progressBar = document.getElementById('restProgressBar');
+
+      overlay.classList.remove('hidden');
+      numDisplay.innerText = restRemaining;
+      progressBar.style.width = "100%";
+
+      restTimerInterval = setInterval(() => {
+        restRemaining--;
+        numDisplay.innerText = restRemaining;
+        const pct = Math.max(0, (restRemaining / restTotalDuration) * 100);
+        progressBar.style.width = `${pct}%`;
+
+        if (restRemaining <= 0) {
+          clearInterval(restTimerInterval);
+          overlay.classList.add('hidden');
+          if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        }
+      }, 1000);
+    }
+
+    document.getElementById('btnRestSkip').addEventListener('click', () => {
+      clearInterval(restTimerInterval);
+      document.getElementById('restTimerOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('btnRestAdd30').addEventListener('click', () => {
+      restRemaining += 30;
+      restTotalDuration += 30;
+      document.getElementById('restTimerNumber').innerText = restRemaining;
+    });
+
+    // ==========================================
+    // 11. 完成訓練、同步 Sheets 與寫入月曆
+    // ==========================================
+    document.getElementById('btnFinishWorkout').addEventListener('click', async () => {
+      if (!isWorkoutStarted || workoutLogs.length === 0) {
+        alert("⚠️ 請先點擊「開始訓練」並記錄至少 1 組數據！");
+        return;
+      }
+      if (!confirm("確定完成今日訓練並儲存？將呼叫本地 Qwen 模型生成分析報告。")) return;
+
+      clearInterval(totalWorkoutTimerInterval);
+      const nowEndTime = new Date().toTimeString().split(' ')[0];
+      endTimeStamp.innerText = nowEndTime;
+
+      btnPauseWorkout.disabled = true;
+      btnPauseWorkout.classList.add('opacity-50', 'pointer-events-none');
+
+      const btn = document.getElementById('btnFinishWorkout');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> 本地 AI 分析中...`;
+
+      const todayStr = document.getElementById('displayDate').innerText;
+      const summaryPayload = {
+        date: todayStr,
+        start_time: startTimeStamp.innerText,
+        end_time: nowEndTime,
+        muscle_group: currentMuscleGroup,
+        total_duration_sec: totalWorkoutSeconds,
+        logs: workoutLogs
+      };
+
+      try {
+        // 1. Google Sheets 背景同步
+        fetch(CONFIG.GAS_WEBAPP_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "saveWorkout", data: summaryPayload })
+        }).catch(e => console.warn(e));
+
+        // 2. 呼叫本機 n8n 觸發 Qwen2.5 分析
+        let aiAdvice = "今日訓練已圓滿完成！";
+        try {
+          const res = await fetch(`${CONFIG.N8N_TUNNEL_URL}/finish-workout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(summaryPayload)
+          });
+          const result = await res.json();
+          if (result.ai_advice) aiAdvice = result.ai_advice;
+        } catch (e) {
+          aiAdvice = "本地 AI 暫時離線，但訓練紀錄已成功歸檔。";
+        }
+
+        // 3. 寫入本地月曆歷史
+        summaryPayload.ai_advice = aiAdvice;
+        saveHistoryRecord(todayStr, summaryPayload);
+
+        showAiModal(aiAdvice);
+      } catch (err) {
+        showAiModal("數據已快取於月曆，但無法連線至外部服務。");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>完成今日訓練 & AI 分析</span>`;
+      }
+    });
+
+    function showAiModal(text) {
+      document.getElementById('aiAdviceContent').innerText = text;
+      document.getElementById('aiModalOverlay').classList.remove('hidden');
+    }
+
+    function closeAiModal() {
+      document.getElementById('aiModalOverlay').classList.add('hidden');
+      location.reload();
+    }
+  </script>
+</body>
+</html>
