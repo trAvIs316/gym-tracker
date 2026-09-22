@@ -294,6 +294,8 @@
       DEFAULT_REPS: 10
     };
 
+    const ACTIVE_SESSION_KEY = 'gym_active_workout_session';
+
     const ALL_MUSCLE_ITEMS = ["操胸", "背", "二頭", "三頭", "腳", "腹", "帶氧"];
 
     const DEFAULT_EQUIPMENT_DATA = {
@@ -319,6 +321,7 @@
     let isWorkoutPaused = false;
     let totalWorkoutSeconds = 0;
     let totalWorkoutTimerInterval = null;
+    let workoutStartEpoch = null;
 
     // 器械使用計時
     let isMachineActive = false;
@@ -330,6 +333,89 @@
     let restTimerInterval = null;
 
     // ==========================================
+    // 持久化管理 (Auto-Save & Restore)
+    // ==========================================
+    function persistActiveSession() {
+      if (!isWorkoutStarted) return;
+      const sessionData = {
+        date: document.getElementById('displayDate').innerText,
+        isWorkoutStarted,
+        isWorkoutPaused,
+        startTime: startTimeStamp.innerText,
+        workoutStartEpoch: workoutStartEpoch,
+        totalWorkoutSeconds,
+        selectedMuscles: Array.from(selectedMuscles),
+        currentSelectedMachine,
+        logs: workoutLogs,
+        machineProgress,
+        customMachineSettings
+      };
+      localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(sessionData));
+    }
+
+    function restoreActiveSession() {
+      const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+      if (!raw) return;
+
+      try {
+        const session = JSON.parse(raw);
+        const todayStr = document.getElementById('displayDate').innerText;
+
+        // 若暫存屬於當日且已啟動訓練，則恢復狀態
+        if (session.isWorkoutStarted && session.date === todayStr) {
+          isWorkoutStarted = true;
+          isWorkoutPaused = session.isWorkoutPaused || false;
+          startTimeStamp.innerText = session.startTime || "--:--:--";
+          workoutStartEpoch = session.workoutStartEpoch || (Date.now() - (session.totalWorkoutSeconds || 0) * 1000);
+
+          if (session.selectedMuscles && session.selectedMuscles.length > 0) {
+            selectedMuscles = new Set(session.selectedMuscles);
+          }
+
+          workoutLogs = session.logs || [];
+          machineProgress = session.machineProgress || {};
+          customMachineSettings = session.customMachineSettings || {};
+
+          // 精準還原已過秒數 (若處於暫停則直接讀取暫存數值)
+          if (!isWorkoutPaused && workoutStartEpoch) {
+            totalWorkoutSeconds = Math.max(0, Math.floor((Date.now() - workoutStartEpoch) / 1000));
+          } else {
+            totalWorkoutSeconds = session.totalWorkoutSeconds || 0;
+          }
+
+          // 還原時長顯示
+          updateWorkoutTimerDisplay();
+
+          // 還原頂部按鈕狀態
+          btnStartWorkout.classList.add('hidden');
+          btnPauseWorkout.classList.remove('hidden');
+
+          if (isWorkoutPaused) {
+            btnPauseWorkout.innerText = "繼續";
+            btnPauseWorkout.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40";
+            document.getElementById('totalWorkoutTimer').classList.replace('text-emerald-400', 'text-amber-400');
+          } else {
+            startTimerInterval();
+          }
+
+          renderMuscleButtons();
+          refreshActiveEquipmentList();
+
+          if (session.currentSelectedMachine) {
+            selectMachine(session.currentSelectedMachine);
+          }
+          updateChecklistUI();
+        }
+      } catch (e) {
+        console.error("還原訓練進度失敗:", e);
+      }
+    }
+
+    function clearActiveSession() {
+      localStorage.removeItem(ACTIVE_SESSION_KEY);
+    }
+
+    // ==========================================
     // 2. 初始化流程
     // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
@@ -337,9 +423,11 @@
       updateLiveClock();
       setInterval(updateLiveClock, 1000);
 
-      // 渲染頂部 7 個部位按鈕
       renderMuscleButtons();
       refreshActiveEquipmentList();
+
+      // 檢查並恢復暫存
+      restoreActiveSession();
     });
 
     function initCurrentDate() {
@@ -392,10 +480,10 @@
       }
       renderMuscleButtons();
       refreshActiveEquipmentList();
+      persistActiveSession();
     }
 
     function refreshActiveEquipmentList() {
-      // 合併所有已選部位的器材
       let combined = [];
       selectedMuscles.forEach(m => {
         const list = DEFAULT_EQUIPMENT_DATA[m] || [];
@@ -464,6 +552,8 @@
       const completedSets = machineProgress[machineName] || 0;
       document.getElementById('currentSetNum').innerText = completedSets + 1;
       loadMachineHistory(machineName);
+
+      persistActiveSession();
     }
 
     function updateActiveMachineSettingBanner(machineName) {
@@ -527,11 +617,13 @@
         isWorkoutPaused = false;
         const nowTime = new Date().toTimeString().split(' ')[0];
         startTimeStamp.innerText = nowTime;
+        workoutStartEpoch = Date.now();
 
         btnStartWorkout.classList.add('hidden');
         btnPauseWorkout.classList.remove('hidden');
 
         startTimerInterval();
+        persistActiveSession();
 
         // 立即上傳開始時間到 Google Sheets
         const payload = {
@@ -552,24 +644,32 @@
         isWorkoutPaused = true;
         clearInterval(totalWorkoutTimerInterval);
         btnPauseWorkout.innerText = "繼續";
-        btnPauseWorkout.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md";
+        btnPauseWorkout.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40";
         document.getElementById('totalWorkoutTimer').classList.replace('text-emerald-400', 'text-amber-400');
       } else {
         isWorkoutPaused = false;
+        // 扣減暫停秒差重新計算起始時間
+        workoutStartEpoch = Date.now() - (totalWorkoutSeconds * 1000);
         startTimerInterval();
         btnPauseWorkout.innerText = "暫停";
-        btnPauseWorkout.className = "bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md";
+        btnPauseWorkout.className = "bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40";
         document.getElementById('totalWorkoutTimer').classList.replace('text-amber-400', 'text-emerald-400');
       }
+      persistActiveSession();
     });
 
+    function updateWorkoutTimerDisplay() {
+      const hrs = String(Math.floor(totalWorkoutSeconds / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((totalWorkoutSeconds % 3600) / 60)).padStart(2, '0');
+      const secs = String(totalWorkoutSeconds % 60).padStart(2, '0');
+      document.getElementById('totalWorkoutTimer').innerText = `${hrs}:${mins}:${secs}`;
+    }
+
     function startTimerInterval() {
+      clearInterval(totalWorkoutTimerInterval);
       totalWorkoutTimerInterval = setInterval(() => {
         totalWorkoutSeconds++;
-        const hrs = String(Math.floor(totalWorkoutSeconds / 3600)).padStart(2, '0');
-        const mins = String(Math.floor((totalWorkoutSeconds % 3600) / 60)).padStart(2, '0');
-        const secs = String(totalWorkoutSeconds % 60).padStart(2, '0');
-        document.getElementById('totalWorkoutTimer').innerText = `${hrs}:${mins}:${secs}`;
+        updateWorkoutTimerDisplay();
       }, 1000);
     }
 
@@ -618,7 +718,7 @@
     }
 
     // ==========================================
-    // 8. 組數記錄 (Log Set)
+    // 8. 組數記錄 (Log Set) - 支援即做即傳與持久化
     // ==========================================
     document.getElementById('btnLogSet').addEventListener('click', () => {
       if (!isWorkoutStarted) {
@@ -641,7 +741,7 @@
       const currentDone = machineProgress[currentSelectedMachine] || 0;
       const setNumberBeingSaved = currentDone + 1;
 
-      workoutLogs.push({
+      const singleLog = {
         date: document.getElementById('displayDate').innerText,
         timestamp: new Date().toLocaleTimeString(),
         muscle_group: Array.from(selectedMuscles).join(", "),
@@ -652,10 +752,24 @@
         weight_kg: Number(wKg),
         reps: r,
         duration_sec: machineSeconds
-      });
+      };
 
+      workoutLogs.push(singleLog);
       machineProgress[currentSelectedMachine] = setNumberBeingSaved;
       saveMachineHistory(currentSelectedMachine, w, r, currentUnit);
+
+      // 1. 本地實時持久化，防跳 App 遺失
+      persistActiveSession();
+
+      // 2. 利用組間休息空檔，背景非同步寫入單組至 Sheets
+      fetch(CONFIG.GAS_WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: "saveSingleSet",
+          data: singleLog
+        })
+      }).catch(e => console.warn("背景上傳單組失敗，稍後會於結束時補存", e));
 
       document.getElementById('currentSetNum').innerText = setNumberBeingSaved + 1;
       document.getElementById('historyHint').innerText = `已存第 ${setNumberBeingSaved} 組 (${w}${currentUnit} × ${r}下)`;
@@ -755,7 +869,7 @@
     }
 
     // ==========================================
-    // 11. 底部功能 1：結束訓練 (上傳結束時間與組數至 Google Sheet)
+    // 11. 底部功能 1：結束訓練 (儲存至 Sheets 並清理暫存)
     // ==========================================
     document.getElementById('btnFinishWorkout').addEventListener('click', async () => {
       if (!isWorkoutStarted) {
@@ -795,8 +909,12 @@
           body: JSON.stringify({ action: "finishWorkout", data: summaryPayload })
         });
         const data = await res.json();
+        
+        // 成功後清理本地暫存，防止再次進入時誤還原
+        clearActiveSession();
         alert("✅ 訓練數據已成功歸檔至 Google Sheet (Workout_Logs & Daily_Summaries)！");
       } catch (err) {
+        clearActiveSession();
         alert("已送出儲存請求，請確認 Google Sheet 連線。");
       } finally {
         finishBtn.disabled = false;
@@ -827,7 +945,6 @@
       };
 
       try {
-        // 1. 呼叫 n8n Webhook 觸發本地 Qwen 模型
         const res = await fetch(`${CONFIG.N8N_TUNNEL_URL}/finish-workout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -836,7 +953,6 @@
         const result = await res.json();
         const advice = result.ai_advice || "今日動作完成良好，保持強度！";
 
-        // 2. 將分析結果回寫至 Google Sheets 的 Daily_Summaries
         fetch(CONFIG.GAS_WEBAPP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -915,7 +1031,6 @@
         notes: document.getElementById('settingNotes').value.trim()
       };
 
-      // 檢查是否為新器材
       const firstMuscle = Array.from(selectedMuscles)[0] || "操胸";
       if (!DEFAULT_EQUIPMENT_DATA[firstMuscle].includes(name)) {
         DEFAULT_EQUIPMENT_DATA[firstMuscle].push(name);
@@ -924,6 +1039,7 @@
 
       selectMachine(name);
       closeMachineSettingModal();
+      persistActiveSession();
     }
 
     // 相片壓縮轉 Base64
@@ -974,7 +1090,6 @@
         const secs = String(restElapsedSeconds % 60).padStart(2, '0');
         display.innerText = `${mins}:${secs}`;
 
-        // 超過 3 分鐘 (180秒) 顏色轉為琥珀黃提示
         if (restElapsedSeconds >= 180) {
           display.className = "text-6xl font-mono font-black text-amber-400 my-2 tracking-tight";
         } else {
@@ -983,7 +1098,6 @@
       }, 1000);
     }
 
-    // 點擊「繼續操下一組」關閉計時彈窗
     document.getElementById('btnEndRestAndContinue').addEventListener('click', () => {
       clearInterval(restTimerInterval);
       document.getElementById('restTimerOverlay').classList.add('hidden');
