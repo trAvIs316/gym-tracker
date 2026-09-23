@@ -90,7 +90,7 @@
         </div>
       </section>
 
-      <!-- 3. 第 N 組操作面板 -->
+      <!-- 3. 第 N 組操作面板 (分兩行平均膠囊排版) -->
       <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <div class="font-bold text-base flex items-center gap-2">
@@ -105,12 +105,14 @@
           </div>
         </div>
 
+        <!-- 訓練部位：分 2 行，每行 4 個等寬膠囊 -->
         <div class="space-y-1.5 py-1">
           <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider flex justify-between">
             <span>對應訓練部位 (單選)</span>
             <span id="activeMuscleLabel" class="text-indigo-400 font-bold">胸</span>
           </div>
-          <div id="muscleButtonContainer" class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5"></div>
+          <!-- 核心改動：grid grid-cols-4 均分寬度 -->
+          <div id="muscleButtonContainer" class="grid grid-cols-4 gap-2 pt-0.5"></div>
         </div>
 
         <div class="grid grid-cols-12 gap-2.5 items-stretch pt-1">
@@ -397,19 +399,6 @@
     let backgroundTimerInterval = null;
     let timelineEvents = [];
 
-// 前端日期正規化工具 (將 2026-9-1 或 2026-09-1 強制轉為標準 2026-09-01)
-function normalizeDateStr(str) {
-  if (!str) return "";
-  const parts = String(str).replace(/'/g, "").trim().split(/[-\/]/);
-  if (parts.length >= 3) {
-    const y = parts[0];
-    const m = parts[1].padStart(2, '0');
-    const d = parts[2].padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-  return str;
-}
-
     // 歷史資料庫快取
     let historicalWorkouts = {}; 
 
@@ -546,6 +535,9 @@ function normalizeDateStr(str) {
 
       // 背景預載歷史訓練資料
       loadLocalHistoryToCache();
+
+      // 從 Google Sheet 靜默同步歷史紀錄，確保上次重量精準對齊雲端
+      silentSyncGoogleSheetHistory();
     });
 
     function initCurrentDate() {
@@ -593,7 +585,7 @@ function normalizeDateStr(str) {
     }
 
     // ==========================================
-    // 4. 部位單選 (純文字)
+    // 4. 部位單選 (2 行 4 列均勻網格)
     // ==========================================
     function renderMuscleButtons() {
       const container = document.getElementById('muscleButtonContainer');
@@ -606,7 +598,7 @@ function normalizeDateStr(str) {
         const isSelected = (currentMuscleGroup === m);
         return `
           <button type="button" onclick="selectMuscleGroup('${m}')"
-                  class="flex-1 min-w-[50px] py-1.5 px-2 rounded-xl text-xs font-bold border transition-all text-center ${
+                  class="w-full py-2 rounded-xl text-xs font-bold border transition-all text-center ${
                     isSelected 
                       ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-950/50 scale-[1.02]' 
                       : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -715,6 +707,7 @@ function normalizeDateStr(str) {
       const setEl = document.getElementById('currentSetNum');
       if (setEl) setEl.innerText = completedSets + 1;
 
+      // 自動讀取該機種上次訓練的重量與次數
       loadMachineHistory(machineName);
       persistActiveSession();
     }
@@ -744,26 +737,58 @@ function normalizeDateStr(str) {
       }
     }
 
+    // ==========================================
+    // 核心邏輯：自動對齊 Google Sheet 的上次數據
+    // ==========================================
     function loadMachineHistory(name) {
       const lastWeightDisplay = document.getElementById('lastWeightDisplay');
       if (!name) {
         if (lastWeightDisplay) lastWeightDisplay.innerText = "N/A";
         return;
       }
-      const raw = localStorage.getItem(`gym_hist_${name}`);
-      
-      if (raw) {
-        try {
-          const item = JSON.parse(raw);
-          if (item.weight !== undefined) document.getElementById('inputWeight').value = item.weight;
-          if (item.reps !== undefined) document.getElementById('inputReps').value = item.reps;
-          if (item.unit) setUnit(item.unit);
 
-          if (lastWeightDisplay) lastWeightDisplay.innerText = `${item.weight} ${item.unit || 'KG'} × ${item.reps} 下`;
-          return;
-        } catch (e) {}
+      // 1. 優先從本地記憶讀取
+      let foundRecord = null;
+      const raw = localStorage.getItem(`gym_hist_${name}`);
+      if (raw) {
+        try { foundRecord = JSON.parse(raw); } catch (e) {}
       }
 
+      // 2. 若本地無紀錄，從已同步的 Google Sheet 歷史庫倒序搜尋該器材最近一筆組數
+      if (!foundRecord && historicalWorkouts) {
+        const sortedDates = Object.keys(historicalWorkouts).sort().reverse();
+        for (const d of sortedDates) {
+          const dayData = historicalWorkouts[d];
+          if (dayData && dayData.logs && dayData.logs.length > 0) {
+            // 倒序找最後一組
+            for (let i = dayData.logs.length - 1; i >= 0; i--) {
+              const l = dayData.logs[i];
+              if (l.exercise_name === name && l.weight > 0) {
+                foundRecord = {
+                  weight: l.weight,
+                  reps: l.reps,
+                  unit: l.unit || 'KG'
+                };
+                // 快取回本地供下次快速調用
+                saveMachineHistory(name, l.weight, l.reps, l.unit || 'KG');
+                break;
+              }
+            }
+          }
+          if (foundRecord) break;
+        }
+      }
+
+      // 3. 填入預設值
+      if (foundRecord) {
+        if (foundRecord.weight !== undefined) document.getElementById('inputWeight').value = foundRecord.weight;
+        if (foundRecord.reps !== undefined) document.getElementById('inputReps').value = foundRecord.reps;
+        if (foundRecord.unit) setUnit(foundRecord.unit);
+        if (lastWeightDisplay) lastWeightDisplay.innerText = `${foundRecord.weight} ${foundRecord.unit || 'KG'} × ${foundRecord.reps} 下`;
+        return;
+      }
+
+      // 若從未做過此動作，填入基準初始值
       if (lastWeightDisplay) lastWeightDisplay.innerText = "N/A";
       document.getElementById('inputWeight').value = CONFIG.DEFAULT_WEIGHT_KG;
       document.getElementById('inputReps').value = CONFIG.DEFAULT_REPS;
@@ -927,7 +952,6 @@ function normalizeDateStr(str) {
           body: JSON.stringify({ action: "saveMachineSetting", data: payload })
         });
         
-        // 安全解析 text -> json
         const resText = await response.text();
         const res = JSON.parse(resText);
 
@@ -1231,7 +1255,7 @@ function normalizeDateStr(str) {
     }
 
     // ==========================================
-    // 11. 單位切換與已完成清單
+    // 11. 單位調節與已完成清單
     // ==========================================
     const unitToggleTrack = document.getElementById('unitToggleTrack');
     const unitSlider = document.getElementById('unitSlider');
@@ -1446,11 +1470,23 @@ function normalizeDateStr(str) {
     }
 
     // =========================================================================
-    // 13. 【歷史日曆系統】 (Calendar View & History Data Engine)
+    // 13. 【歷史日曆系統】 (含日期補零正規化防呆)
     // =========================================================================
     let calendarSelectedYear = new Date().getFullYear();
     let calendarSelectedMonth = new Date().getMonth();
     let calendarActiveSelectedDate = "";
+
+    function normalizeDateStr(str) {
+      if (!str) return "";
+      const parts = String(str).replace(/'/g, "").trim().split(/[-\/]/);
+      if (parts.length >= 3) {
+        const y = parts[0];
+        const m = parts[1].padStart(2, '0');
+        const d = parts[2].padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      return str;
+    }
 
     function initCalendarView() {
       const yearSelect = document.getElementById('calYearSelect');
@@ -1472,7 +1508,7 @@ function normalizeDateStr(str) {
       renderCalendarGrid();
 
       const todayStr = document.getElementById('displayDate').innerText;
-      selectCalendarDate(todayStr);
+      selectCalendarDate(normalizeDateStr(todayStr));
     }
 
     function onCalendarSelectChange() {
@@ -1506,7 +1542,7 @@ function normalizeDateStr(str) {
         grid.innerHTML += `<div class="h-11 rounded-xl bg-slate-950/20 border border-transparent opacity-20"></div>`;
       }
 
-      const todayStr = document.getElementById('displayDate').innerText;
+      const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
 
       for (let day = 1; day <= daysInMonth; day++) {
         const mStr = String(calendarSelectedMonth + 1).padStart(2, '0');
@@ -1532,14 +1568,15 @@ function normalizeDateStr(str) {
     }
 
     function selectCalendarDate(dateStr) {
-      calendarActiveSelectedDate = dateStr;
-      document.getElementById('selectedDateTitle').innerText = dateStr;
+      const cleanDate = normalizeDateStr(dateStr);
+      calendarActiveSelectedDate = cleanDate;
+      document.getElementById('selectedDateTitle').innerText = cleanDate;
 
       renderCalendarGrid();
 
       const container = document.getElementById('selectedDateDetailsContainer');
       const badge = document.getElementById('daySummaryBadge');
-      const workout = historicalWorkouts[dateStr];
+      const workout = historicalWorkouts[cleanDate];
 
       if (!workout || (!workout.logs || workout.logs.length === 0)) {
         badge.className = "text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-slate-800 text-slate-400";
@@ -1583,7 +1620,7 @@ function normalizeDateStr(str) {
       container.innerHTML = `
         <div class="p-3 bg-indigo-950/20 border border-indigo-800/40 rounded-xl text-xs space-y-1">
           <div class="flex justify-between text-indigo-300 font-semibold">
-            <span>訓練部位: <b class="text-white">${workout.muscle_group || '綜合'}</b></span>
+            <span>訓練部位: <b class="text-white">${workout.muscle_group || '胸'}</b></span>
             <span>時長: <b class="text-white">${workout.total_duration_min ? workout.total_duration_min + ' 分鐘' : '--'}</b></span>
           </div>
           <div class="text-[11px] text-slate-400 font-mono">
@@ -1606,7 +1643,7 @@ function normalizeDateStr(str) {
     }
 
     function saveWorkoutToLocalHistory(summaryPayload) {
-      const d = summaryPayload.date;
+      const d = normalizeDateStr(summaryPayload.date);
       historicalWorkouts[d] = {
         muscle_group: summaryPayload.muscle_group,
         start_time: summaryPayload.start_time,
@@ -1624,7 +1661,7 @@ function normalizeDateStr(str) {
         try { historicalWorkouts = JSON.parse(raw); } catch(e){}
       }
       if (workoutLogs.length > 0) {
-        const todayStr = document.getElementById('displayDate').innerText;
+        const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
         historicalWorkouts[todayStr] = {
           muscle_group: currentMuscleGroup,
           start_time: startTimeStamp.innerText,
@@ -1635,14 +1672,37 @@ function normalizeDateStr(str) {
       }
     }
 
-async function refreshCalendarDataFromSheets() {
+    // 啟動時靜默向 Google Sheet 抓取全部歷史紀錄
+    async function silentSyncGoogleSheetHistory() {
+      try {
+        const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory`);
+        const data = await res.json();
+        if (data.status === "success" && data.history) {
+          const cleanHistory = {};
+          for (const [rawDate, val] of Object.entries(data.history)) {
+            const cleanKey = normalizeDateStr(rawDate);
+            cleanHistory[cleanKey] = val;
+          }
+          historicalWorkouts = Object.assign(historicalWorkouts, cleanHistory);
+          localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
+          
+          // 重新載入當前機種的上次數據 (如 Chest Press)
+          if (currentSelectedMachine) {
+            loadMachineHistory(currentSelectedMachine);
+          }
+        }
+      } catch (e) {
+        console.warn("背景靜默同步失敗 (已使用本地快取)", e);
+      }
+    }
+
+    async function refreshCalendarDataFromSheets() {
       const badge = document.getElementById('daySummaryBadge');
       badge.innerText = "同步中...";
       try {
         const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory`);
         const data = await res.json();
         if (data.status === "success" && data.history) {
-          // 將雲端所有 Key 進行正規化補零存入
           const cleanHistory = {};
           for (const [rawDate, val] of Object.entries(data.history)) {
             const cleanKey = normalizeDateStr(rawDate);
@@ -1653,7 +1713,13 @@ async function refreshCalendarDataFromSheets() {
           localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
           
           renderCalendarGrid();
-          if (calendarActiveSelectedDate) selectCalendarDate(normalizeDateStr(calendarActiveSelectedDate));
+          if (calendarActiveSelectedDate) selectCalendarDate(calendarActiveSelectedDate);
+          
+          // 重新對齊當前機器的上次重量
+          if (currentSelectedMachine) {
+            loadMachineHistory(currentSelectedMachine);
+          }
+
           alert("✅ 歷史紀錄已與 Google Sheet 完整同步！");
         } else {
           renderCalendarGrid();
@@ -1663,7 +1729,6 @@ async function refreshCalendarDataFromSheets() {
         renderCalendarGrid();
       }
     }
-
   </script>
 </body>
 </html>
