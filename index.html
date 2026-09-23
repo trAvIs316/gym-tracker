@@ -207,10 +207,10 @@
 
 
   <!-- ========================================================================= -->
-  <!-- 頁面 2：【全新】歷史日曆與日期紀錄檢視頁                                  -->
+  <!-- 頁面 2：歷史日曆與日期紀錄檢視頁                                          -->
   <!-- ========================================================================= -->
   <div id="viewCalendarPage" class="hidden space-y-4">
-    <!-- 頂部導航列：返回按鈕 + 標題 -->
+    <!-- 頂部導航列 -->
     <header class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg flex justify-between items-center">
       <button onclick="switchView('tracker')" class="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 active:scale-95 transition-all font-bold">
         <span>⬅️</span>
@@ -226,22 +226,19 @@
       </button>
     </header>
 
-    <!-- 月曆控制：選擇年份與月份 -->
+    <!-- 月曆控制 -->
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
       <div class="flex items-center justify-between gap-2">
         <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 active:scale-95">◀</button>
         
         <div class="flex items-center gap-2">
-          <!-- 年份選擇 -->
           <select id="calYearSelect" onchange="onCalendarSelectChange()" class="bg-slate-950 text-white border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono focus:outline-none focus:border-indigo-500"></select>
-          <!-- 月份選擇 -->
           <select id="calMonthSelect" onchange="onCalendarSelectChange()" class="bg-slate-950 text-white border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono focus:outline-none focus:border-indigo-500"></select>
         </div>
 
         <button onclick="changeMonth(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 active:scale-95">▶</button>
       </div>
 
-      <!-- 星期表頭 (日 至 六) -->
       <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 uppercase">
         <span class="text-rose-400">日</span>
         <span>一</span>
@@ -252,11 +249,10 @@
         <span class="text-sky-400">六</span>
       </div>
 
-      <!-- 日曆主網格 -->
       <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1.5 text-xs"></div>
     </section>
 
-    <!-- 點選日期之詳細操練記錄展示區 -->
+    <!-- 點選日期之詳細紀錄展示區 -->
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 min-h-[160px]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
         <div class="flex items-center gap-2">
@@ -266,7 +262,6 @@
         <span id="daySummaryBadge" class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-slate-800 text-slate-400">無紀錄</span>
       </div>
 
-      <!-- 詳細內容容器 -->
       <div id="selectedDateDetailsContainer" class="space-y-3">
         <div class="text-slate-500 text-xs text-center py-6">請點擊上方日曆任意日期以查看訓練明細</div>
       </div>
@@ -291,8 +286,10 @@
         <input type="text" id="modalMachineNameInput" placeholder="例如: 雙槓臂屈伸機 / 跑步機" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 text-xs">
       </div>
 
+      <!-- 相片預覽大框與雙按鈕 -->
       <div class="space-y-1.5">
         <label class="text-[11px] text-slate-400 font-semibold block">器材相片</label>
+        
         <div class="relative w-full h-32 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center">
           <img id="modalMachineImgPreview" src="" class="w-full h-full object-contain p-1 hidden">
           <div id="modalMachineImgPlaceholder" class="text-slate-500 text-xs flex flex-col items-center">
@@ -400,7 +397,7 @@
     let backgroundTimerInterval = null;
     let timelineEvents = [];
 
-    // 歷史資料庫（由 Google Sheet 與本地暫存匯總）
+    // 歷史資料庫快取
     let historicalWorkouts = {}; 
 
     function isCardioEquipment(name, muscle) {
@@ -615,7 +612,7 @@
     }
 
     // ==========================================
-    // 5. 選擇機種卡片渲染
+    // 5. 選擇機種卡片渲染 (大圖完整展示)
     // ==========================================
     function refreshActiveEquipmentList() {
       const myMachines = Object.keys(customMachineSettings).filter(name => {
@@ -864,6 +861,7 @@
       handleImageFileSelection(e.target.files[0]);
     });
 
+    // 核心安全傳輸：防範 302 跨域中斷
     async function saveMachineSettingsFromModal() {
       const nameInput = document.getElementById('modalMachineNameInput');
       const machineName = nameInput.value.trim();
@@ -915,14 +913,18 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: "saveMachineSetting", data: payload })
         });
-        const res = await response.json();
+        
+        // 安全解析 text -> json
+        const resText = await response.text();
+        const res = JSON.parse(resText);
+
         if (res.status === "success" && res.image_url) {
           customMachineSettings[machineName].image_url = res.image_url;
           localStorage.setItem('gym_custom_machines_meta', JSON.stringify(customMachineSettings));
           refreshActiveEquipmentList();
         }
       } catch (err) {
-        console.warn("同步至 Drive/Sheet 出錯", err);
+        console.warn("同步至 Drive/Sheet 出錯 (不影響本地運作):", err);
       } finally {
         saveBtn.disabled = false;
         saveBtn.innerText = "儲存並同步";
@@ -1216,7 +1218,7 @@
     }
 
     // ==========================================
-    // 11. 單位調節與已完成清單
+    // 11. 單位切換與已完成清單
     // ==========================================
     const unitToggleTrack = document.getElementById('unitToggleTrack');
     const unitSlider = document.getElementById('unitSlider');
@@ -1337,7 +1339,6 @@
         });
         await res.json();
         
-        // 同步寫入本地歷史快取
         saveWorkoutToLocalHistory(summaryPayload);
         
         clearActiveSession();
@@ -1431,12 +1432,11 @@
       });
     }
 
-
     // =========================================================================
     // 13. 【歷史日曆系統】 (Calendar View & History Data Engine)
     // =========================================================================
     let calendarSelectedYear = new Date().getFullYear();
-    let calendarSelectedMonth = new Date().getMonth(); // 0 - 11
+    let calendarSelectedMonth = new Date().getMonth();
     let calendarActiveSelectedDate = "";
 
     function initCalendarView() {
@@ -1458,7 +1458,6 @@
 
       renderCalendarGrid();
 
-      // 預設選定當日
       const todayStr = document.getElementById('displayDate').innerText;
       selectCalendarDate(todayStr);
     }
@@ -1490,14 +1489,12 @@
       const firstDayIndex = new Date(calendarSelectedYear, calendarSelectedMonth, 1).getDay();
       const daysInMonth = new Date(calendarSelectedYear, calendarSelectedMonth + 1, 0).getDate();
 
-      // 補足前置空白格
       for (let i = 0; i < firstDayIndex; i++) {
         grid.innerHTML += `<div class="h-11 rounded-xl bg-slate-950/20 border border-transparent opacity-20"></div>`;
       }
 
       const todayStr = document.getElementById('displayDate').innerText;
 
-      // 渲染當月所有日子
       for (let day = 1; day <= daysInMonth; day++) {
         const mStr = String(calendarSelectedMonth + 1).padStart(2, '0');
         const dStr = String(day).padStart(2, '0');
@@ -1525,10 +1522,8 @@
       calendarActiveSelectedDate = dateStr;
       document.getElementById('selectedDateTitle').innerText = dateStr;
 
-      // 重新繪畫日曆選定框
       renderCalendarGrid();
 
-      // 載入該日明細
       const container = document.getElementById('selectedDateDetailsContainer');
       const badge = document.getElementById('daySummaryBadge');
       const workout = historicalWorkouts[dateStr];
@@ -1547,7 +1542,6 @@
       badge.className = "text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/50";
       badge.innerText = `完成 ${workout.logs.length} 組`;
 
-      // 整理器材組別
       const machineGroups = {};
       workout.logs.forEach(l => {
         if (!machineGroups[l.exercise_name]) machineGroups[l.exercise_name] = [];
@@ -1574,7 +1568,6 @@
       }).join('');
 
       container.innerHTML = `
-        <!-- 當日概覽卡 -->
         <div class="p-3 bg-indigo-950/20 border border-indigo-800/40 rounded-xl text-xs space-y-1">
           <div class="flex justify-between text-indigo-300 font-semibold">
             <span>訓練部位: <b class="text-white">${workout.muscle_group || '綜合'}</b></span>
@@ -1585,13 +1578,11 @@
           </div>
         </div>
 
-        <!-- 各動作組數明細 -->
         <div class="space-y-2">
           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">動作明細</span>
           ${machinesDetailHtml}
         </div>
 
-        <!-- 若有 AI 建議則展示 -->
         ${workout.ai_advice ? `
           <div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1">
             <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span>
@@ -1601,7 +1592,6 @@
       `;
     }
 
-    // 將本日訓練存入本地歷史快取
     function saveWorkoutToLocalHistory(summaryPayload) {
       const d = summaryPayload.date;
       historicalWorkouts[d] = {
@@ -1620,7 +1610,6 @@
       if (raw) {
         try { historicalWorkouts = JSON.parse(raw); } catch(e){}
       }
-      // 亦同步本日未完成或已完成的 logs
       if (workoutLogs.length > 0) {
         const todayStr = document.getElementById('displayDate').innerText;
         historicalWorkouts[todayStr] = {
@@ -1633,7 +1622,6 @@
       }
     }
 
-    // 從 Google Apps Script 主動抓取雲端全部歷史操練紀錄
     async function refreshCalendarDataFromSheets() {
       const badge = document.getElementById('daySummaryBadge');
       badge.innerText = "同步中...";
