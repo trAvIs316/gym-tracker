@@ -397,6 +397,19 @@
     let backgroundTimerInterval = null;
     let timelineEvents = [];
 
+// 前端日期正規化工具 (將 2026-9-1 或 2026-09-1 強制轉為標準 2026-09-01)
+function normalizeDateStr(str) {
+  if (!str) return "";
+  const parts = String(str).replace(/'/g, "").trim().split(/[-\/]/);
+  if (parts.length >= 3) {
+    const y = parts[0];
+    const m = parts[1].padStart(2, '0');
+    const d = parts[2].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return str;
+}
+
     // 歷史資料庫快取
     let historicalWorkouts = {}; 
 
@@ -1622,17 +1635,25 @@
       }
     }
 
-    async function refreshCalendarDataFromSheets() {
+async function refreshCalendarDataFromSheets() {
       const badge = document.getElementById('daySummaryBadge');
       badge.innerText = "同步中...";
       try {
         const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory`);
         const data = await res.json();
         if (data.status === "success" && data.history) {
-          historicalWorkouts = Object.assign(historicalWorkouts, data.history);
+          // 將雲端所有 Key 進行正規化補零存入
+          const cleanHistory = {};
+          for (const [rawDate, val] of Object.entries(data.history)) {
+            const cleanKey = normalizeDateStr(rawDate);
+            cleanHistory[cleanKey] = val;
+          }
+
+          historicalWorkouts = Object.assign(historicalWorkouts, cleanHistory);
           localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
+          
           renderCalendarGrid();
-          if (calendarActiveSelectedDate) selectCalendarDate(calendarActiveSelectedDate);
+          if (calendarActiveSelectedDate) selectCalendarDate(normalizeDateStr(calendarActiveSelectedDate));
           alert("✅ 歷史紀錄已與 Google Sheet 完整同步！");
         } else {
           renderCalendarGrid();
@@ -1642,6 +1663,7 @@
         renderCalendarGrid();
       }
     }
+
   </script>
 </body>
 </html>
