@@ -113,7 +113,7 @@
           <div id="muscleButtonContainer" class="grid grid-cols-4 gap-2 pt-0.5"></div>
         </div>
 
-        <!-- 【改進 1】醒目型動態休息提示橫條 -->
+        <!-- 醒目型動態休息提示橫條 -->
         <div id="restStatusBanner" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between transition-all">
           <div class="flex items-center gap-2">
             <span id="restStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
@@ -125,21 +125,23 @@
         <div class="grid grid-cols-12 gap-2.5 items-stretch pt-1">
           <div class="col-span-8 flex flex-col justify-between space-y-2.5">
             <div id="weightRepsControlsContainer" class="space-y-2.5">
+              <!-- 重量調節：已將 -5 / +5 改為 -2.5 / +2.5 -->
               <div>
                 <div class="text-[11px] text-slate-400 mb-1 font-semibold flex justify-between">
                   <span>重量 (<span id="unitText">KG</span>)</span>
                 </div>
                 <div class="flex items-center gap-0.5 sm:gap-1">
                   <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -10)">-10</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -5)">-5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -2.5)">-2.5</button>
                   <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -1)">-1</button>
                   <input type="number" id="inputWeight" value="20" step="0.5" class="w-12 h-8 text-center bg-slate-950 border border-slate-800 rounded font-mono text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
                   <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('weight', 1)">+1</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('weight', 5)">+5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('weight', 2.5)">+2.5</button>
                   <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('weight', 10)">+10</button>
                 </div>
               </div>
 
+              <!-- 次數調節 -->
               <div>
                 <div class="text-[11px] text-slate-400 mb-1 font-semibold">次數 (Reps)</div>
                 <div class="flex items-center gap-0.5 sm:gap-1">
@@ -213,12 +215,10 @@
     </div>
   </div>
 
-
   <!-- ========================================================================= -->
   <!-- 頁面 2：歷史日曆與日期紀錄檢視頁                                          -->
   <!-- ========================================================================= -->
   <div id="viewCalendarPage" class="hidden space-y-4">
-    <!-- 頂部導航列 -->
     <header class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg flex justify-between items-center">
       <button onclick="switchView('tracker')" class="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 active:scale-95 transition-all font-bold">
         <span>⬅️</span>
@@ -234,7 +234,6 @@
       </button>
     </header>
 
-    <!-- 月曆控制 -->
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
       <div class="flex items-center justify-between gap-2">
         <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 active:scale-95">◀</button>
@@ -260,7 +259,6 @@
       <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1.5 text-xs"></div>
     </section>
 
-    <!-- 【改進 2】點選日期之詳細紀錄展示區 (按部位歸類 + 1組1行) -->
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 min-h-[160px]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
         <div class="flex items-center gap-2">
@@ -293,6 +291,7 @@
 
       <div class="space-y-1.5">
         <label class="text-[11px] text-slate-400 font-semibold block">器材相片</label>
+        
         <div class="relative w-full h-32 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center">
           <img id="modalMachineImgPreview" src="" class="w-full h-full object-contain p-1 hidden">
           <div id="modalMachineImgPlaceholder" class="text-slate-500 text-xs flex flex-col items-center">
@@ -383,12 +382,11 @@
     let machineProgress = {};
     let customMachineSettings = {};
 
-    // 【改進 3：絕對時間戳 (Wall-Clock)】
     let isWorkoutStarted = false;
     let isWorkoutPaused = false;
-    let workoutStartEpoch = null;      // 訓練開始的絕對物理時間戳 (毫秒)
-    let pausedDurationMs = 0;          // 累計暫停的時間 (毫秒)
-    let pauseStartEpoch = null;        // 暫停開始時間戳
+    let workoutStartEpoch = null;
+    let pausedDurationMs = 0;
+    let pauseStartEpoch = null;
     let totalWorkoutTimerInterval = null;
 
     let isMachineActive = false;
@@ -423,7 +421,7 @@
     }
 
     // ==========================================
-    // 2. 持久化管理 (精確儲存開始 Epoch)
+    // 2. 持久化管理
     // ==========================================
     function persistActiveSession() {
       if (!isWorkoutStarted) return;
@@ -504,7 +502,7 @@
     }
 
     // ==========================================
-    // 3. 初始化與螢幕解鎖修正監聽
+    // 3. 初始化
     // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
       initCurrentDate();
@@ -526,7 +524,6 @@
       loadLocalHistoryToCache();
       silentSyncGoogleSheetHistory();
 
-      // 【改進 3 核心】：當手機螢幕重開或 App 回到前景時，立即校準時間
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && isWorkoutStarted) {
           updateLiveWorkoutTimeDisplay();
@@ -578,7 +575,7 @@
     }
 
     // ==========================================
-    // 4. 部位單選 (2 行 4 欄均勻網格)
+    // 4. 部位單選 (2 行 4 欄網格)
     // ==========================================
     function renderMuscleButtons() {
       const container = document.getElementById('muscleButtonContainer');
@@ -729,9 +726,6 @@
       }
     }
 
-    // ==========================================
-    // 上次重量自動對齊 Google Sheet
-    // ==========================================
     function loadMachineHistory(name) {
       const lastWeightDisplay = document.getElementById('lastWeightDisplay');
       if (!name) {
@@ -949,14 +943,13 @@
     }
 
     // ==========================================
-    // 7. 【改進 3：Wall-Clock 精準時間追蹤】
+    // 7. Wall-Clock 時間追蹤
     // ==========================================
     const btnStartWorkout = document.getElementById('btnStartWorkout');
     const btnPauseWorkout = document.getElementById('btnPauseWorkout');
     const startTimeStamp = document.getElementById('startTimeStamp');
     const endTimeStamp = document.getElementById('endTimeStamp');
 
-    // 計算自開始以來的真實物理秒數（扣除暫停時長）
     function getAccurateElapsedWorkoutSeconds() {
       if (!workoutStartEpoch) return 0;
       const now = Date.now();
@@ -1035,7 +1028,6 @@
       persistActiveSession();
     });
 
-    // 【改進 1：醒目橫條動態監控】
     function startBackgroundIndicator() {
       clearInterval(backgroundTimerInterval);
       backgroundTimerInterval = setInterval(() => {
@@ -1046,7 +1038,6 @@
         if (!banner || isWorkoutPaused) return;
 
         if (lastSetLogEpoch) {
-          // 正在組間休息中
           const restDiff = Math.max(0, Math.floor((Date.now() - lastSetLogEpoch) / 1000));
           const m = String(Math.floor(restDiff / 60)).padStart(2, '0');
           const s = String(restDiff % 60).padStart(2, '0');
@@ -1072,7 +1063,6 @@
             timer.className = "font-mono font-black text-sm text-emerald-400";
           }
         } else if (currentSetStartEpoch) {
-          // 動作進行中
           const setDiff = Math.max(0, Math.floor((Date.now() - currentSetStartEpoch) / 1000));
           const m = String(Math.floor(setDiff / 60)).padStart(2, '0');
           const s = String(setDiff % 60).padStart(2, '0');
@@ -1284,7 +1274,7 @@
     }
 
     // ==========================================
-    // 11. 單位調節與已完成清單
+    // 11. 單位切換與步進運算 (支援 ±2.5 浮點防呆)
     // ==========================================
     const unitToggleTrack = document.getElementById('unitToggleTrack');
     const unitSlider = document.getElementById('unitSlider');
@@ -1308,13 +1298,18 @@
       }
     }
 
+    // 核心調整：支持 ±2.5 步進並消除 JavaScript 浮點數微差
     function stepValue(type, amount) {
       if (type === 'weight') {
         const el = document.getElementById('inputWeight');
-        el.value = Math.max(0, (parseFloat(el.value) || 0) + amount);
+        let current = parseFloat(el.value) || 0;
+        let next = Math.max(0, current + amount);
+        // 四捨五入至 1 位小數，避免 67.50000000000001
+        el.value = Math.round(next * 10) / 10;
       } else {
         const el = document.getElementById('inputReps');
-        el.value = Math.max(1, (parseInt(el.value, 10) || 0) + amount);
+        let current = parseInt(el.value, 10) || 0;
+        el.value = Math.max(1, current + amount);
       }
     }
 
@@ -1364,7 +1359,7 @@
     }
 
     // ==========================================
-    // 12. 結束訓練 (按真實時間差上傳)
+    // 12. 結束訓練
     // ==========================================
     document.getElementById('btnFinishWorkout').addEventListener('click', async () => {
       if (!isWorkoutStarted) { alert("⚠️ 尚未開始訓練！"); return; }
@@ -1376,7 +1371,6 @@
       const nowEndTime = new Date().toTimeString().split(' ')[0];
       endTimeStamp.innerText = nowEndTime;
 
-      // 【改進 3】：總秒數精確按物理時間差結算
       const totalAccurateSec = getAccurateElapsedWorkoutSeconds();
       addTimelineEntry(`🏁 ${nowEndTime} 結束訓練 (總時長: ${Math.round(totalAccurateSec / 60)}分鐘)`);
 
@@ -1501,7 +1495,7 @@
     }
 
     // =========================================================================
-    // 13. 【改進 2：歷史記錄階梯排版 (按部位歸類 + 1組1行)】
+    // 13. 歷史日曆系統
     // =========================================================================
     let calendarSelectedYear = new Date().getFullYear();
     let calendarSelectedMonth = new Date().getMonth();
@@ -1598,7 +1592,6 @@
       }
     }
 
-    // 【核心改進 2】：按身體部位大分組 + 1組1行清晰排版
     function selectCalendarDate(dateStr) {
       const cleanDate = normalizeDateStr(dateStr);
       calendarActiveSelectedDate = cleanDate;
@@ -1624,7 +1617,6 @@
       badge.className = "text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/50";
       badge.innerText = `完成 ${workout.logs.length} 組`;
 
-      // 1. 先按「訓練部位」歸類
       const muscleGroups = {};
       workout.logs.forEach(l => {
         const mGroup = l.muscle_group || '其他';
@@ -1633,13 +1625,11 @@
         muscleGroups[mGroup][l.exercise_name].push(l);
       });
 
-      // 2. 構建雙層階梯排版 HTML
       let muscleGroupsHtml = Object.entries(muscleGroups).map(([muscleName, machineDict]) => {
         let totalSetsInMuscle = 0;
         Object.values(machineDict).forEach(sets => totalSetsInMuscle += sets.length);
 
         const machinesHtml = Object.entries(machineDict).map(([mName, sets]) => {
-          // 【1 組 1 行】排版，徹底杜絕文字擠壓換行
           const setRowsHtml = sets.map((s, idx) => {
             const isCardio = s.weight === 0 && s.reps === 0;
             return `
@@ -1693,7 +1683,6 @@
       }).join('');
 
       container.innerHTML = `
-        <!-- 當日概覽卡 -->
         <div class="p-3 bg-indigo-950/20 border border-indigo-800/40 rounded-xl text-xs space-y-1">
           <div class="flex justify-between text-indigo-300 font-semibold">
             <span>訓練部位: <b class="text-white">${workout.muscle_group || '綜合'}</b></span>
@@ -1704,7 +1693,6 @@
           </div>
         </div>
 
-        <!-- 依部位歸類之 1組1行 列表 -->
         <div class="space-y-4">
           ${muscleGroupsHtml}
         </div>
