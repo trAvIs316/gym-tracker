@@ -33,7 +33,7 @@
   <!-- 全螢幕呼吸燈指示層 -->
   <div id="screenBreathingOverlay" class="fixed inset-0 pointer-events-none z-50 transition-all duration-700"></div>
 
-  <!-- 全螢幕圖片放大 Lightbox 預覽層 (點擊任意空白關閉) -->
+  <!-- 全螢幕圖片放大 Lightbox 預覽層 -->
   <div id="imageLightboxOverlay" onclick="closeImageLightbox()" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-3 hidden cursor-zoom-out transition-all">
     <div class="relative max-w-full max-h-full flex flex-col items-center">
       <img id="lightboxImage" src="" alt="器材高清大圖" class="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800">
@@ -56,6 +56,9 @@
           <button id="btnPauseWorkout" class="hidden bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40">
             暫停
           </button>
+          <span id="badgeWorkoutEnded" class="hidden bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold">
+            🏁 訓練已結束
+          </span>
         </div>
 
         <button onclick="switchView('calendar')" class="flex items-center gap-1 text-xs text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-900 px-3 py-2 rounded-xl border border-indigo-700/50 active:scale-95 transition-all font-bold">
@@ -157,7 +160,7 @@
           <div class="col-span-8 flex flex-col justify-between space-y-2.5">
             <div id="weightRepsControlsContainer" class="space-y-2.5">
               
-              <!-- 單手/單邊模式切換器 (僅在器械啟用單手模式時顯現) -->
+              <!-- 單手/單邊模式切換器 -->
               <div id="sideSelectorContainer" class="hidden p-2 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
                 <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
                   <span>單邊側別 (Side)</span>
@@ -253,7 +256,7 @@
       <div class="max-w-md mx-auto grid grid-cols-2 gap-3">
         <button id="btnFinishWorkout" class="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white py-3.5 rounded-xl font-bold text-xs shadow-lg shadow-rose-950/50 transition-all flex items-center justify-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-          <span>結束訓練 (存Sheets)</span>
+          <span id="btnFinishWorkoutText">結束訓練 (存Sheets)</span>
         </button>
 
         <button id="btnTriggerAiAnalysis" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-3.5 rounded-xl font-bold text-xs shadow-lg shadow-indigo-950/50 transition-all flex items-center justify-center gap-1.5">
@@ -321,7 +324,7 @@
     </section>
   </div>
 
-  <!-- 修改單組數據專用 Modal -->
+  <!-- 修改單組數據專用 Modal (支援重訓模式與帶氧時間模式分流) -->
   <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
@@ -333,7 +336,8 @@
 
       <input type="hidden" id="editSetIndex">
 
-      <div class="space-y-3 text-xs">
+      <!-- 重訓模式下的修改欄位 -->
+      <div id="editStrengthFields" class="space-y-3 text-xs">
         <div id="editSideGroup" class="hidden">
           <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
           <div class="grid grid-cols-2 gap-2">
@@ -365,8 +369,34 @@
         </div>
       </div>
 
+      <!-- 帶氧/純計時模式下的修改時間欄位 -->
+      <div id="editCardioFields" class="hidden space-y-3 text-xs">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-[11px] text-slate-400 font-semibold block">🏃 帶氧運動時間</label>
+            <span id="editCardioTimeText" class="text-sky-400 font-mono font-bold text-xs">0 分 0 秒</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pb-1.5">
+            <div>
+              <span class="text-[10px] text-slate-500 block mb-0.5">分鐘 (Minutes)</span>
+              <input type="number" id="editCardioMinutesInput" min="0" max="600" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-500 block mb-0.5">秒數 (Seconds)</span>
+              <input type="number" id="editCardioSecondsInput" min="0" max="59" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1 pt-1">
+            <button type="button" onclick="stepCardioEditTime(-300)" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-5分</button>
+            <button type="button" onclick="stepCardioEditTime(-60)" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-1分</button>
+            <button type="button" onclick="stepCardioEditTime(60)" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+1分</button>
+            <button type="button" onclick="stepCardioEditTime(300)" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+5分</button>
+          </div>
+        </div>
+      </div>
+
       <div class="flex gap-2 pt-2 border-t border-slate-800/80">
-        <button onclick="deleteSetFromModal()" class="w-1/3 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold py-2 rounded-xl text-xs active:scale-95 transition-all">刪除此組</button>
+        <button onclick="deleteSetFromModal()" class="w-1/3 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold py-2 rounded-xl text-xs active:scale-95 transition-all">刪除此段</button>
         <button onclick="saveEditSetModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs shadow-md active:scale-95 transition-all">確認修改</button>
       </div>
     </div>
@@ -514,6 +544,7 @@
 
     let isWorkoutStarted = false;
     let isWorkoutPaused = false;
+    let isWorkoutEnded = false;
     let workoutStartEpoch = null;
     let pausedDurationMs = 0;
     let pauseStartEpoch = null;
@@ -529,11 +560,12 @@
     let timelineEvents = [];
     let historicalWorkouts = {};
 
+    // 強化帶氧判定邏輯
     function isCardioEquipment(name, muscle) {
       if (muscle === "帶氧") return true;
       if (!name) return false;
       const lower = name.toLowerCase();
-      const cardioKeywords = ["跑", "樓梯", "划船", "單車", "車", "橢圓", "跳繩", "踏步", "treadmill", "stair", "bike", "row"];
+      const cardioKeywords = ["跑", "樓梯", "划船", "單車", "車", "橢圓", "跳繩", "踏步", "treadmill", "stair", "bike", "row", "cardio"];
       return cardioKeywords.some(k => lower.includes(k));
     }
 
@@ -577,7 +609,11 @@
 
       const isCardio = isCardioEquipment(currentSelectedMachine, currentMuscleGroup);
 
-      if (!isWorkoutStarted) {
+      if (isWorkoutEnded) {
+        btn.disabled = true;
+        btn.className = "w-full bg-slate-800 text-slate-500 opacity-40 cursor-not-allowed py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5";
+        text.innerText = "今日訓練已結算 (不可記錄)";
+      } else if (!isWorkoutStarted) {
         btn.disabled = true;
         btn.className = "w-full bg-slate-800 text-slate-500 opacity-40 cursor-not-allowed py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5";
         text.innerText = "請先點擊上方「開始訓練」";
@@ -600,7 +636,7 @@
     // 2. 持久化管理
     // ==========================================
     function persistActiveSession() {
-      if (!isWorkoutStarted) return;
+      if (!isWorkoutStarted || isWorkoutEnded) return;
       const sessionData = {
         date: document.getElementById('displayDate').innerText,
         isWorkoutStarted,
@@ -674,13 +710,8 @@
           if (isMachineActive && machineStartEpoch) {
             btnToggleMachineText.innerText = "結束此機";
             btnToggleMachine.className = "flex-1 w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px] animate-pulse";
-            machineTimerInterval = setInterval(() => {
-              if (!machineStartEpoch) return;
-              const diffSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
-              const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
-              const s = String(diffSec % 60).padStart(2, '0');
-              document.getElementById('machineTimerDisplay').innerText = `${m}:${s}`;
-            }, 1000);
+            updateMachineTimerDisplay();
+            machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
           }
 
           updateLogSetButtonState();
@@ -721,9 +752,13 @@
 
       updateLogSetButtonState();
 
+      // 手機背景喚醒校準
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && isWorkoutStarted) {
+        if (!document.hidden && isWorkoutStarted && !isWorkoutEnded) {
           updateLiveWorkoutTimeDisplay();
+          if (isMachineActive && machineStartEpoch) {
+            updateMachineTimerDisplay();
+          }
         }
       });
     });
@@ -796,6 +831,7 @@
     }
 
     function selectMuscleGroup(muscleName) {
+      if (isWorkoutEnded) return;
       currentMuscleGroup = muscleName;
       renderMuscleButtons();
       refreshActiveEquipmentList();
@@ -876,6 +912,14 @@
 
     function selectMachine(machineName) {
       if (!machineName) return;
+      if (isWorkoutEnded) return;
+
+      if (isMachineActive && currentSelectedMachine && currentSelectedMachine !== machineName) {
+        if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) {
+          return;
+        }
+      }
+
       currentSelectedMachine = machineName;
       const label = document.getElementById('currentMachineLabel');
       if (label) label.innerText = machineName;
@@ -914,7 +958,10 @@
       }
 
       updateActiveMachineSettingBanner(machineName);
-      resetMachineTimerUI();
+      
+      if (!isMachineActive) {
+        resetMachineTimerUI();
+      }
 
       const isCardio = isCardioEquipment(machineName, currentMuscleGroup);
       toggleCardioModeUI(isCardio);
@@ -1019,7 +1066,6 @@
     let targetModalMachine = "";
     let tempModalImgBase64 = "";
 
-    // 點選相片放大至 Lightbox
     function triggerImageZoomFromModal() {
       if (tempModalImgBase64 && tempModalImgBase64.length > 10) {
         openImageLightbox(tempModalImgBase64);
@@ -1085,7 +1131,6 @@
       document.getElementById('settingBackrest').value = "";
       document.getElementById('settingNotes').value = "";
 
-      // 新增模式隱藏「刪除」按鈕
       document.getElementById('btnDeleteMachine').classList.add('hidden');
 
       resetModalImgPreview("");
@@ -1116,7 +1161,6 @@
       document.getElementById('settingBackrest').value = s.backrest || "";
       document.getElementById('settingNotes').value = s.notes || "";
 
-      // 修改模式顯示「刪除」按鈕
       document.getElementById('btnDeleteMachine').classList.remove('hidden');
 
       resetModalImgPreview(tempModalImgBase64);
@@ -1168,7 +1212,6 @@
       handleImageFileSelection(e.target.files[0]);
     });
 
-    // 刪除器材函式 (包含強防呆 Warning Confirm)
     async function deleteMachineFromModal() {
       const machineName = targetModalMachine;
       const s = customMachineSettings[machineName] || {};
@@ -1315,16 +1358,29 @@
       if (timerEl) timerEl.innerText = `${hrs}:${mins}:${secs}`;
     }
 
+    function updateMachineTimerDisplay() {
+      if (!machineStartEpoch) return;
+      const diffSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
+      const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+      const s = String(diffSec % 60).padStart(2, '0');
+      const timerEl = document.getElementById('machineTimerDisplay');
+      if (timerEl) timerEl.innerText = `${m}:${s}`;
+    }
+
     function startWorkoutTimerLoop() {
       clearInterval(totalWorkoutTimerInterval);
       totalWorkoutTimerInterval = setInterval(() => {
-        if (!isWorkoutPaused) {
+        if (!isWorkoutPaused && !isWorkoutEnded) {
           updateLiveWorkoutTimeDisplay();
         }
       }, 1000);
     }
 
     btnStartWorkout.addEventListener('click', () => {
+      if (isWorkoutEnded) {
+        alert("今日訓練已經結束並歸檔！若要重新記錄，請重新整理頁面開啟新一節。");
+        return;
+      }
       if (!isWorkoutStarted) {
         isWorkoutStarted = true;
         isWorkoutPaused = false;
@@ -1355,6 +1411,7 @@
     });
 
     btnPauseWorkout.addEventListener('click', () => {
+      if (isWorkoutEnded) return;
       if (!isWorkoutPaused) {
         isWorkoutPaused = true;
         pauseStartEpoch = Date.now();
@@ -1398,7 +1455,7 @@
         const timer = document.getElementById('restStatusTimer');
         if (!banner) return;
 
-        if (isWorkoutPaused || !isWorkoutStarted) {
+        if (isWorkoutPaused || !isWorkoutStarted || isWorkoutEnded) {
           setBreathingOverlay('off');
           return;
         }
@@ -1461,6 +1518,10 @@
     const btnToggleMachineText = document.getElementById('btnToggleMachineText');
 
     btnToggleMachine.addEventListener('click', () => {
+      if (isWorkoutEnded) {
+        alert("⚠️ 今日訓練已經結束並歸檔！請勿重新開始器材。");
+        return;
+      }
       if (!isWorkoutStarted) {
         alert("⚠️【互鎖提醒】尚未開始訓練！請先點擊最上方「開始訓練」按鈕。");
         return;
@@ -1488,13 +1549,9 @@
         
         addTimelineEntry(`🏋️ ${nowTime} 開始此機: ${currentSelectedMachine} [${currentMuscleGroup}]`);
 
-        machineTimerInterval = setInterval(() => {
-          if (!machineStartEpoch) return;
-          const diffSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
-          const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
-          const s = String(diffSec % 60).padStart(2, '0');
-          document.getElementById('machineTimerDisplay').innerText = `${m}:${s}`;
-        }, 1000);
+        updateMachineTimerDisplay();
+        clearInterval(machineTimerInterval);
+        machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
         clearInterval(machineTimerInterval);
         isMachineActive = false;
@@ -1537,6 +1594,10 @@
     // 9. 記錄此組 (Log Set)
     // ==========================================
     document.getElementById('btnLogSet').addEventListener('click', () => {
+      if (isWorkoutEnded) {
+        alert("⚠️ 今日訓練已結算！");
+        return;
+      }
       if (!isWorkoutStarted) {
         alert("⚠️【互鎖提醒】尚未開始訓練！請先點擊上方「開始訓練」。");
         return;
@@ -1619,7 +1680,6 @@
         }
       }
 
-      // 若為單手模式，自動預先切換至另一邊 (L -> R, R -> L)
       if (setting.is_unilateral) {
         selectSide(actualSide === 'L' ? 'R' : 'L');
       }
@@ -1643,7 +1703,7 @@
     });
 
     // ==========================================
-    // 10. 做 Gym 期間修改/刪除組數 (支援 Side)
+    // 10. 做 Gym 期間及結束後修改/刪除組數 (支援帶氧時間 vs 重訓分流)
     // ==========================================
     let editingSideTemp = "Both";
 
@@ -1665,23 +1725,72 @@
       if (!item) return;
 
       document.getElementById('editSetIndex').value = index;
-      document.getElementById('editSetModalTitle').innerText = `修改 ${item.exercise_name} (第 ${item.set_num} 組)`;
-      document.getElementById('editUnitLabel').innerText = item.unit || 'KG';
-      document.getElementById('editSetWeightInput').value = item.weight || 0;
-      document.getElementById('editSetRepsInput').value = item.reps || 0;
 
-      const editSideGroup = document.getElementById('editSideGroup');
-      const setting = customMachineSettings[item.exercise_name] || {};
+      // 雙重保險判斷帶氧項目
+      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group) || 
+                       item.unit === "--" || 
+                       (Number(item.weight) === 0 && Number(item.reps) === 0);
 
-      if (setting.is_unilateral || (item.side && item.side !== 'Both')) {
-        editSideGroup.classList.remove('hidden');
-        setEditModalSide(item.side === 'R' ? 'R' : 'L');
+      const titlePrefix = isCardio ? "修改帶氧記錄" : "修改組數記錄";
+      document.getElementById('editSetModalTitle').innerText = `${titlePrefix}: ${item.exercise_name} (第 ${item.set_num} ${isCardio ? '段' : '組'})`;
+
+      const strengthFields = document.getElementById('editStrengthFields');
+      const cardioFields = document.getElementById('editCardioFields');
+
+      if (isCardio) {
+        strengthFields.classList.add('hidden');
+        cardioFields.classList.remove('hidden');
+
+        const dur = item.set_duration_sec || item.duration_sec || 0;
+        const mins = Math.floor(dur / 60);
+        const secs = dur % 60;
+
+        document.getElementById('editCardioMinutesInput').value = mins;
+        document.getElementById('editCardioSecondsInput').value = secs;
+        document.getElementById('editCardioTimeText').innerText = `${mins} 分 ${secs} 秒`;
+
+        document.getElementById('editCardioMinutesInput').oninput = updateCardioEditText;
+        document.getElementById('editCardioSecondsInput').oninput = updateCardioEditText;
       } else {
-        editSideGroup.classList.add('hidden');
-        editingSideTemp = "Both";
+        cardioFields.classList.add('hidden');
+        strengthFields.classList.remove('hidden');
+
+        document.getElementById('editUnitLabel').innerText = item.unit || 'KG';
+        document.getElementById('editSetWeightInput').value = item.weight || 0;
+        document.getElementById('editSetRepsInput').value = item.reps || 0;
+
+        const editSideGroup = document.getElementById('editSideGroup');
+        const setting = customMachineSettings[item.exercise_name] || {};
+
+        if (setting.is_unilateral || (item.side && item.side !== 'Both')) {
+          editSideGroup.classList.remove('hidden');
+          setEditModalSide(item.side === 'R' ? 'R' : 'L');
+        } else {
+          editSideGroup.classList.add('hidden');
+          editingSideTemp = "Both";
+        }
       }
 
       document.getElementById('editSetModal').classList.remove('hidden');
+    }
+
+    function updateCardioEditText() {
+      const m = parseInt(document.getElementById('editCardioMinutesInput').value, 10) || 0;
+      const s = parseInt(document.getElementById('editCardioSecondsInput').value, 10) || 0;
+      document.getElementById('editCardioTimeText').innerText = `${m} 分 ${s} 秒`;
+    }
+
+    function stepCardioEditTime(secondsToAdd) {
+      let m = parseInt(document.getElementById('editCardioMinutesInput').value, 10) || 0;
+      let s = parseInt(document.getElementById('editCardioSecondsInput').value, 10) || 0;
+      let totalSec = Math.max(5, (m * 60 + s) + secondsToAdd);
+
+      const newM = Math.floor(totalSec / 60);
+      const newS = totalSec % 60;
+
+      document.getElementById('editCardioMinutesInput').value = newM;
+      document.getElementById('editCardioSecondsInput').value = newS;
+      document.getElementById('editCardioTimeText').innerText = `${newM} 分 ${newS} 秒`;
     }
 
     function closeEditSetModal() {
@@ -1705,32 +1814,65 @@
       const item = workoutLogs[idx];
       if (!item) return;
 
-      const newWeight = parseFloat(document.getElementById('editSetWeightInput').value) || 0;
-      const newReps = parseInt(document.getElementById('editSetRepsInput').value, 10) || 0;
+      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group) || 
+                       item.unit === "--" || 
+                       (Number(item.weight) === 0 && Number(item.reps) === 0);
 
-      item.weight = newWeight;
-      item.reps = newReps;
-      item.side = editingSideTemp;
-      item.weight_kg = (item.unit === 'LB') ? Number((newWeight * 0.453592).toFixed(1)) : newWeight;
+      if (isCardio) {
+        const m = parseInt(document.getElementById('editCardioMinutesInput').value, 10) || 0;
+        const s = parseInt(document.getElementById('editCardioSecondsInput').value, 10) || 0;
+        const newTotalSec = (m * 60) + s;
+        
+        item.set_duration_sec = newTotalSec;
+        item.duration_sec = newTotalSec;
+        item.weight = 0;
+        item.reps = 0;
+        item.unit = "--";
+        item.weight_kg = 0;
+      } else {
+        const newWeight = parseFloat(document.getElementById('editSetWeightInput').value) || 0;
+        const newReps = parseInt(document.getElementById('editSetRepsInput').value, 10) || 0;
 
-      saveMachineHistory(item.exercise_name, newWeight, newReps, item.unit);
-      if (currentSelectedMachine === item.exercise_name) {
-        document.getElementById('lastWeightDisplay').innerText = `${newWeight} ${item.unit || 'KG'} × ${newReps} 下`;
-        document.getElementById('inputWeight').value = newWeight;
-        document.getElementById('inputReps').value = newReps;
+        item.weight = newWeight;
+        item.reps = newReps;
+        item.side = editingSideTemp;
+        item.weight_kg = (item.unit === 'LB') ? Number((newWeight * 0.453592).toFixed(1)) : newWeight;
+
+        saveMachineHistory(item.exercise_name, newWeight, newReps, item.unit);
+        if (currentSelectedMachine === item.exercise_name) {
+          document.getElementById('lastWeightDisplay').innerText = `${newWeight} ${item.unit || 'KG'} × ${newReps} 下`;
+          document.getElementById('inputWeight').value = newWeight;
+          document.getElementById('inputReps').value = newReps;
+        }
       }
 
       renderCompletedMachinesList();
+
+      const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
+      if (historicalWorkouts[todayStr]) {
+        historicalWorkouts[todayStr].logs = workoutLogs;
+        localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
+      }
+
       persistActiveSession();
       closeEditSetModal();
 
+      // 發送更新請求至 Google Sheets Apps Script
       try {
-        fetch(CONFIG.GAS_WEBAPP_URL, {
+        const res = await fetch(CONFIG.GAS_WEBAPP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: "updateSingleSet", data: item })
         });
-      } catch(e) {}
+        const resJson = await res.json();
+        if (resJson.status === "success") {
+          console.log("雲端紀錄已成功同步更新");
+        } else {
+          console.warn("雲端回傳狀態:", resJson.message);
+        }
+      } catch(e) {
+        console.warn("更新雲端失敗", e);
+      }
     }
 
     async function deleteSetFromModal() {
@@ -1738,7 +1880,11 @@
       const item = workoutLogs[idx];
       if (!item) return;
 
-      if (!confirm(`確定刪除 ${item.exercise_name} 第 ${item.set_num} 組？`)) return;
+      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group) || 
+                       item.unit === "--" || 
+                       (Number(item.weight) === 0 && Number(item.reps) === 0);
+      const confirmText = isCardio ? `確定刪除 ${item.exercise_name} 第 ${item.set_num} 段？` : `確定刪除 ${item.exercise_name} 第 ${item.set_num} 組？`;
+      if (!confirm(confirmText)) return;
 
       const exName = item.exercise_name;
       const deletedItem = Object.assign({}, item);
@@ -1760,6 +1906,13 @@
       }
 
       renderCompletedMachinesList();
+
+      const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
+      if (historicalWorkouts[todayStr]) {
+        historicalWorkouts[todayStr].logs = workoutLogs;
+        localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
+      }
+
       persistActiveSession();
       closeEditSetModal();
 
@@ -1807,7 +1960,7 @@
     }
 
     // ==========================================
-    // 12. 單位調節與已完成清單 (顯示 Side 標記)
+    // 12. 單位調節與已完成清單
     // ==========================================
     const unitToggleTrack = document.getElementById('unitToggleTrack');
     const unitSlider = document.getElementById('unitSlider');
@@ -1867,13 +2020,25 @@
         const setsPillsHtml = workoutLogs
           .map((l, globalIdx) => {
             if (l.exercise_name !== name) return null;
-            const isCardio = l.weight === 0 && l.reps === 0;
+            const isCardio = isCardioEquipment(l.exercise_name, l.muscle_group) || 
+                             l.unit === "--" || 
+                             (Number(l.weight) === 0 && Number(l.reps) === 0);
             const sideLabel = (l.side === "L") ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '');
-            const label = isCardio ? `段${l.set_num}(${l.set_duration_sec}s)` : `${l.weight}${l.unit}×${l.reps}`;
+            
+            let label = "";
+            if (isCardio) {
+              const dur = l.set_duration_sec || l.duration_sec || 0;
+              const m = Math.floor(dur / 60);
+              const s = dur % 60;
+              label = `段${l.set_num}: <b>${m > 0 ? m + '分' : ''}${s}秒</b>`;
+            } else {
+              label = `第${l.set_num}組: ${sideLabel} <b>${l.weight}${l.unit}×${l.reps}</b>`;
+            }
+
             return `
               <button type="button" onclick="openEditSetModal(${globalIdx})" 
                       class="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 px-2 py-1 rounded-lg text-slate-200 active:scale-90 transition-all font-mono text-[11px]">
-                <span>第${l.set_num}組: ${sideLabel} <b>${label}</b></span>
+                <span>${label}</span>
                 <span class="text-indigo-400 text-[10px]">✏️</span>
               </button>
             `;
@@ -1898,28 +2063,52 @@
     }
 
     // ==========================================
-    // 13. 結束訓練
+    // 13. 結束訓練 (鎖死動作按鈕，保留已完成標籤修改)
     // ==========================================
     document.getElementById('btnFinishWorkout').addEventListener('click', async () => {
-      if (!isWorkoutStarted) { alert("⚠️ 尚未開始訓練！"); return; }
-      if (workoutLogs.length === 0) { alert("今日尚未記錄任何組數！"); return; }
-      if (!confirm("確定結束今日訓練並儲存至 Google Sheet？")) return;
+      if (isWorkoutEnded) {
+        alert("今日訓練已經結束並完成儲存！");
+        return;
+      }
+      if (!isWorkoutStarted) { 
+        alert("⚠️ 尚未開始訓練！"); 
+        return; 
+      }
+      if (workoutLogs.length === 0) { 
+        alert("今日尚未記錄任何組數！"); 
+        return; 
+      }
+      if (!confirm("確定結束今日訓練並儲存至 Google Sheet？結束後將鎖定今日記錄。")) return;
 
+      isWorkoutEnded = true;
+      isWorkoutStarted = false;
+      isWorkoutPaused = false;
+      
       clearInterval(totalWorkoutTimerInterval);
       clearInterval(backgroundTimerInterval);
+      clearInterval(machineTimerInterval);
       setBreathingOverlay('off');
+
       const nowEndTime = new Date().toTimeString().split(' ')[0];
       endTimeStamp.innerText = nowEndTime;
 
       const totalAccurateSec = getAccurateElapsedWorkoutSeconds();
       addTimelineEntry(`🏁 ${nowEndTime} 結束訓練 (總時長: ${Math.round(totalAccurateSec / 60)}分鐘)`);
 
-      btnPauseWorkout.disabled = true;
-      btnPauseWorkout.classList.add('opacity-50', 'pointer-events-none');
+      btnPauseWorkout.classList.add('hidden');
+      document.getElementById('badgeWorkoutEnded').classList.remove('hidden');
+
+      btnToggleMachine.disabled = true;
+      btnToggleMachine.className = "flex-1 w-full bg-slate-800 text-slate-500 opacity-40 cursor-not-allowed rounded-xl font-bold text-xs transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px]";
+      btnToggleMachineText.innerText = "訓練已結束";
+
+      updateLogSetButtonState();
 
       const finishBtn = document.getElementById('btnFinishWorkout');
+      const finishBtnText = document.getElementById('btnFinishWorkoutText');
       finishBtn.disabled = true;
-      finishBtn.innerText = "儲存中...";
+      finishBtn.className = "bg-slate-800 text-slate-400 py-3.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60";
+      finishBtnText.innerText = "儲存中...";
 
       const muscleSummaries = Array.from(new Set(workoutLogs.map(l => l.muscle_group))).join(", ");
 
@@ -1943,13 +2132,12 @@
         
         saveWorkoutToLocalHistory(summaryPayload);
         clearActiveSession();
+        finishBtnText.innerText = "✅ 已結束訓練";
         alert("✅ 訓練數據及時間線已成功歸檔至 Google Sheet！");
       } catch (err) {
         clearActiveSession();
+        finishBtnText.innerText = "已結束 (離線)";
         alert("已送出儲存請求，請確認 Google Sheet 連線。");
-      } finally {
-        finishBtn.disabled = false;
-        finishBtn.innerText = "已結束訓練";
       }
     });
 
@@ -2171,21 +2359,34 @@
 
         const machinesHtml = Object.entries(machineDict).map(([mName, sets]) => {
           const setRowsHtml = sets.map((s, idx) => {
-            const isCardio = s.weight === 0 && s.reps === 0;
+            const isCardio = isCardioEquipment(s.exercise_name, s.muscle_group) || 
+                             s.unit === "--" || 
+                             (Number(s.weight) === 0 && Number(s.reps) === 0);
             const sideTag = (s.side === "L") ? '<span class="text-amber-400 mr-1 font-bold">[左手 L]</span>' : (s.side === "R" ? '<span class="text-amber-400 mr-1 font-bold">[右手 R]</span>' : '');
+            
+            let displayVal = "";
+            if (isCardio) {
+              const dur = s.set_duration_sec || s.duration_sec || 0;
+              const m = Math.floor(dur / 60);
+              const sec = dur % 60;
+              displayVal = `純計時: ${m > 0 ? m + '分' : ''}${sec}秒`;
+            } else {
+              displayVal = `${s.weight} ${s.unit} ×${s.reps} 下`;
+            }
+
             return `
               <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/50 last:border-none font-mono">
                 <div class="flex items-center gap-1.5">
                   <span class="text-slate-500 text-[11px] w-9">第 ${s.set_num || (idx + 1)} 組</span>
                   ${sideTag}
                   <span class="text-slate-100 font-bold">
-                    ${isCardio ? '純計時段落' : `${s.weight} ${s.unit} ×${s.reps} 下`}
+                    ${displayVal}
                   </span>
                 </div>
                 <div class="text-[11px] text-slate-400 flex items-center gap-2">
-                  <span class="text-emerald-400/90">做 ${s.set_duration_sec}s</span>
+                  <span class="text-emerald-400/90">做 ${s.set_duration_sec || s.duration_sec || 0}s</span>
                   <span class="text-slate-600">/</span>
-                  <span class="text-amber-400/90">休 ${s.rest_duration_sec}s</span>
+                  <span class="text-amber-400/90">休 ${s.rest_duration_sec || 0}s</span>
                 </div>
               </div>
             `;
@@ -2198,7 +2399,7 @@
                   <span>🏋️</span> ${mName}
                 </span>
                 <span class="text-indigo-400 font-mono text-[11px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
-                  ${sets.length} 組
+                  ${sets.length} ${isCardioEquipment(mName, "") ? '段' : '組'}
                 </span>
               </div>
               <div class="space-y-0.5">
@@ -2215,7 +2416,7 @@
                 <span class="w-1.5 h-3 bg-indigo-500 rounded-full inline-block"></span>
                 ${muscleName} 部位訓練
               </span>
-              <span class="text-[11px] text-slate-400 font-mono">小計: ${totalSetsInMuscle} 組</span>
+              <span class="text-[11px] text-slate-400 font-mono">小計: ${totalSetsInMuscle} ${muscleName === '帶氧' ? '段' : '組'}</span>
             </div>
             <div class="space-y-2">
               ${machinesHtml}
