@@ -96,10 +96,21 @@
 
         <div id="machineCardsSlider" class="flex gap-3 overflow-x-auto no-scrollbar py-1 min-h-[140px]"></div>
 
-        <div id="lastWeightContainer" class="flex justify-between items-center bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800 text-xs">
-          <span class="text-slate-400 font-semibold">上次訓練重量:</span>
-          <span id="lastWeightDisplay" class="font-mono font-bold text-amber-400 text-sm">N/A</span>
-        </div>
+<!-- 上次訓練完整記錄卡片 (日期與天數相鄰，組數逐行排列) -->
+<div id="lastWeightContainer" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+  <div class="flex items-center gap-2 pb-1.5 border-b border-slate-800/60">
+    <span class="text-slate-400 font-semibold">📋 上次訓練記錄:</span>
+    <div class="flex items-center gap-1.5">
+      <span id="lastWorkoutDateBadge" class="text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold">無過往記錄</span>
+      <span id="lastWorkoutDaysAgo" class="text-[11px] text-amber-400 font-semibold"></span>
+    </div>
+  </div>
+  
+	<!-- 每一組單獨一行的緊湊小膠囊容器 -->
+	<div id="lastWorkoutSetsContainer" class="flex flex-col items-start gap-1.5 pt-0.5">
+	  <span class="text-slate-600 text-[11px] italic">尚未有此器材的歷史訓練數據</span>
+	</div>
+</div>
 
         <div id="activeMachineSettingBanner" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
           <div class="flex justify-between items-center">
@@ -998,49 +1009,116 @@
       updateLogSetButtonState();
     }
 
-    function loadMachineHistory(name) {
-      const lastWeightDisplay = document.getElementById('lastWeightDisplay');
-      if (!name) {
-        if (lastWeightDisplay) lastWeightDisplay.innerText = "N/A";
-        return;
-      }
+	function loadMachineHistory(name) {
+      const container = document.getElementById('lastWorkoutSetsContainer');
+      const dateBadge = document.getElementById('lastWorkoutDateBadge');
+      const daysAgoText = document.getElementById('lastWorkoutDaysAgo');
+      if (!name) return;
 
-      let foundRecord = null;
-      const raw = localStorage.getItem(`gym_hist_${name}`);
-      if (raw) {
-        try { foundRecord = JSON.parse(raw); } catch (e) {}
-      }
+      const setting = customMachineSettings[name] || {};
+      const targetId = setting.machine_id || "";
+      const isCardio = isCardioEquipment(name, setting.muscle_group);
 
-      if (!foundRecord && historicalWorkouts) {
+      let foundDate = null;
+      let matchedSets = [];
+
+      // 從快取的歷史日曆數據中尋找「最近一次使用此器材」的整場記錄
+      if (historicalWorkouts) {
         const sortedDates = Object.keys(historicalWorkouts).sort().reverse();
+        const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
+
         for (const d of sortedDates) {
+          if (d === todayStr) continue; // 排除今日記錄
+
           const dayData = historicalWorkouts[d];
           if (dayData && dayData.logs && dayData.logs.length > 0) {
-            for (let i = dayData.logs.length - 1; i >= 0; i--) {
-              const l = dayData.logs[i];
-              if ((l.exercise_name === name || l.machine_id === (customMachineSettings[name] && customMachineSettings[name].machine_id)) && l.weight > 0) {
-                foundRecord = { weight: l.weight, reps: l.reps, unit: l.unit || 'KG' };
-                saveMachineHistory(name, l.weight, l.reps, l.unit || 'KG');
-                break;
-              }
+            const setsOnDay = dayData.logs.filter(l => 
+              l.exercise_name === name || (targetId && l.machine_id === targetId)
+            );
+
+            if (setsOnDay.length > 0) {
+              foundDate = d;
+              matchedSets = setsOnDay;
+              break;
             }
           }
-          if (foundRecord) break;
         }
       }
 
-      if (foundRecord) {
-        if (foundRecord.weight !== undefined) document.getElementById('inputWeight').value = foundRecord.weight;
-        if (foundRecord.reps !== undefined) document.getElementById('inputReps').value = foundRecord.reps;
-        if (foundRecord.unit) setUnit(foundRecord.unit);
-        if (lastWeightDisplay) lastWeightDisplay.innerText = `${foundRecord.weight} ${foundRecord.unit || 'KG'} × ${foundRecord.reps} 下`;
+      // 1. 若完全無歷史數據
+      if (!foundDate || matchedSets.length === 0) {
+        if (dateBadge) {
+          dateBadge.innerText = "全新器材";
+          dateBadge.className = "text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800";
+        }
+        if (daysAgoText) daysAgoText.innerText = "(無歷史)";
+        if (container) {
+          container.innerHTML = `<span class="text-slate-600 text-[11px] italic">此器材尚未有過往的操練歷史</span>`;
+        }
+        document.getElementById('inputWeight').value = CONFIG.DEFAULT_WEIGHT_KG;
+        document.getElementById('inputReps').value = CONFIG.DEFAULT_REPS;
+        setUnit('KG');
         return;
       }
 
-      if (lastWeightDisplay) lastWeightDisplay.innerText = "N/A";
-      document.getElementById('inputWeight').value = CONFIG.DEFAULT_WEIGHT_KG;
-      document.getElementById('inputReps').value = CONFIG.DEFAULT_REPS;
-      setUnit('KG');
+      // 2. 計算是幾日前進行
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const pastParts = foundDate.split('-');
+      const pastDate = new Date(pastParts[0], pastParts[1] - 1, pastParts[2]);
+      const diffTime = now.getTime() - pastDate.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+      
+      let daysAgoStr = "";
+      if (diffDays === 1) daysAgoStr = "昨天";
+      else if (diffDays === 2) daysAgoStr = "前天";
+      else if (diffDays > 2) daysAgoStr = `${diffDays}日前`;
+      else daysAgoStr = "近期";
+
+      // 緊貼放在日期旁：2026-09-24 (4日前)
+      if (dateBadge) {
+        dateBadge.innerText = `📅 ${foundDate}`;
+        dateBadge.className = "text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold";
+      }
+      if (daysAgoText) {
+        daysAgoText.innerText = `(${daysAgoStr})`;
+      }
+
+	// 3. 渲染為「每行一個緊湊小膠囊」
+      if (container) {
+        container.innerHTML = matchedSets.map((s, idx) => {
+          const setNum = s.set_num || (idx + 1);
+          if (isCardio) {
+            const dur = s.set_duration_sec || s.duration_sec || 0;
+            const m = Math.floor(dur / 60);
+            const sec = dur % 60;
+            return `
+              <div class="inline-flex items-center gap-2 bg-slate-900 border border-sky-900/50 px-2.5 py-1 rounded-lg font-mono text-xs shadow-sm">
+                <span class="text-slate-400 font-semibold">第 ${setNum} 段:</span>
+                <span class="text-sky-300 font-bold">${m > 0 ? m + ' 分 ' : ''}${sec} 秒</span>
+              </div>
+            `;
+          } else {
+            const sideTag = (s.side === "L") ? '<b class="text-amber-400 mr-0.5">L</b>' : (s.side === "R" ? '<b class="text-amber-400 mr-0.5">R</b>' : '');
+            return `
+              <div class="inline-flex items-center gap-2 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg font-mono text-xs shadow-sm">
+                <span class="text-slate-400 font-semibold">${sideTag}第 ${setNum} 組:</span>
+                <span class="text-amber-300 font-bold">${s.weight} ${s.unit || 'KG'}</span>
+                <span class="text-slate-500">×</span>
+                <span class="text-white font-bold">${s.reps} 下</span>
+              </div>
+            `;
+          }
+        }).join('');
+      }
+
+      // 4. 自動預載該次訓練第 1 組的數值到輸入框
+      if (!isCardio && matchedSets.length > 0) {
+        const firstSet = matchedSets[0];
+        if (firstSet.weight !== undefined) document.getElementById('inputWeight').value = firstSet.weight;
+        if (firstSet.reps !== undefined) document.getElementById('inputReps').value = firstSet.reps;
+        if (firstSet.unit) setUnit(firstSet.unit);
+      }
     }
 
     function saveMachineHistory(name, weight, reps, unit) {
