@@ -1009,7 +1009,7 @@
       updateLogSetButtonState();
     }
 
-	function loadMachineHistory(name) {
+function loadMachineHistory(name) {
       const container = document.getElementById('lastWorkoutSetsContainer');
       const dateBadge = document.getElementById('lastWorkoutDateBadge');
       const daysAgoText = document.getElementById('lastWorkoutDaysAgo');
@@ -1022,13 +1022,17 @@
       let foundDate = null;
       let matchedSets = [];
 
-      // 從快取的歷史日曆數據中尋找「最近一次使用此器材」的整場記錄
+      // 從快取歷史數據中倒序尋找「最近一次使用此器材」的完整 Session
       if (historicalWorkouts) {
         const sortedDates = Object.keys(historicalWorkouts).sort().reverse();
         const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
 
         for (const d of sortedDates) {
-          if (d === todayStr) continue; // 排除今日記錄
+          // 【關鍵修正】：只有在「今日訓練正在進行中」時，才排除今日；
+          // 若今日訓練已經結束 (isWorkoutEnded)，或者今天尚未按開始訓練，則今日做過的訓練就是「上一次記錄」！
+          if (d === todayStr && isWorkoutStarted && !isWorkoutEnded) {
+            continue; 
+          }
 
           const dayData = historicalWorkouts[d];
           if (dayData && dayData.logs && dayData.logs.length > 0) {
@@ -1061,7 +1065,7 @@
         return;
       }
 
-      // 2. 計算是幾日前進行
+      // 2. 計算相對天數
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       const pastParts = foundDate.split('-');
@@ -1070,12 +1074,11 @@
       const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
       
       let daysAgoStr = "";
-      if (diffDays === 1) daysAgoStr = "昨天";
+      if (diffDays <= 0) daysAgoStr = "今天";
+      else if (diffDays === 1) daysAgoStr = "昨天";
       else if (diffDays === 2) daysAgoStr = "前天";
-      else if (diffDays > 2) daysAgoStr = `${diffDays}日前`;
-      else daysAgoStr = "近期";
+      else daysAgoStr = `${diffDays}日前`;
 
-      // 緊貼放在日期旁：2026-09-24 (4日前)
       if (dateBadge) {
         dateBadge.innerText = `📅 ${foundDate}`;
         dateBadge.className = "text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold";
@@ -1084,7 +1087,7 @@
         daysAgoText.innerText = `(${daysAgoStr})`;
       }
 
-	// 3. 渲染為「每行一個緊湊小膠囊」
+      // 3. 逐行渲染緊湊小膠囊
       if (container) {
         container.innerHTML = matchedSets.map((s, idx) => {
           const setNum = s.set_num || (idx + 1);
