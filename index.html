@@ -155,7 +155,7 @@
           <div id="muscleButtonContainer" class="grid grid-cols-4 gap-2 pt-0.5"></div>
         </div>
 
-        <!-- 醒目型動態休息提示橫條 -->
+        <!-- 醒目型動態休息提示橫條 (重訓專用，帶氧自動徹底隱藏) -->
         <div id="restStatusBanner" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between transition-all">
           <div class="flex items-center gap-2">
             <span id="restStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
@@ -214,7 +214,7 @@
               </div>
             </div>
 
-            <!-- 帶氧速度/斜度專用控制盤 (分段打點核心) -->
+            <!-- 帶氧速度/斜度專用控制盤 -->
             <div id="cardioControlsContainer" class="hidden space-y-2.5">
               <div class="bg-slate-950 p-2.5 rounded-xl border border-sky-900/40 flex justify-between items-center text-xs">
                 <span class="text-slate-400 font-semibold">此分段時長:</span>
@@ -362,7 +362,7 @@
     </section>
   </div>
 
-  <!-- 修改單組數據專用 Modal (即時關閉與回饋) -->
+  <!-- 修改單組數據專用 Modal (即時關閉視窗與非同步同步) -->
   <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
@@ -530,7 +530,6 @@
           <input type="text" id="settingBackrest" placeholder="例: 倒數第2段 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
         </div>
 
-        <!-- 帶氧預設速度與斜度 -->
         <div class="grid grid-cols-2 gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
           <div>
             <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">🏃 預設速度 (Speed)</label>
@@ -627,7 +626,6 @@
       return ["跑", "樓梯", "划船", "單車", "踏步", "treadmill", "stair", "bike", "cardio"].some(k => lower.includes(k));
     }
 
-    // ACSM 運動卡路里估算公式 (kcal)
     function calculateCardioCalories(speedKmh, inclinePct, durationSec, userWeightKg = CONFIG.USER_WEIGHT_KG) {
       if (!durationSec || durationSec <= 0) return 0;
       const speed = Math.max(0, parseFloat(speedKmh) || 0);
@@ -705,7 +703,7 @@
     }
 
     // ==========================================
-    // 2. 持久化管理
+    // 2. 持久化管理 (修復結束後重開仍計時的Bug)
     // ==========================================
     function persistActiveSession() {
       if (!isWorkoutStarted || isWorkoutEnded) return;
@@ -713,6 +711,7 @@
         date: document.getElementById('displayDate').innerText,
         isWorkoutStarted,
         isWorkoutPaused,
+        isWorkoutEnded,
         startTime: startTimeStamp.innerText,
         workoutStartEpoch,
         pausedDurationMs,
@@ -739,9 +738,16 @@
         const session = JSON.parse(raw);
         const todayStr = document.getElementById('displayDate').innerText;
 
+        // 【Bug 2 修復】：若該節已結束，徹底阻斷恢復並清除
+        if (session.isWorkoutEnded) {
+          clearActiveSession();
+          return;
+        }
+
         if (session.isWorkoutStarted && session.date === todayStr) {
           isWorkoutStarted = true;
           isWorkoutPaused = session.isWorkoutPaused || false;
+          isWorkoutEnded = false;
           startTimeStamp.innerText = session.startTime || "--:--:--";
           workoutStartEpoch = session.workoutStartEpoch || Date.now();
           pausedDurationMs = session.pausedDurationMs || 0;
@@ -904,8 +910,18 @@
       }).join('');
     }
 
+    // 【Bug 1 修復】：若器材正在運行，點擊「取消/否」必須嚴格 return，絕對不可切換部位
     function selectMuscleGroup(muscleName) {
       if (isWorkoutEnded) return;
+      if (muscleName === currentMuscleGroup) return;
+
+      if (isMachineActive && currentSelectedMachine) {
+        if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在運行計時中！切換訓練部位將會中斷當前器材。是否確定切換？`)) {
+          return; // 嚴格中斷！不再切換部位
+        }
+        resetMachineTimerUI();
+      }
+
       currentMuscleGroup = muscleName;
       renderMuscleButtons();
       refreshActiveEquipmentList();
@@ -982,13 +998,15 @@
       }).join('');
     }
 
+    // 【Bug 1 修復】：若器械運行中點擊「取消」，絕對不可變更器材選擇
     function selectMachine(machineName) {
       if (!machineName || isWorkoutEnded) return;
 
       if (isMachineActive && currentSelectedMachine && currentSelectedMachine !== machineName) {
         if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) {
-          return;
+          return; // 嚴格中斷！保持原本器材
         }
+        resetMachineTimerUI();
       }
 
       currentSelectedMachine = machineName;
@@ -1037,7 +1055,6 @@
       const isCardio = isCardioEquipment(machineName, currentMuscleGroup);
       toggleCardioModeUI(isCardio);
 
-      // 套用器材預設速度與斜度
       if (isCardio) {
         if (setting.default_speed) document.getElementById('inputCardioSpeed').value = setting.default_speed;
         if (setting.default_incline) document.getElementById('inputCardioIncline').value = setting.default_incline;
@@ -1057,28 +1074,25 @@
       persistActiveSession();
     }
 
-function toggleCardioModeUI(isCardio) {
+    // 【Bug 3 修復】：切換為帶氧時，徹底隱藏組間休息橫條
+    function toggleCardioModeUI(isCardio) {
       const weightRepsContainer = document.getElementById('weightRepsControlsContainer');
       const cardioControlsContainer = document.getElementById('cardioControlsContainer');
       const cardioModeTag = document.getElementById('cardioModeTag');
       const unitToggle = document.getElementById('unitToggleTrack');
-      const restStatusBanner = document.getElementById('restStatusBanner'); // 取得休息橫條元素
+      const restStatusBanner = document.getElementById('restStatusBanner');
 
       if (isCardio) {
         weightRepsContainer.classList.add('hidden');
         cardioControlsContainer.classList.remove('hidden');
         cardioModeTag.classList.remove('hidden');
         unitToggle.classList.add('opacity-0', 'pointer-events-none');
-        
-        // 【優化點】：帶氧模式直接隱藏「動作進行中/休息橫條」，徹底消除重複計時
         if (restStatusBanner) restStatusBanner.classList.add('hidden');
       } else {
         weightRepsContainer.classList.remove('hidden');
         cardioControlsContainer.classList.add('hidden');
         cardioModeTag.classList.add('hidden');
         unitToggle.classList.remove('opacity-0', 'pointer-events-none');
-        
-        // 重訓模式恢復顯示組間休息提示
         if (restStatusBanner) restStatusBanner.classList.remove('hidden');
       }
       updateLogSetButtonState();
@@ -1527,7 +1541,6 @@ function toggleCardioModeUI(isCardio) {
       const timerEl = document.getElementById('machineTimerDisplay');
       if (timerEl) timerEl.innerText = `${m}:${s}`;
 
-      // 若為帶氧模式，同步更新該分段的即時計時
       const splitEl = document.getElementById('cardioSplitTimerDisplay');
       if (splitEl) {
         let splitSec = currentSetStartEpoch ? Math.floor((Date.now() - currentSetStartEpoch) / 1000) : diffSec;
@@ -1616,6 +1629,7 @@ function toggleCardioModeUI(isCardio) {
       }
     }
 
+    // 【Bug 3 修復】：若當前為帶氧模式，定時器自動跳過覆寫，保持完全隱藏
     function startBackgroundIndicator() {
       clearInterval(backgroundTimerInterval);
       backgroundTimerInterval = setInterval(() => {
@@ -1624,6 +1638,13 @@ function toggleCardioModeUI(isCardio) {
         const text = document.getElementById('restStatusText');
         const timer = document.getElementById('restStatusTimer');
         if (!banner) return;
+
+        // 如果是帶氧模式，直接強制隱藏並返回，絕不覆寫 class
+        if (isCardioEquipment(currentSelectedMachine, currentMuscleGroup)) {
+          banner.classList.add('hidden');
+          setBreathingOverlay('off');
+          return;
+        }
 
         if (isWorkoutPaused || !isWorkoutStarted || isWorkoutEnded) {
           setBreathingOverlay('off');
@@ -1724,10 +1745,9 @@ function toggleCardioModeUI(isCardio) {
         clearInterval(machineTimerInterval);
         machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
-        // 如果是帶氧，且有正在進行中的分段尚未保存，提示使用者
         if (isCardio && currentSetStartEpoch) {
           const splitSec = Math.floor((Date.now() - currentSetStartEpoch) / 1000);
-          if (splitSec >= 10) {
+          if (splitSec >= 5) {
             if (confirm(`檢測到當前分段已進行 ${splitSec} 秒，是否先將此段記錄存檔？`)) {
               document.getElementById('btnLogSet').click();
             }
@@ -1831,7 +1851,6 @@ function toggleCardioModeUI(isCardio) {
         const durStr = setDurationSec >= 60 ? `${Math.floor(setDurationSec/60)}分${setDurationSec%60}秒` : `${setDurationSec}秒`;
         addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNumberBeingSaved}段: ${durStr} | 速:${speed} 斜:${incline}% (約消粍 ${calories} kcal)`);
 
-        // 【關鍵分段重置】：總機器計時不停，但當前段落秒數歸零重新起算
         currentSetStartEpoch = Date.now();
         lastSetLogEpoch = null;
       } else {
@@ -1884,7 +1903,6 @@ function toggleCardioModeUI(isCardio) {
 
       persistActiveSession();
 
-      // 背景傳送 Google Sheets
       fetch(CONFIG.GAS_WEBAPP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1898,7 +1916,7 @@ function toggleCardioModeUI(isCardio) {
     });
 
     // ==========================================
-    // 10. 修改與刪除組數 (非同步背景更新，視窗即時關閉)
+    // 10. 修改與刪除組數 (非同步背景更新，視窗即刻關閉)
     // ==========================================
     let editingSideTemp = "Both";
 
@@ -2050,7 +2068,6 @@ function toggleCardioModeUI(isCardio) {
         }
       }
 
-      // 1. 本地更新與立即關閉視窗 (解決按鈕卡住問題)
       renderCompletedMachinesList();
       const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
       if (historicalWorkouts[todayStr]) {
@@ -2060,7 +2077,6 @@ function toggleCardioModeUI(isCardio) {
       persistActiveSession();
       closeEditSetModal();
 
-      // 2. 非同步背景同步至 Google Sheets
       fetch(CONFIG.GAS_WEBAPP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2188,7 +2204,6 @@ function toggleCardioModeUI(isCardio) {
       }
     }
 
-    // 渲染今日已完成清單 (含帶氧加權均速與總結算)
     function renderCompletedMachinesList() {
       const container = document.getElementById('completedMachinesList');
       const badge = document.getElementById('completedCountBadge');
@@ -2253,6 +2268,9 @@ function toggleCardioModeUI(isCardio) {
         const setsPillsHtml = workoutLogs
           .map((l, globalIdx) => {
             if (l.exercise_name !== name) return null;
+            const isCardio = isCardioEquipment(l.exercise_name, l.muscle_group) || 
+                             l.unit === "--" || 
+                             (Number(l.weight) === 0 && Number(l.reps) === 0);
             const sideLabel = (l.side === "L") ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '');
             
             let label = "";
@@ -2294,7 +2312,7 @@ function toggleCardioModeUI(isCardio) {
     }
 
     // ==========================================
-    // 13. 結束訓練與 AI 分析
+    // 13. 結束訓練 (徹底清除 ActiveSession 防止重新打開誤恢復)
     // ==========================================
     document.getElementById('btnFinishWorkout').addEventListener('click', async () => {
       if (isWorkoutEnded) return;
@@ -2346,6 +2364,9 @@ function toggleCardioModeUI(isCardio) {
         logs: workoutLogs
       };
 
+      // 【Bug 2 修復】：結束時直接徹底銷毀 Active Session，杜絕重開後復活計時
+      clearActiveSession();
+
       try {
         await fetch(CONFIG.GAS_WEBAPP_URL, {
           method: 'POST',
@@ -2354,11 +2375,9 @@ function toggleCardioModeUI(isCardio) {
         });
         
         saveWorkoutToLocalHistory(summaryPayload);
-        clearActiveSession();
         finishBtnText.innerText = "✅ 已結束訓練";
         alert("✅ 訓練數據及時間線已成功歸檔至 Google Sheet！");
       } catch (err) {
-        clearActiveSession();
         finishBtnText.innerText = "已結束 (離線)";
         alert("已送出儲存請求，請確認 Google Sheet 連線。");
       }
@@ -2445,9 +2464,9 @@ function toggleCardioModeUI(isCardio) {
       });
     }
 
-    // ==========================================
+    // =========================================================================
     // 14. 歷史日曆系統
-    // ==========================================
+    // =========================================================================
     let calendarSelectedYear = new Date().getFullYear();
     let calendarSelectedMonth = new Date().getMonth();
     let calendarActiveSelectedDate = "";
