@@ -1057,22 +1057,29 @@
       persistActiveSession();
     }
 
-    function toggleCardioModeUI(isCardio) {
+function toggleCardioModeUI(isCardio) {
       const weightRepsContainer = document.getElementById('weightRepsControlsContainer');
       const cardioControlsContainer = document.getElementById('cardioControlsContainer');
       const cardioModeTag = document.getElementById('cardioModeTag');
       const unitToggle = document.getElementById('unitToggleTrack');
+      const restStatusBanner = document.getElementById('restStatusBanner'); // 取得休息橫條元素
 
       if (isCardio) {
         weightRepsContainer.classList.add('hidden');
         cardioControlsContainer.classList.remove('hidden');
         cardioModeTag.classList.remove('hidden');
         unitToggle.classList.add('opacity-0', 'pointer-events-none');
+        
+        // 【優化點】：帶氧模式直接隱藏「動作進行中/休息橫條」，徹底消除重複計時
+        if (restStatusBanner) restStatusBanner.classList.add('hidden');
       } else {
         weightRepsContainer.classList.remove('hidden');
         cardioControlsContainer.classList.add('hidden');
         cardioModeTag.classList.add('hidden');
         unitToggle.classList.remove('opacity-0', 'pointer-events-none');
+        
+        // 重訓模式恢復顯示組間休息提示
+        if (restStatusBanner) restStatusBanner.classList.remove('hidden');
       }
       updateLogSetButtonState();
     }
