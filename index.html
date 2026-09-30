@@ -18,14 +18,8 @@
       50% { box-shadow: inset 0 0 110px 38px rgba(239, 68, 68, 0.7); }
     }
 
-    .breath-yellow {
-      animation: yellowBreath 2.2s infinite ease-in-out;
-      border: 3px solid rgba(245, 158, 11, 0.75) !important;
-    }
-    .breath-red {
-      animation: redBreath 1.6s infinite ease-in-out;
-      border: 3px solid rgba(239, 68, 68, 0.85) !important;
-    }
+    .breath-yellow { animation: yellowBreath 2.2s infinite ease-in-out; border: 3px solid rgba(245, 158, 11, 0.75) !important; }
+    .breath-red { animation: redBreath 1.6s infinite ease-in-out; border: 3px solid rgba(239, 68, 68, 0.85) !important; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3.5 pb-32 font-sans select-none">
@@ -33,7 +27,7 @@
   <!-- 全螢幕呼吸燈指示層 -->
   <div id="screenBreathingOverlay" class="fixed inset-0 pointer-events-none z-50 transition-all duration-700"></div>
 
-  <!-- 全螢幕圖片放大 Lightbox 預覽層 -->
+  <!-- 全螢幕圖片放大 Lightbox -->
   <div id="imageLightboxOverlay" onclick="closeImageLightbox()" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-3 hidden cursor-zoom-out transition-all">
     <div class="relative max-w-full max-h-full flex flex-col items-center">
       <img id="lightboxImage" src="" alt="器材高清大圖" class="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800">
@@ -103,7 +97,6 @@
               <span id="lastWorkoutDaysAgo" class="text-[11px] text-amber-400 font-semibold"></span>
             </div>
           </div>
-          
           <div id="lastWorkoutSetsContainer" class="flex flex-col items-start gap-1.5 pt-0.5">
             <span class="text-slate-600 text-[11px] italic">尚未有此器材的歷史訓練數據</span>
           </div>
@@ -146,7 +139,6 @@
           </div>
         </div>
 
-        <!-- 訓練部位：2 行 4 欄等寬排版 -->
         <div class="space-y-1.5 py-1">
           <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider flex justify-between">
             <span>對應訓練部位 (單選)</span>
@@ -155,7 +147,7 @@
           <div id="muscleButtonContainer" class="grid grid-cols-4 gap-2 pt-0.5"></div>
         </div>
 
-        <!-- 醒目型動態休息提示橫條 (重訓專用，帶氧自動徹底隱藏) -->
+        <!-- 重訓專用休息橫條 -->
         <div id="restStatusBanner" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between transition-all">
           <div class="flex items-center gap-2">
             <span id="restStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
@@ -174,14 +166,8 @@
                   <span id="activeSideLabel" class="text-amber-400 font-bold">左手 (Left)</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                  <button type="button" id="btnSideL" onclick="selectSide('L')" 
-                          class="py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow">
-                    👈 左手 / 左邊 (L)
-                  </button>
-                  <button type="button" id="btnSideR" onclick="selectSide('R')" 
-                          class="py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">
-                    👉 右手 / 右邊 (R)
-                  </button>
+                  <button type="button" id="btnSideL" onclick="selectSide('L')" class="py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow">👈 左手 (L)</button>
+                  <button type="button" id="btnSideR" onclick="selectSide('R')" class="py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">👉 右手 (R)</button>
                 </div>
               </div>
 
@@ -190,9 +176,9 @@
                   <span>重量 (<span id="unitText">KG</span>)</span>
                 </div>
                 <div class="flex items-center gap-0.5 sm:gap-1">
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -10)">-10</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -2.5)">-2.5</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('weight', -1)">-1</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepValue('weight', -10)">-10</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepValue('weight', -2.5)">-2.5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepValue('weight', -1)">-1</button>
                   <input type="number" id="inputWeight" value="20" step="0.5" class="w-12 h-8 text-center bg-slate-950 border border-slate-800 rounded font-mono text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
                   <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('weight', 1)">+1</button>
                   <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('weight', 2.5)">+2.5</button>
@@ -203,9 +189,9 @@
               <div>
                 <div class="text-[11px] text-slate-400 mb-1 font-semibold">次數 (Reps)</div>
                 <div class="flex items-center gap-0.5 sm:gap-1">
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('reps', -10)">-10</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('reps', -5)">-5</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepValue('reps', -1)">-1</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepValue('reps', -10)">-10</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepValue('reps', -5)">-5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepValue('reps', -1)">-1</button>
                   <input type="number" id="inputReps" value="10" class="w-12 h-8 text-center bg-slate-950 border border-slate-800 rounded font-mono text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
                   <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('reps', 1)">+1</button>
                   <button type="button" class="flex-1 h-8 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="stepValue('reps', 5)">+5</button>
@@ -227,8 +213,8 @@
                   <span class="text-[10px] text-slate-500">km/h</span>
                 </div>
                 <div class="flex items-center gap-1">
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepCardioValue('speed', -1)">-1.0</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepCardioValue('speed', -0.5)">-0.5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepCardioValue('speed', -1)">-1.0</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepCardioValue('speed', -0.5)">-0.5</button>
                   <input type="number" id="inputCardioSpeed" value="6.0" step="0.1" class="w-14 h-8 text-center bg-slate-950 border border-sky-800/80 rounded font-mono text-xs font-bold text-sky-300 focus:outline-none focus:border-sky-500">
                   <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-90 text-[10px] font-bold text-sky-300" onclick="stepCardioValue('speed', 0.5)">+0.5</button>
                   <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-90 text-[10px] font-bold text-sky-300" onclick="stepCardioValue('speed', 1)">+1.0</button>
@@ -241,8 +227,8 @@
                   <span class="text-[10px] text-slate-500">%</span>
                 </div>
                 <div class="flex items-center gap-1">
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepCardioValue('incline', -1)">-1.0</button>
-                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepCardioValue('incline', -0.5)">-0.5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepCardioValue('incline', -1)">-1.0</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="stepCardioValue('incline', -0.5)">-0.5</button>
                   <input type="number" id="inputCardioIncline" value="3.0" step="0.5" class="w-14 h-8 text-center bg-slate-950 border border-sky-800/80 rounded font-mono text-xs font-bold text-sky-300 focus:outline-none focus:border-sky-500">
                   <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-90 text-[10px] font-bold text-sky-300" onclick="stepCardioValue('incline', 0.5)">+0.5</button>
                   <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-90 text-[10px] font-bold text-sky-300" onclick="stepCardioValue('incline', 1)">+1.0</button>
@@ -362,7 +348,7 @@
     </section>
   </div>
 
-  <!-- 修改單組數據專用 Modal (即時關閉視窗與非同步同步) -->
+  <!-- 修改單組數據專用 Modal -->
   <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
@@ -379,8 +365,8 @@
         <div id="editSideGroup" class="hidden">
           <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="btnEditSideL" onclick="setEditModalSide('L')" class="py-1 rounded bg-slate-800 text-slate-300 font-bold">左手 (L)</button>
-            <button type="button" id="btnEditSideR" onclick="setEditModalSide('R')" class="py-1 rounded bg-slate-800 text-slate-300 font-bold">右手 (R)</button>
+            <button type="button" id="btnEditSideL" onclick="setEditModalSide('L')" class="py-1 rounded bg-indigo-600 text-white font-bold">左手 (L)</button>
+            <button type="button" id="btnEditSideR" onclick="setEditModalSide('R')" class="py-1 rounded bg-slate-800 text-slate-400 font-bold">右手 (R)</button>
           </div>
         </div>
 
@@ -402,7 +388,7 @@
             <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" onclick="stepEditValue('reps', -1)">-1</button>
             <input type="number" id="editSetRepsInput" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500">
             <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 1)">+1</button>
-            <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 5)">+5</button>
+            <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 5)">+5</button>
           </div>
         </div>
       </div>
@@ -575,11 +561,9 @@
     </div>
   </div>
 
-  <canvas id="compressCanvas" class="hidden"></canvas>
-
   <script>
     // ==========================================
-    // 1. 環境設定與全域狀態
+    // 1. 環境設定與全域狀態 (簡潔瘦身版)
     // ==========================================
     const CONFIG = {
       N8N_TUNNEL_URL: "https://example-random-subdomain.trycloudflare.com/webhook",
@@ -612,16 +596,19 @@
     let isMachineActive = false;
     let machineStartEpoch = null;
     let machineTimerInterval = null;
+
     let machineStartLoggedToTimeline = false;
     let pendingMachineTimelineEntry = null;
-    
+
     let lastSetLogEpoch = null;
     let currentSetStartEpoch = null;
     let backgroundTimerInterval = null;
     let timelineEvents = [];
     let historicalWorkouts = {};
 
-    function isCardioEquipment(name, muscle) {
+    // 整合為單一帶氧辨識函式
+    function isCardioEquipment(name, muscle, item = null) {
+      if (item && (item.unit === "--" || (Number(item.weight) === 0 && Number(item.reps) === 0 && item.speed !== undefined))) return true;
       if (muscle === "帶氧") return true;
       if (!name) return false;
       const lower = name.toLowerCase();
@@ -634,43 +621,29 @@
       const incline = Math.max(0, parseFloat(inclinePct) || 0) / 100;
       const speedMMin = speed * (1000 / 60);
       const durationMin = durationSec / 60;
-      
-      let vo2 = (speed <= 6.0) 
+      const vo2 = (speed <= 6.0) 
         ? ((0.1 * speedMMin) + (1.8 * speedMMin * incline) + 3.5)
         : ((0.2 * speedMMin) + (0.9 * speedMMin * incline) + 3.5);
-      
-      const calories = (vo2 * userWeightKg / 1000) * 5 * durationMin;
-      return Math.round(calories);
+      return Math.round((vo2 * userWeightKg / 1000) * 5 * durationMin);
     }
 
     function switchView(viewName) {
-      const trackerPage = document.getElementById('viewTrackerPage');
-      const calendarPage = document.getElementById('viewCalendarPage');
-      if (viewName === 'calendar') {
-        trackerPage.classList.add('hidden');
-        calendarPage.classList.remove('hidden');
-        initCalendarView();
-      } else {
-        calendarPage.classList.add('hidden');
-        trackerPage.classList.remove('hidden');
-      }
+      const isCal = (viewName === 'calendar');
+      document.getElementById('viewTrackerPage').classList.toggle('hidden', isCal);
+      document.getElementById('viewCalendarPage').classList.toggle('hidden', !isCal);
+      if (isCal) initCalendarView();
     }
 
     function selectSide(side) {
       currentSelectedSide = side;
-      const btnL = document.getElementById('btnSideL');
-      const btnR = document.getElementById('btnSideR');
-      const label = document.getElementById('activeSideLabel');
-
-      if (side === 'L') {
-        btnL.className = "py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow";
-        btnR.className = "py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white";
-        if (label) label.innerText = "左手 (Left)";
-      } else {
-        btnR.className = "py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow";
-        btnL.className = "py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white";
-        if (label) label.innerText = "右手 (Right)";
-      }
+      document.getElementById('btnSideL').className = side === 'L' 
+        ? "py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow"
+        : "py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white";
+      document.getElementById('btnSideR').className = side === 'R'
+        ? "py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow"
+        : "py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white";
+      const lbl = document.getElementById('activeSideLabel');
+      if (lbl) lbl.innerText = side === 'L' ? "左手 (Left)" : "右手 (Right)";
       persistActiveSession();
     }
 
@@ -705,29 +678,18 @@
     }
 
     // ==========================================
-    // 2. 持久化管理 (修復結束後重開仍計時的Bug)
+    // 2. 持久化管理
     // ==========================================
     function persistActiveSession() {
       if (!isWorkoutStarted || isWorkoutEnded) return;
       const sessionData = {
         date: document.getElementById('displayDate').innerText,
-        isWorkoutStarted,
-        isWorkoutPaused,
-        isWorkoutEnded,
+        isWorkoutStarted, isWorkoutPaused, isWorkoutEnded,
         startTime: startTimeStamp.innerText,
-        workoutStartEpoch,
-        pausedDurationMs,
-        pauseStartEpoch,
-        currentMuscleGroup,
-        currentSelectedMachine,
-        currentSelectedSide,
-        logs: workoutLogs,
-        machineProgress,
-        timelineEvents,
-        isMachineActive,
-        machineStartEpoch,
-        lastSetLogEpoch,
-        currentSetStartEpoch
+        workoutStartEpoch, pausedDurationMs, pauseStartEpoch,
+        currentMuscleGroup, currentSelectedMachine, currentSelectedSide,
+        logs: workoutLogs, machineProgress, timelineEvents,
+        isMachineActive, machineStartEpoch, lastSetLogEpoch, currentSetStartEpoch
       };
       localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(sessionData));
     }
@@ -735,20 +697,15 @@
     function restoreActiveSession() {
       const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
       if (!raw) return;
-
       try {
         const session = JSON.parse(raw);
         const todayStr = document.getElementById('displayDate').innerText;
 
-        // 【Bug 2 修復】：若該節已結束，徹底阻斷恢復並清除
-        if (session.isWorkoutEnded) {
-          clearActiveSession();
-          return;
-        }
+        if (session.isWorkoutEnded) { clearActiveSession(); return; }
 
         if (session.isWorkoutStarted && session.date === todayStr) {
           isWorkoutStarted = true;
-          isWorkoutPaused = session.isWorkoutPaused || false;
+          isWorkoutPaused = !!session.isWorkoutPaused;
           isWorkoutEnded = false;
           startTimeStamp.innerText = session.startTime || "--:--:--";
           workoutStartEpoch = session.workoutStartEpoch || Date.now();
@@ -763,8 +720,7 @@
           workoutLogs = session.logs || [];
           machineProgress = session.machineProgress || {};
           timelineEvents = session.timelineEvents || [];
-          
-          isMachineActive = session.isMachineActive || false;
+          isMachineActive = !!session.isMachineActive;
           machineStartEpoch = session.machineStartEpoch || null;
           lastSetLogEpoch = session.lastSetLogEpoch || null;
           currentSetStartEpoch = session.currentSetStartEpoch || null;
@@ -784,7 +740,6 @@
           updateLiveWorkoutTimeDisplay();
           renderMuscleButtons();
           refreshActiveEquipmentList();
-
           if (session.currentSelectedMachine) selectMachine(session.currentSelectedMachine);
 
           if (isMachineActive && machineStartEpoch) {
@@ -800,7 +755,7 @@
           renderWorkoutTimelineUI();
         }
       } catch (e) {
-        console.error("還原訓練進度失敗:", e);
+        console.error("還原失敗:", e);
       }
     }
 
@@ -836,9 +791,7 @@
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && isWorkoutStarted && !isWorkoutEnded) {
           updateLiveWorkoutTimeDisplay();
-          if (isMachineActive && machineStartEpoch) {
-            updateMachineTimerDisplay();
-          }
+          if (isMachineActive && machineStartEpoch) updateMachineTimerDisplay();
         }
       });
     });
@@ -857,9 +810,8 @@
     }
 
     function updateLiveClock() {
-      const now = new Date();
       const liveClockEl = document.getElementById('liveClock');
-      if (liveClockEl) liveClockEl.innerText = now.toTimeString().split(' ')[0];
+      if (liveClockEl) liveClockEl.innerText = new Date().toTimeString().split(' ')[0];
     }
 
     async function fetchMachineSettingsFromSheets() {
@@ -897,29 +849,24 @@
 
       if (label) label.innerText = currentMuscleGroup;
 
-      container.innerHTML = ALL_MUSCLE_ITEMS.map(m => {
-        const isSelected = (currentMuscleGroup === m);
-        return `
-          <button type="button" onclick="selectMuscleGroup('${m}')"
-                  class="w-full py-2 rounded-xl text-xs font-bold border transition-all text-center ${
-                    isSelected 
-                      ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-950/50 scale-[1.02]' 
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }">
-            ${m}
-          </button>
-        `;
-      }).join('');
+      container.innerHTML = ALL_MUSCLE_ITEMS.map(m => `
+        <button type="button" onclick="selectMuscleGroup('${m}')"
+                class="w-full py-2 rounded-xl text-xs font-bold border transition-all text-center ${
+                  currentMuscleGroup === m 
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-950/50 scale-[1.02]' 
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }">
+          ${m}
+        </button>
+      `).join('');
     }
 
-    // 【Bug 1 修復】：若器材正在運行，點擊「取消/否」必須嚴格 return，絕對不可切換部位
     function selectMuscleGroup(muscleName) {
-      if (isWorkoutEnded) return;
-      if (muscleName === currentMuscleGroup) return;
+      if (isWorkoutEnded || muscleName === currentMuscleGroup) return;
 
       if (isMachineActive && currentSelectedMachine) {
         if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在運行計時中！切換訓練部位將會中斷當前器材。是否確定切換？`)) {
-          return; // 嚴格中斷！不再切換部位
+          return;
         }
         resetMachineTimerUI();
       }
@@ -949,10 +896,8 @@
         currentSelectedMachine = "";
         const label = document.getElementById('currentMachineLabel');
         if (label) label.innerText = "未選擇";
-        const idBadge = document.getElementById('currentMachineIdBadge');
-        if (idBadge) idBadge.classList.add('hidden');
-        const uniBadge = document.getElementById('currentUnilateralBadge');
-        if (uniBadge) uniBadge.classList.add('hidden');
+        document.getElementById('currentMachineIdBadge')?.classList.add('hidden');
+        document.getElementById('currentUnilateralBadge')?.classList.add('hidden');
         updateActiveMachineSettingBanner("");
         toggleCardioModeUI(false);
       }
@@ -980,14 +925,9 @@
           <div class="machine-card relative flex-shrink-0 w-44 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer transition-all active:scale-95"
                id="card-${encodeURIComponent(name)}"
                onclick="selectMachine('${name.replace(/'/g, "\\'")}')">
-            
             <div class="w-full h-32 bg-slate-900/90 flex items-center justify-center overflow-hidden border-b border-slate-800 p-1">
-              ${hasImg 
-                ? `<img src="${setting.image_url}" class="w-full h-full object-contain rounded-lg">` 
-                : `<span class="text-3xl">🏋️</span>`
-              }
+              ${hasImg ? `<img src="${setting.image_url}" class="w-full h-full object-contain rounded-lg">` : `<span class="text-3xl">🏋️️</span>`}
             </div>
-
             <div class="p-2 text-center">
               <div class="text-xs font-bold text-slate-200 truncate">${name}</div>
               <div class="flex items-center justify-center gap-1 mt-1">
@@ -1000,14 +940,11 @@
       }).join('');
     }
 
-    // 【Bug 1 修復】：若器械運行中點擊「取消」，絕對不可變更器材選擇
     function selectMachine(machineName) {
       if (!machineName || isWorkoutEnded) return;
 
       if (isMachineActive && currentSelectedMachine && currentSelectedMachine !== machineName) {
-        if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) {
-          return; // 嚴格中斷！保持原本器材
-        }
+        if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) return;
         resetMachineTimerUI();
       }
 
@@ -1018,24 +955,20 @@
       const setting = customMachineSettings[machineName] || {};
       const idBadge = document.getElementById('currentMachineIdBadge');
       if (idBadge) {
-        if (setting.machine_id) {
-          idBadge.innerText = setting.machine_id;
-          idBadge.classList.remove('hidden');
-        } else {
-          idBadge.classList.add('hidden');
-        }
+        idBadge.innerText = setting.machine_id || "";
+        idBadge.classList.toggle('hidden', !setting.machine_id);
       }
 
       const uniBadge = document.getElementById('currentUnilateralBadge');
       const sideContainer = document.getElementById('sideSelectorContainer');
 
       if (setting.is_unilateral) {
-        if (uniBadge) uniBadge.classList.remove('hidden');
-        if (sideContainer) sideContainer.classList.remove('hidden');
+        uniBadge?.classList.remove('hidden');
+        sideContainer?.classList.remove('hidden');
         selectSide(currentSelectedSide || 'L');
       } else {
-        if (uniBadge) uniBadge.classList.add('hidden');
-        if (sideContainer) sideContainer.classList.add('hidden');
+        uniBadge?.classList.add('hidden');
+        sideContainer?.classList.add('hidden');
         currentSelectedSide = 'Both';
       }
 
@@ -1049,10 +982,7 @@
       }
 
       updateActiveMachineSettingBanner(machineName);
-      
-      if (!isMachineActive) {
-        resetMachineTimerUI();
-      }
+      if (!isMachineActive) resetMachineTimerUI();
 
       const isCardio = isCardioEquipment(machineName, currentMuscleGroup);
       toggleCardioModeUI(isCardio);
@@ -1076,42 +1006,21 @@
       persistActiveSession();
     }
 
-    // 【Bug 3 修復】：切換為帶氧時，徹底隱藏組間休息橫條
     function toggleCardioModeUI(isCardio) {
-      const weightRepsContainer = document.getElementById('weightRepsControlsContainer');
-      const cardioControlsContainer = document.getElementById('cardioControlsContainer');
-      const cardioModeTag = document.getElementById('cardioModeTag');
-      const unitToggle = document.getElementById('unitToggleTrack');
-      const restStatusBanner = document.getElementById('restStatusBanner');
-
-      if (isCardio) {
-        weightRepsContainer.classList.add('hidden');
-        cardioControlsContainer.classList.remove('hidden');
-        cardioModeTag.classList.remove('hidden');
-        unitToggle.classList.add('opacity-0', 'pointer-events-none');
-        if (restStatusBanner) restStatusBanner.classList.add('hidden');
-      } else {
-        weightRepsContainer.classList.remove('hidden');
-        cardioControlsContainer.classList.add('hidden');
-        cardioModeTag.classList.add('hidden');
-        unitToggle.classList.remove('opacity-0', 'pointer-events-none');
-        if (restStatusBanner) restStatusBanner.classList.remove('hidden');
-      }
+      document.getElementById('weightRepsControlsContainer')?.classList.toggle('hidden', isCardio);
+      document.getElementById('cardioControlsContainer')?.classList.toggle('hidden', !isCardio);
+      document.getElementById('cardioModeTag')?.classList.toggle('hidden', !isCardio);
+      document.getElementById('unitToggleTrack')?.classList.toggle('opacity-0', isCardio);
+      document.getElementById('unitToggleTrack')?.classList.toggle('pointer-events-none', isCardio);
+      document.getElementById('restStatusBanner')?.classList.toggle('hidden', isCardio);
       updateLogSetButtonState();
     }
 
     function stepCardioValue(type, amount) {
-      if (type === 'speed') {
-        const el = document.getElementById('inputCardioSpeed');
-        let current = parseFloat(el.value) || 0;
-        let next = Math.max(0.5, current + amount);
-        el.value = (Math.round(next * 10) / 10).toFixed(1);
-      } else {
-        const el = document.getElementById('inputCardioIncline');
-        let current = parseFloat(el.value) || 0;
-        let next = Math.max(0, current + amount);
-        el.value = (Math.round(next * 10) / 10).toFixed(1);
-      }
+      const el = document.getElementById(type === 'speed' ? 'inputCardioSpeed' : 'inputCardioIncline');
+      if (!el) return;
+      const next = Math.max(type === 'speed' ? 0.5 : 0, (parseFloat(el.value) || 0) + amount);
+      el.value = (Math.round(next * 10) / 10).toFixed(1);
     }
 
     function loadMachineHistory(name) {
@@ -1132,16 +1041,11 @@
         const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
 
         for (const d of sortedDates) {
-          if (d === todayStr && isWorkoutStarted && !isWorkoutEnded) {
-            continue; 
-          }
+          if (d === todayStr && isWorkoutStarted && !isWorkoutEnded) continue;
 
           const dayData = historicalWorkouts[d];
           if (dayData && dayData.logs && dayData.logs.length > 0) {
-            const setsOnDay = dayData.logs.filter(l => 
-              l.exercise_name === name || (targetId && l.machine_id === targetId)
-            );
-
+            const setsOnDay = dayData.logs.filter(l => l.exercise_name === name || (targetId && l.machine_id === targetId));
             if (setsOnDay.length > 0) {
               foundDate = d;
               matchedSets = setsOnDay;
@@ -1157,9 +1061,7 @@
           dateBadge.className = "text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800";
         }
         if (daysAgoText) daysAgoText.innerText = "(無歷史)";
-        if (container) {
-          container.innerHTML = `<span class="text-slate-600 text-[11px] italic">此器材尚未有過往的操練歷史</span>`;
-        }
+        if (container) container.innerHTML = `<span class="text-slate-600 text-[11px] italic">此器材尚未有過往的操練歷史</span>`;
         document.getElementById('inputWeight').value = CONFIG.DEFAULT_WEIGHT_KG;
         document.getElementById('inputReps').value = CONFIG.DEFAULT_REPS;
         setUnit('KG');
@@ -1170,18 +1072,14 @@
       now.setHours(0, 0, 0, 0);
       const pastParts = foundDate.split('-');
       const pastDate = new Date(pastParts[0], pastParts[1] - 1, pastParts[2]);
-      const diffTime = now.getTime() - pastDate.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
-      
-      let daysAgoStr = diffDays <= 0 ? "今天" : (diffDays === 1 ? "昨天" : (diffDays === 2 ? "前天" : `${diffDays}日前`));
+      const diffDays = Math.round((now.getTime() - pastDate.getTime()) / (1000 * 3600 * 24));
+      const daysAgoStr = diffDays <= 0 ? "今天" : (diffDays === 1 ? "昨天" : (diffDays === 2 ? "前天" : `${diffDays}日前`));
 
       if (dateBadge) {
         dateBadge.innerText = `📅 ${foundDate}`;
         dateBadge.className = "text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold";
       }
-      if (daysAgoText) {
-        daysAgoText.innerText = `(${daysAgoStr})`;
-      }
+      if (daysAgoText) daysAgoText.innerText = `(${daysAgoStr})`;
 
       if (container) {
         container.innerHTML = matchedSets.map((s, idx) => {
@@ -1190,14 +1088,12 @@
             const dur = s.set_duration_sec || s.duration_sec || 0;
             const m = Math.floor(dur / 60);
             const sec = dur % 60;
-            const spd = s.speed ? `速:${s.speed}` : '';
-            const inc = s.incline ? `斜:${s.incline}%` : '';
-            const cal = s.calories ? `🔥${s.calories}kcal` : '';
+            const extra = [s.speed ? `速:${s.speed}` : '', s.incline ? `斜:${s.incline}%` : '', s.calories ? `🔥${s.calories}kcal` : ''].filter(Boolean).join(' | ');
             return `
               <div class="inline-flex items-center gap-2 bg-slate-900 border border-sky-900/50 px-2.5 py-1 rounded-lg font-mono text-xs shadow-sm">
                 <span class="text-slate-400 font-semibold">第 ${setNum} 段:</span>
                 <span class="text-sky-300 font-bold">${m > 0 ? m + '分' : ''}${sec}秒</span>
-                <span class="text-sky-400/80 text-[11px]">${[spd, inc, cal].filter(Boolean).join(' | ')}</span>
+                <span class="text-sky-400/80 text-[11px]">${extra}</span>
               </div>
             `;
           } else {
@@ -1232,20 +1128,16 @@
       const details = document.getElementById('currentMachineSettingDetails');
       if (!details) return;
 
-      if (isCardio) {
-        details.innerHTML = `
-          <span>🏃 預設速度: <b class="text-sky-300">${setting.default_speed || '6.0'} km/h</b></span>
-          <span>📈 預設斜度: <b class="text-sky-300">${setting.default_incline || '0.0'} %</b></span>
-          <span class="text-slate-400">📝 備註: <b class="text-slate-300">${setting.notes || '無'}</b></span>
-        `;
-      } else {
-        details.innerHTML = `
-          <span>💺 坐位: <b class="text-slate-200">${setting.seat || '未設定'}</b></span>
-          <span>↔️ 扶手: <b class="text-slate-200">${setting.handle || '未設定'}</b></span>
-          <span>📐 角度: <b class="text-slate-200">${setting.backrest || '未設定'}</b></span>
-          <span class="text-slate-400">📝 備註: <b class="text-slate-300">${setting.notes || '無'}</b></span>
-        `;
-      }
+      details.innerHTML = isCardio ? `
+        <span>🏃 預設速度: <b class="text-sky-300">${setting.default_speed || '6.0'} km/h</b></span>
+        <span>📈 預設斜度: <b class="text-sky-300">${setting.default_incline || '0.0'} %</b></span>
+        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${setting.notes || '無'}</b></span>
+      ` : `
+        <span>💺 坐位: <b class="text-slate-200">${setting.seat || '未設定'}</b></span>
+        <span>↔️ 扶手: <b class="text-slate-200">${setting.handle || '未設定'}</b></span>
+        <span>📐 角度: <b class="text-slate-200">${setting.backrest || '未設定'}</b></span>
+        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${setting.notes || '無'}</b></span>
+      `;
     }
 
     // ==========================================
@@ -1255,9 +1147,7 @@
     let tempModalImgBase64 = "";
 
     function triggerImageZoomFromModal() {
-      if (tempModalImgBase64 && tempModalImgBase64.length > 10) {
-        openImageLightbox(tempModalImgBase64);
-      }
+      if (tempModalImgBase64 && tempModalImgBase64.length > 10) openImageLightbox(tempModalImgBase64);
     }
 
     function openImageLightbox(src) {
@@ -1269,27 +1159,23 @@
     }
 
     function closeImageLightbox() {
-      const overlay = document.getElementById('imageLightboxOverlay');
-      if (overlay) overlay.classList.add('hidden');
+      document.getElementById('imageLightboxOverlay')?.classList.add('hidden');
     }
 
     function renderModalMuscleButtons() {
       const container = document.getElementById('modalMuscleSelectContainer');
       if (!container) return;
 
-      container.innerHTML = ALL_MUSCLE_ITEMS.map(m => {
-        const isSelected = (modalSelectedMuscle === m);
-        return `
-          <button type="button" onclick="selectModalMuscle('${m}')"
-                  class="py-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
-                    isSelected 
-                      ? 'bg-indigo-600 border-indigo-500 text-white shadow' 
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }">
-            ${m}
-          </button>
-        `;
-      }).join('');
+      container.innerHTML = ALL_MUSCLE_ITEMS.map(m => `
+        <button type="button" onclick="selectModalMuscle('${m}')"
+                class="py-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
+                  modalSelectedMuscle === m 
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow' 
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }">
+          ${m}
+        </button>
+      `).join('');
     }
 
     function selectModalMuscle(muscle) {
@@ -1302,29 +1188,21 @@
       tempModalImgBase64 = "";
       document.getElementById('modalMainTitle').innerText = "新增器材與相片";
       document.getElementById('modalTitleIcon').innerText = "➕";
-      
       document.getElementById('modalMachineIdInput').value = "";
       document.getElementById('modalMachineIdDisplay').innerText = "ID: 儲存時自動生成";
 
       modalSelectedMuscle = currentMuscleGroup;
       renderModalMuscleButtons();
 
-      const nameInput = document.getElementById('modalMachineNameInput');
-      nameInput.value = "";
-      nameInput.disabled = false;
-
+      document.getElementById('modalMachineNameInput').value = "";
       document.getElementById('modalIsUnilateralCheckbox').checked = false;
-      document.getElementById('settingSeat').value = "";
-      document.getElementById('settingHandle').value = "";
-      document.getElementById('settingBackrest').value = "";
-      document.getElementById('settingDefaultSpeed').value = "";
-      document.getElementById('settingDefaultIncline').value = "";
-      document.getElementById('settingNotes').value = "";
+      ['settingSeat', 'settingHandle', 'settingBackrest', 'settingDefaultSpeed', 'settingDefaultIncline', 'settingNotes'].forEach(id => {
+        document.getElementById(id).value = "";
+      });
 
-      document.getElementById('btnDeleteMachine').classList.add('hidden');
-
+      document.getElementById('btnDeleteMachine')?.classList.add('hidden');
       resetModalImgPreview("");
-      document.getElementById('machineSettingModal').classList.remove('hidden');
+      document.getElementById('machineSettingModal')?.classList.remove('hidden');
     }
 
     function openEditMachineModal(name) {
@@ -1334,18 +1212,14 @@
 
       document.getElementById('modalMainTitle').innerText = "修改器材設定與相片";
       document.getElementById('modalTitleIcon').innerText = "⚙️";
-
       document.getElementById('modalMachineIdInput').value = s.machine_id || "";
       document.getElementById('modalMachineIdDisplay').innerText = `ID: ${s.machine_id || '自動補齊'}`;
 
       modalSelectedMuscle = s.muscle_group || currentMuscleGroup;
       renderModalMuscleButtons();
 
-      const nameInput = document.getElementById('modalMachineNameInput');
-      nameInput.value = name;
-      nameInput.disabled = false;
-
-      document.getElementById('modalIsUnilateralCheckbox').checked = (s.is_unilateral === true);
+      document.getElementById('modalMachineNameInput').value = name;
+      document.getElementById('modalIsUnilateralCheckbox').checked = !!s.is_unilateral;
       document.getElementById('settingSeat').value = s.seat || "";
       document.getElementById('settingHandle').value = s.handle || "";
       document.getElementById('settingBackrest').value = s.backrest || "";
@@ -1353,36 +1227,28 @@
       document.getElementById('settingDefaultIncline').value = s.default_incline || "";
       document.getElementById('settingNotes').value = s.notes || "";
 
-      document.getElementById('btnDeleteMachine').classList.remove('hidden');
-
+      document.getElementById('btnDeleteMachine')?.classList.remove('hidden');
       resetModalImgPreview(tempModalImgBase64);
-      document.getElementById('machineSettingModal').classList.remove('hidden');
+      document.getElementById('machineSettingModal')?.classList.remove('hidden');
     }
 
-    document.getElementById('btnEditCurrentSetting').addEventListener('click', () => {
+    document.getElementById('btnEditCurrentSetting')?.addEventListener('click', () => {
       if (currentSelectedMachine) openEditMachineModal(currentSelectedMachine);
     });
 
     function closeMachineSettingModal() {
-      document.getElementById('machineSettingModal').classList.add('hidden');
+      document.getElementById('machineSettingModal')?.classList.add('hidden');
     }
 
     function resetModalImgPreview(urlOrBase64) {
       const preview = document.getElementById('modalMachineImgPreview');
       const placeholder = document.getElementById('modalMachineImgPlaceholder');
       const zoomHint = document.getElementById('zoomHintText');
+      const has = !!(urlOrBase64 && urlOrBase64.length > 10);
 
-      if (urlOrBase64 && urlOrBase64.length > 10) {
-        preview.src = urlOrBase64;
-        preview.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-        if (zoomHint) zoomHint.classList.remove('hidden');
-      } else {
-        preview.src = "";
-        preview.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-        if (zoomHint) zoomHint.classList.add('hidden');
-      }
+      if (preview) { preview.src = has ? urlOrBase64 : ""; preview.classList.toggle('hidden', !has); }
+      if (placeholder) placeholder.classList.toggle('hidden', has);
+      if (zoomHint) zoomHint.classList.toggle('hidden', !has);
     }
 
     async function handleImageFileSelection(file) {
@@ -1396,53 +1262,33 @@
       }
     }
 
-    document.getElementById('modalCameraInput').addEventListener('change', (e) => {
-      handleImageFileSelection(e.target.files[0]);
-    });
-
-    document.getElementById('modalGalleryInput').addEventListener('change', (e) => {
-      handleImageFileSelection(e.target.files[0]);
-    });
+    document.getElementById('modalCameraInput')?.addEventListener('change', (e) => handleImageFileSelection(e.target.files[0]));
+    document.getElementById('modalGalleryInput')?.addEventListener('change', (e) => handleImageFileSelection(e.target.files[0]));
 
     async function deleteMachineFromModal() {
       const machineName = targetModalMachine;
       const s = customMachineSettings[machineName] || {};
       const machineId = s.machine_id || "";
-
-      if (!machineName) return;
-
-      const confirmMsg = `⚠️ 確定要徹底刪除器材「${machineName}」(${machineId}) 嗎？`;
-      if (!confirm(confirmMsg)) return;
+      if (!machineName || !confirm(`⚠️ 確定要徹底刪除器材「${machineName}」(${machineId}) 嗎？`)) return;
 
       delete customMachineSettings[machineName];
       localStorage.removeItem(`gym_hist_${machineName}`);
       localStorage.setItem('gym_custom_machines_meta', JSON.stringify(customMachineSettings));
 
-      if (currentSelectedMachine === machineName) {
-        currentSelectedMachine = "";
-      }
-
+      if (currentSelectedMachine === machineName) currentSelectedMachine = "";
       refreshActiveEquipmentList();
       closeMachineSettingModal();
 
       fetch(CONFIG.GAS_WEBAPP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: "deleteMachineSetting",
-          data: { machine_id: machineId, machine_name: machineName }
-        })
+        body: JSON.stringify({ action: "deleteMachineSetting", data: { machine_id: machineId, machine_name: machineName } })
       }).catch(e => console.warn(e));
     }
 
     async function saveMachineSettingsFromModal() {
-      const nameInput = document.getElementById('modalMachineNameInput');
-      const machineName = nameInput.value.trim();
-
-      if (!machineName) {
-        alert("請輸入器材名稱！");
-        return;
-      }
+      const machineName = document.getElementById('modalMachineNameInput').value.trim();
+      if (!machineName) { alert("請輸入器材名稱！"); return; }
 
       const machineId = document.getElementById('modalMachineIdInput').value.trim();
       const isUnilateral = document.getElementById('modalIsUnilateralCheckbox').checked;
@@ -1453,21 +1299,13 @@
       const defIncline = document.getElementById('settingDefaultIncline').value.trim();
       const notesVal = document.getElementById('settingNotes').value.trim();
 
-      if (!customMachineSettings[machineName]) {
-        customMachineSettings[machineName] = {};
-      }
-      customMachineSettings[machineName].machine_id = machineId;
-      customMachineSettings[machineName].muscle_group = modalSelectedMuscle;
-      customMachineSettings[machineName].is_unilateral = isUnilateral;
-      customMachineSettings[machineName].seat = seatVal;
-      customMachineSettings[machineName].handle = handleVal;
-      customMachineSettings[machineName].backrest = backrestVal;
-      customMachineSettings[machineName].default_speed = defSpeed;
-      customMachineSettings[machineName].default_incline = defIncline;
-      customMachineSettings[machineName].notes = notesVal;
-      if (tempModalImgBase64) {
-        customMachineSettings[machineName].image_url = tempModalImgBase64;
-      }
+      if (!customMachineSettings[machineName]) customMachineSettings[machineName] = {};
+      Object.assign(customMachineSettings[machineName], {
+        machine_id: machineId, muscle_group: modalSelectedMuscle, is_unilateral: isUnilateral,
+        seat: seatVal, handle: handleVal, backrest: backrestVal,
+        default_speed: defSpeed, default_incline: defIncline, notes: notesVal
+      });
+      if (tempModalImgBase64) customMachineSettings[machineName].image_url = tempModalImgBase64;
 
       localStorage.setItem('gym_custom_machines_meta', JSON.stringify(customMachineSettings));
       refreshActiveEquipmentList();
@@ -1475,16 +1313,9 @@
       closeMachineSettingModal();
 
       const payload = {
-        machine_id: machineId,
-        muscle_group: modalSelectedMuscle,
-        machine_name: machineName,
-        seat: seatVal,
-        handle: handleVal,
-        backrest: backrestVal,
-        default_speed: defSpeed,
-        default_incline: defIncline,
-        notes: notesVal,
-        is_unilateral: isUnilateral,
+        machine_id: machineId, muscle_group: modalSelectedMuscle, machine_name: machineName,
+        seat: seatVal, handle: handleVal, backrest: backrestVal,
+        default_speed: defSpeed, default_incline: defIncline, notes: notesVal, is_unilateral: isUnilateral,
         image_base64: tempModalImgBase64.startsWith('data:image') ? tempModalImgBase64 : "",
         image_url: tempModalImgBase64.startsWith('http') ? tempModalImgBase64 : ""
       };
@@ -1503,12 +1334,12 @@
           refreshActiveEquipmentList();
         }
       } catch (err) {
-        console.warn("同步出錯 (不影響本地運作):", err);
+        console.warn("同步出錯:", err);
       }
     }
 
     // ==========================================
-    // 7. 計時與動態呼吸燈
+    // 7. 計時與指示燈
     // ==========================================
     const btnStartWorkout = document.getElementById('btnStartWorkout');
     const btnPauseWorkout = document.getElementById('btnPauseWorkout');
@@ -1518,12 +1349,8 @@
     function getAccurateElapsedWorkoutSeconds() {
       if (!workoutStartEpoch) return 0;
       const now = Date.now();
-      let currentPauseExtra = 0;
-      if (isWorkoutPaused && pauseStartEpoch) {
-        currentPauseExtra = now - pauseStartEpoch;
-      }
-      const totalElapsedMs = now - workoutStartEpoch - (pausedDurationMs + currentPauseExtra);
-      return Math.max(0, Math.floor(totalElapsedMs / 1000));
+      const currentPauseExtra = (isWorkoutPaused && pauseStartEpoch) ? (now - pauseStartEpoch) : 0;
+      return Math.max(0, Math.floor((now - workoutStartEpoch - (pausedDurationMs + currentPauseExtra)) / 1000));
     }
 
     function updateLiveWorkoutTimeDisplay() {
@@ -1545,33 +1372,25 @@
 
       const splitEl = document.getElementById('cardioSplitTimerDisplay');
       if (splitEl) {
-        let splitSec = currentSetStartEpoch ? Math.floor((Date.now() - currentSetStartEpoch) / 1000) : diffSec;
-        const sm = String(Math.floor(splitSec / 60)).padStart(2, '0');
-        const ss = String(splitSec % 60).padStart(2, '0');
-        splitEl.innerText = `${sm}:${ss}`;
+        const splitSec = currentSetStartEpoch ? Math.floor((Date.now() - currentSetStartEpoch) / 1000) : diffSec;
+        splitEl.innerText = `${String(Math.floor(splitSec / 60)).padStart(2, '0')}:${String(splitSec % 60).padStart(2, '0')}`;
       }
     }
 
     function startWorkoutTimerLoop() {
       clearInterval(totalWorkoutTimerInterval);
       totalWorkoutTimerInterval = setInterval(() => {
-        if (!isWorkoutPaused && !isWorkoutEnded) {
-          updateLiveWorkoutTimeDisplay();
-        }
+        if (!isWorkoutPaused && !isWorkoutEnded) updateLiveWorkoutTimeDisplay();
       }, 1000);
     }
 
-    btnStartWorkout.addEventListener('click', () => {
-      if (isWorkoutEnded) {
-        alert("今日訓練已經結束並歸檔！若要重新記錄，請重新整理頁面開啟新一節。");
-        return;
-      }
+    btnStartWorkout?.addEventListener('click', () => {
+      if (isWorkoutEnded) { alert("今日訓練已經結束並歸檔！若要重新記錄請重新整理。"); return; }
       if (!isWorkoutStarted) {
         isWorkoutStarted = true;
         isWorkoutPaused = false;
         const nowTime = new Date().toTimeString().split(' ')[0];
         startTimeStamp.innerText = nowTime;
-        
         workoutStartEpoch = Date.now();
         pausedDurationMs = 0;
         pauseStartEpoch = null;
@@ -1595,24 +1414,23 @@
       }
     });
 
-    btnPauseWorkout.addEventListener('click', () => {
+    btnPauseWorkout?.addEventListener('click', () => {
       if (isWorkoutEnded) return;
-      if (!isWorkoutPaused) {
-        isWorkoutPaused = true;
+      isWorkoutPaused = !isWorkoutPaused;
+      if (isWorkoutPaused) {
         pauseStartEpoch = Date.now();
         btnPauseWorkout.innerText = "繼續";
         btnPauseWorkout.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40";
-        document.getElementById('totalWorkoutTimer').classList.replace('text-emerald-400', 'text-amber-400');
+        document.getElementById('totalWorkoutTimer')?.classList.replace('text-emerald-400', 'text-amber-400');
         setBreathingOverlay('off');
       } else {
-        isWorkoutPaused = false;
         if (pauseStartEpoch) {
           pausedDurationMs += (Date.now() - pauseStartEpoch);
           pauseStartEpoch = null;
         }
         btnPauseWorkout.innerText = "暫停";
         btnPauseWorkout.className = "bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40";
-        document.getElementById('totalWorkoutTimer').classList.replace('text-amber-400', 'text-emerald-400');
+        document.getElementById('totalWorkoutTimer')?.classList.replace('text-amber-400', 'text-emerald-400');
         updateLiveWorkoutTimeDisplay();
       }
       updateLogSetButtonState();
@@ -1622,16 +1440,9 @@
     function setBreathingOverlay(mode) {
       const overlay = document.getElementById('screenBreathingOverlay');
       if (!overlay) return;
-      if (mode === 'yellow') {
-        overlay.className = "fixed inset-0 pointer-events-none z-50 transition-all duration-700 breath-yellow";
-      } else if (mode === 'red') {
-        overlay.className = "fixed inset-0 pointer-events-none z-50 transition-all duration-700 breath-red";
-      } else {
-        overlay.className = "fixed inset-0 pointer-events-none z-50 transition-all duration-700";
-      }
+      overlay.className = "fixed inset-0 pointer-events-none z-50 transition-all duration-700 " + (mode === 'yellow' ? 'breath-yellow' : (mode === 'red' ? 'breath-red' : ''));
     }
 
-    // 【Bug 3 修復】：若當前為帶氧模式，定時器自動跳過覆寫，保持完全隱藏
     function startBackgroundIndicator() {
       clearInterval(backgroundTimerInterval);
       backgroundTimerInterval = setInterval(() => {
@@ -1641,7 +1452,6 @@
         const timer = document.getElementById('restStatusTimer');
         if (!banner) return;
 
-        // 如果是帶氧模式，直接強制隱藏並返回，絕不覆寫 class
         if (isCardioEquipment(currentSelectedMachine, currentMuscleGroup)) {
           banner.classList.add('hidden');
           setBreathingOverlay('off');
@@ -1684,14 +1494,12 @@
         } else if (currentSetStartEpoch) {
           setBreathingOverlay('off');
           const setDiff = Math.max(0, Math.floor((Date.now() - currentSetStartEpoch) / 1000));
-          const m = String(Math.floor(setDiff / 60)).padStart(2, '0');
-          const s = String(setDiff % 60).padStart(2, '0');
           banner.className = "p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between transition-all";
           dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
           text.className = "text-xs font-bold text-emerald-400";
           text.innerText = "💪 動作進行中";
           timer.className = "font-mono font-black text-sm text-emerald-400";
-          timer.innerText = `${m}:${s}`;
+          timer.innerText = `${String(Math.floor(setDiff / 60)).padStart(2, '0')}:${String(setDiff % 60).padStart(2, '0')}`;
         } else {
           setBreathingOverlay('off');
           banner.className = "p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between transition-all";
@@ -1705,28 +1513,16 @@
     }
 
     // ==========================================
-    // 8. 此機使用時間 (結束此機)
+    // 8. 此機操作 (Lazy Commit 時間線)
     // ==========================================
     const btnToggleMachine = document.getElementById('btnToggleMachine');
     const btnToggleMachineText = document.getElementById('btnToggleMachineText');
 
-   btnToggleMachine.addEventListener('click', () => {
-      if (isWorkoutEnded) {
-        alert("⚠️ 今日訓練已經結束並歸檔！請勿重新開始器材。");
-        return;
-      }
-      if (!isWorkoutStarted) {
-        alert("⚠️【互鎖提醒】尚未開始訓練！請先點擊最上方「開始訓練」按鈕。");
-        return;
-      }
-      if (isWorkoutPaused) {
-        alert("⚠️【互鎖提醒】訓練處於暫停狀態，請先按繼續！");
-        return;
-      }
-      if (!currentSelectedMachine) {
-        alert("請先選擇或新增器材！");
-        return;
-      }
+    btnToggleMachine?.addEventListener('click', () => {
+      if (isWorkoutEnded) { alert("⚠️ 今日訓練已經結束並歸檔！"); return; }
+      if (!isWorkoutStarted) { alert("⚠️ 請先點擊最上方「開始訓練」。"); return; }
+      if (isWorkoutPaused) { alert("⚠️ 訓練處於暫停狀態，請按繼續！"); return; }
+      if (!currentSelectedMachine) { alert("請先選擇或新增器材！"); return; }
 
       const nowTime = new Date().toTimeString().split(' ')[0];
       const isCardio = isCardioEquipment(currentSelectedMachine, currentMuscleGroup);
@@ -1737,8 +1533,7 @@
         currentSetStartEpoch = Date.now();
         lastSetLogEpoch = null;
         setBreathingOverlay('off');
-        
-        // 【核心修改】：暫存開始資訊，不立即寫入時間線
+
         machineStartLoggedToTimeline = false;
         pendingMachineTimelineEntry = `🏋️ ${nowTime} 開始此機: ${currentSelectedMachine} [${currentMuscleGroup}]`;
 
@@ -1749,31 +1544,27 @@
         clearInterval(machineTimerInterval);
         machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
-        // 若為帶氧且已有計時，提示是否儲存該段
-        if (isCardio && currentSetStartEpoch) {
-          const splitSec = Math.floor((Date.now() - currentSetStartEpoch) / 1000);
-          if (splitSec >= 5) {
-            if (confirm(`檢測到當前分段已進行 ${splitSec} 秒，是否先將此段記錄存檔？`)) {
-              document.getElementById('btnLogSet').click();
-            }
-          }
+        const totalMachineSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
+
+        // 帶氧自動儲存
+        if (isCardio) {
+          const splitSec = currentSetStartEpoch ? Math.floor((Date.now() - currentSetStartEpoch) / 1000) : totalMachineSec;
+          if (splitSec >= 5) autoLogCardioSplit(splitSec);
         }
 
         clearInterval(machineTimerInterval);
         isMachineActive = false;
-        const totalMachineSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
+
         const m = Math.floor(totalMachineSec / 60);
         const s = totalMachineSec % 60;
         const durStr = m > 0 ? `${m}分${s}秒` : `${s}秒`;
 
-        // 【核心修改】：只有在此機真正記錄過組數時，才寫入結束紀錄；未做過任何組數則完全不留痕跡
         if (machineStartLoggedToTimeline) {
           addTimelineEntry(`⏹️ ${nowTime} 結束此機: ${currentSelectedMachine} (總使用時間: ${durStr})`);
         }
 
         machineStartLoggedToTimeline = false;
         pendingMachineTimelineEntry = null;
-
         lastSetLogEpoch = null;
         currentSetStartEpoch = null;
         machineStartEpoch = null;
@@ -1786,7 +1577,52 @@
       updateLogSetButtonState();
       persistActiveSession();
     });
-    
+
+    function autoLogCardioSplit(durationSec) {
+      const nowTime = new Date().toTimeString().split(' ')[0];
+      const setting = customMachineSettings[currentSelectedMachine] || {};
+      const speed = parseFloat(document.getElementById('inputCardioSpeed').value) || 0;
+      const incline = parseFloat(document.getElementById('inputCardioIncline').value) || 0;
+      const calories = calculateCardioCalories(speed, incline, durationSec);
+      const currentDone = machineProgress[currentSelectedMachine] || 0;
+      const setNum = currentDone + 1;
+
+      const singleLog = {
+        date: document.getElementById('displayDate').innerText,
+        timestamp: nowTime,
+        muscle_group: currentMuscleGroup,
+        machine_id: setting.machine_id || "",
+        exercise_name: currentSelectedMachine,
+        side: "Both",
+        set_num: setNum,
+        weight: 0, unit: "--", weight_kg: 0, reps: 0,
+        speed, incline, calories,
+        set_duration_sec: durationSec, rest_duration_sec: 0,
+        machine_duration_sec: machineStartEpoch ? Math.floor((Date.now() - machineStartEpoch) / 1000) : durationSec
+      };
+
+      workoutLogs.push(singleLog);
+      machineProgress[currentSelectedMachine] = setNum;
+
+      if (!machineStartLoggedToTimeline && pendingMachineTimelineEntry) {
+        addTimelineEntry(pendingMachineTimelineEntry);
+        machineStartLoggedToTimeline = true;
+      }
+
+      const durStr = durationSec >= 60 ? `${Math.floor(durationSec/60)}分${durationSec%60}秒` : `${durationSec}秒`;
+      addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNum}段: ${durStr} | 速:${speed} 斜:${incline}% (約消粍 ${calories} kcal)`);
+
+      fetch(CONFIG.GAS_WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "saveSingleSet", data: singleLog })
+      }).catch(e => console.warn(e));
+
+      document.getElementById('currentSetNum').innerText = setNum + 1;
+      renderCompletedMachinesList();
+      persistActiveSession();
+    }
+
     function resetMachineTimerUI() {
       if (isMachineActive) {
         clearInterval(machineTimerInterval);
@@ -1808,147 +1644,96 @@
     }
 
     // ==========================================
-    // 9. 記錄此組 / 分段打點 (Log Set / Split)
+    // 9. 記錄組數 (瘦身整合 Base Object)
     // ==========================================
-    document.getElementById('btnLogSet').addEventListener('click', () => {
-      if (isWorkoutEnded) return;
-      if (!isWorkoutStarted || isWorkoutPaused || !isMachineActive || !currentSelectedMachine) return;
+    document.getElementById('btnLogSet')?.addEventListener('click', () => {
+      if (isWorkoutEnded || !isWorkoutStarted || isWorkoutPaused || !isMachineActive || !currentSelectedMachine) return;
 
       const nowEpoch = Date.now();
       const nowTime = new Date().toTimeString().split(' ')[0];
       const isCardio = isCardioEquipment(currentSelectedMachine, currentMuscleGroup);
       const setting = customMachineSettings[currentSelectedMachine] || {};
+      const setDurationSec = currentSetStartEpoch ? Math.max(5, Math.round((nowEpoch - currentSetStartEpoch) / 1000)) : 30;
+      const restDurationSec = lastSetLogEpoch ? Math.max(0, Math.round((nowEpoch - lastSetLogEpoch) / 1000)) : 0;
+      const setNum = (machineProgress[currentSelectedMachine] || 0) + 1;
+      const durStr = setDurationSec >= 60 ? `${Math.floor(setDurationSec/60)}分${setDurationSec%60}秒` : `${setDurationSec}秒`;
 
-      let setDurationSec = 30;
-      if (currentSetStartEpoch) {
-        setDurationSec = Math.max(5, Math.round((nowEpoch - currentSetStartEpoch) / 1000));
-      }
+      const singleLog = {
+        date: document.getElementById('displayDate').innerText,
+        timestamp: nowTime,
+        muscle_group: currentMuscleGroup,
+        machine_id: setting.machine_id || "",
+        exercise_name: currentSelectedMachine,
+        side: setting.is_unilateral ? currentSelectedSide : "Both",
+        set_num: setNum,
+        set_duration_sec: setDurationSec,
+        rest_duration_sec: isCardio ? 0 : restDurationSec,
+        machine_duration_sec: machineStartEpoch ? Math.floor((nowEpoch - machineStartEpoch) / 1000) : 0,
+        weight: 0, unit: "--", weight_kg: 0, reps: 0, speed: 0, incline: 0, calories: 0
+      };
 
-      let restDurationSec = 0;
-      if (lastSetLogEpoch) {
-        restDurationSec = Math.max(0, Math.round((nowEpoch - lastSetLogEpoch) / 1000));
-      }
-
-      const machineSec = machineStartEpoch ? Math.floor((nowEpoch - machineStartEpoch) / 1000) : 0;
-      const currentDone = machineProgress[currentSelectedMachine] || 0;
-      const setNumberBeingSaved = currentDone + 1;
-      const actualSide = setting.is_unilateral ? currentSelectedSide : "Both";
-
-      let singleLog = {};
-      
-      if (!machineStartLoggedToTimeline && pendingMachineTimelineEntry) {
-        addTimelineEntry(pendingMachineTimelineEntry);
-        machineStartLoggedToTimeline = true;
-      }
-      
       if (isCardio) {
-        const speed = parseFloat(document.getElementById('inputCardioSpeed').value) || 0;
-        const incline = parseFloat(document.getElementById('inputCardioIncline').value) || 0;
-        const calories = calculateCardioCalories(speed, incline, setDurationSec);
+        singleLog.speed = parseFloat(document.getElementById('inputCardioSpeed').value) || 0;
+        singleLog.incline = parseFloat(document.getElementById('inputCardioIncline').value) || 0;
+        singleLog.calories = calculateCardioCalories(singleLog.speed, singleLog.incline, setDurationSec);
 
-        singleLog = {
-          date: document.getElementById('displayDate').innerText,
-          timestamp: nowTime,
-          muscle_group: currentMuscleGroup,
-          machine_id: setting.machine_id || "",
-          exercise_name: currentSelectedMachine,
-          side: "Both",
-          set_num: setNumberBeingSaved,
-          weight: 0,
-          unit: "--",
-          weight_kg: 0,
-          reps: 0,
-          speed: speed,
-          incline: incline,
-          calories: calories,
-          set_duration_sec: setDurationSec,
-          rest_duration_sec: 0,
-          machine_duration_sec: machineSec
-        };
-
-        const durStr = setDurationSec >= 60 ? `${Math.floor(setDurationSec/60)}分${setDurationSec%60}秒` : `${setDurationSec}秒`;
-        addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNumberBeingSaved}段: ${durStr} | 速:${speed} 斜:${incline}% (約消粍 ${calories} kcal)`);
-
+        if (!machineStartLoggedToTimeline && pendingMachineTimelineEntry) {
+          addTimelineEntry(pendingMachineTimelineEntry);
+          machineStartLoggedToTimeline = true;
+        }
+        addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNum}段: ${durStr} | 速:${singleLog.speed} 斜:${singleLog.incline}% (約消粍 ${singleLog.calories} kcal)`);
         currentSetStartEpoch = Date.now();
         lastSetLogEpoch = null;
       } else {
-        const w = parseFloat(document.getElementById('inputWeight').value) || 0;
-        const r = parseInt(document.getElementById('inputReps').value, 10) || 0;
-        const wKg = (currentUnit === 'LB') ? Number((w * 0.453592).toFixed(1)) : w;
+        singleLog.weight = parseFloat(document.getElementById('inputWeight').value) || 0;
+        singleLog.unit = currentUnit;
+        singleLog.weight_kg = Number((currentUnit === 'LB' ? singleLog.weight * 0.453592 : singleLog.weight).toFixed(1));
+        singleLog.reps = parseInt(document.getElementById('inputReps').value, 10) || 0;
 
-        singleLog = {
-          date: document.getElementById('displayDate').innerText,
-          timestamp: nowTime,
-          muscle_group: currentMuscleGroup,
-          machine_id: setting.machine_id || "",
-          exercise_name: currentSelectedMachine,
-          side: actualSide,
-          set_num: setNumberBeingSaved,
-          weight: w,
-          unit: currentUnit,
-          weight_kg: Number(wKg),
-          reps: r,
-          speed: 0,
-          incline: 0,
-          calories: 0,
-          set_duration_sec: setDurationSec,
-          rest_duration_sec: restDurationSec,
-          machine_duration_sec: machineSec
-        };
+        if (!machineStartLoggedToTimeline && pendingMachineTimelineEntry) {
+          addTimelineEntry(pendingMachineTimelineEntry);
+          machineStartLoggedToTimeline = true;
+        }
 
-        saveMachineHistory(currentSelectedMachine, w, r, currentUnit);
-        const sideTag = (actualSide === "L") ? "(左手 L)" : (actualSide === "R" ? "(右手 R)" : "");
-        const setDurStr = setDurationSec >= 60 ? `${Math.floor(setDurationSec/60)}分${setDurationSec%60}秒` : `${setDurationSec}秒`;
-
-        if (setNumberBeingSaved === 1) {
-          addTimelineEntry(`💪 ${nowTime} ${currentSelectedMachine} ${sideTag} 第1組: ${w}${currentUnit}×${r}下 (做咗 ${setDurStr})`);
+        saveMachineHistory(currentSelectedMachine, singleLog.weight, singleLog.reps, currentUnit);
+        const sideTag = (singleLog.side === "L") ? "(左手 L)" : (singleLog.side === "R" ? "(右手 R)" : "");
+        if (setNum === 1) {
+          addTimelineEntry(`💪 ${nowTime} ${currentSelectedMachine} ${sideTag} 第1組: ${singleLog.weight}${currentUnit}×${singleLog.reps}下 (做咗 ${durStr})`);
         } else {
           const restDurStr = restDurationSec >= 60 ? `${Math.floor(restDurationSec/60)}分${restDurationSec%60}秒` : `${restDurationSec}秒`;
-          addTimelineEntry(`💪 ${nowTime} ${currentSelectedMachine} ${sideTag} 第${setNumberBeingSaved}組: ${w}${currentUnit}×${r}下 (做咗 ${setDurStr} / 休息咗 ${restDurStr})`);
+          addTimelineEntry(`💪 ${nowTime} ${currentSelectedMachine} ${sideTag} 第${setNum}組: ${singleLog.weight}${currentUnit}×${singleLog.reps}下 (做咗 ${durStr} / 休息咗 ${restDurStr})`);
         }
 
-        if (setting.is_unilateral) {
-          selectSide(actualSide === 'L' ? 'R' : 'L');
-        }
-
+        if (setting.is_unilateral) selectSide(singleLog.side === 'L' ? 'R' : 'L');
         lastSetLogEpoch = Date.now();
         currentSetStartEpoch = null;
       }
 
       workoutLogs.push(singleLog);
-      machineProgress[currentSelectedMachine] = setNumberBeingSaved;
+      machineProgress[currentSelectedMachine] = setNum;
       setBreathingOverlay('off');
-
       persistActiveSession();
 
       fetch(CONFIG.GAS_WEBAPP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "saveSingleSet", data: singleLog })
-      }).catch(e => console.warn("背景上傳單組失敗", e));
+      }).catch(e => console.warn(e));
 
-      document.getElementById('currentSetNum').innerText = setNumberBeingSaved + 1;
+      document.getElementById('currentSetNum').innerText = setNum + 1;
       renderCompletedMachinesList();
-
       if ('vibrate' in navigator) navigator.vibrate(50);
     });
 
     // ==========================================
-    // 10. 修改與刪除組數 (非同步背景更新，視窗即刻關閉)
+    // 10. 修改與刪除組數 (非同步背景同步)
     // ==========================================
     let editingSideTemp = "Both";
 
     function setEditModalSide(side) {
       editingSideTemp = side;
-      const bL = document.getElementById('btnEditSideL');
-      const bR = document.getElementById('btnEditSideR');
-      if (side === 'L') {
-        bL.className = "py-1 rounded bg-indigo-600 text-white font-bold";
-        bR.className = "py-1 rounded bg-slate-800 text-slate-400 font-bold";
-      } else {
-        bR.className = "py-1 rounded bg-indigo-600 text-white font-bold";
-        bL.className = "py-1 rounded bg-slate-800 text-slate-400 font-bold";
-      }
+      document.getElementById('btnEditSideL').className = side === 'L' ? "py-1 rounded bg-indigo-600 text-white font-bold" : "py-1 rounded bg-slate-800 text-slate-400 font-bold";
+      document.getElementById('btnEditSideR').className = side === 'R' ? "py-1 rounded bg-indigo-600 text-white font-bold" : "py-1 rounded bg-slate-800 text-slate-400 font-bold";
     }
 
     function openEditSetModal(index) {
@@ -1956,55 +1741,34 @@
       if (!item) return;
 
       document.getElementById('editSetIndex').value = index;
+      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group, item);
 
-      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group) || 
-                       item.unit === "--" || 
-                       (Number(item.weight) === 0 && Number(item.reps) === 0);
-
-      const titlePrefix = isCardio ? "修改帶氧分段記錄" : "修改組數記錄";
-      document.getElementById('editSetModalTitle').innerText = `${titlePrefix}: ${item.exercise_name} (第 ${item.set_num} ${isCardio ? '段' : '組'})`;
-
-      const strengthFields = document.getElementById('editStrengthFields');
-      const cardioFields = document.getElementById('editCardioFields');
+      document.getElementById('editSetModalTitle').innerText = `${isCardio ? "修改帶氧記錄" : "修改組數記錄"}: ${item.exercise_name} (第 ${item.set_num} ${isCardio ? '段' : '組'})`;
+      document.getElementById('editStrengthFields')?.classList.toggle('hidden', isCardio);
+      document.getElementById('editCardioFields')?.classList.toggle('hidden', !isCardio);
 
       if (isCardio) {
-        strengthFields.classList.add('hidden');
-        cardioFields.classList.remove('hidden');
-
         const dur = item.set_duration_sec || item.duration_sec || 0;
         const mins = Math.floor(dur / 60);
         const secs = dur % 60;
-
         document.getElementById('editCardioMinutesInput').value = mins;
         document.getElementById('editCardioSecondsInput').value = secs;
         document.getElementById('editCardioTimeText').innerText = `${mins} 分 ${secs} 秒`;
-
         document.getElementById('editCardioSpeedInput').value = item.speed !== undefined ? item.speed : 6.0;
         document.getElementById('editCardioInclineInput').value = item.incline !== undefined ? item.incline : 0.0;
-
         document.getElementById('editCardioMinutesInput').oninput = updateCardioEditText;
         document.getElementById('editCardioSecondsInput').oninput = updateCardioEditText;
       } else {
-        cardioFields.classList.add('hidden');
-        strengthFields.classList.remove('hidden');
-
         document.getElementById('editUnitLabel').innerText = item.unit || 'KG';
         document.getElementById('editSetWeightInput').value = item.weight || 0;
         document.getElementById('editSetRepsInput').value = item.reps || 0;
-
-        const editSideGroup = document.getElementById('editSideGroup');
-        const setting = customMachineSettings[item.exercise_name] || {};
-
-        if (setting.is_unilateral || (item.side && item.side !== 'Both')) {
-          editSideGroup.classList.remove('hidden');
-          setEditModalSide(item.side === 'R' ? 'R' : 'L');
-        } else {
-          editSideGroup.classList.add('hidden');
-          editingSideTemp = "Both";
-        }
+        const isUni = customMachineSettings[item.exercise_name]?.is_unilateral || (item.side && item.side !== 'Both');
+        document.getElementById('editSideGroup')?.classList.toggle('hidden', !isUni);
+        if (isUni) setEditModalSide(item.side === 'R' ? 'R' : 'L');
+        else editingSideTemp = "Both";
       }
 
-      document.getElementById('editSetModal').classList.remove('hidden');
+      document.getElementById('editSetModal')?.classList.remove('hidden');
     }
 
     function updateCardioEditText() {
@@ -2016,43 +1780,29 @@
     function stepCardioEditTime(secondsToAdd) {
       let m = parseInt(document.getElementById('editCardioMinutesInput').value, 10) || 0;
       let s = parseInt(document.getElementById('editCardioSecondsInput').value, 10) || 0;
-      let totalSec = Math.max(5, (m * 60 + s) + secondsToAdd);
-
-      const newM = Math.floor(totalSec / 60);
-      const newS = totalSec % 60;
-
-      document.getElementById('editCardioMinutesInput').value = newM;
-      document.getElementById('editCardioSecondsInput').value = newS;
-      document.getElementById('editCardioTimeText').innerText = `${newM} 分 ${newS} 秒`;
+      const totalSec = Math.max(5, (m * 60 + s) + secondsToAdd);
+      document.getElementById('editCardioMinutesInput').value = Math.floor(totalSec / 60);
+      document.getElementById('editCardioSecondsInput').value = totalSec % 60;
+      updateCardioEditText();
     }
 
     function closeEditSetModal() {
-      document.getElementById('editSetModal').classList.add('hidden');
+      document.getElementById('editSetModal')?.classList.add('hidden');
     }
 
     function stepEditValue(type, amount) {
-      if (type === 'weight') {
-        const el = document.getElementById('editSetWeightInput');
-        let current = parseFloat(el.value) || 0;
-        el.value = Math.max(0, Math.round((current + amount) * 10) / 10);
-      } else {
-        const el = document.getElementById('editSetRepsInput');
-        let current = parseInt(el.value, 10) || 0;
-        el.value = Math.max(1, current + amount);
-      }
+      const el = document.getElementById(type === 'weight' ? 'editSetWeightInput' : 'editSetRepsInput');
+      if (!el) return;
+      const cur = parseFloat(el.value) || 0;
+      el.value = type === 'weight' ? Math.max(0, Math.round((cur + amount) * 10) / 10) : Math.max(1, cur + amount);
     }
 
     function saveEditSetModal() {
       const idx = parseInt(document.getElementById('editSetIndex').value, 10);
       const item = workoutLogs[idx];
-      if (!item) {
-        closeEditSetModal();
-        return;
-      }
+      if (!item) { closeEditSetModal(); return; }
 
-      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group) || 
-                       item.unit === "--" || 
-                       (Number(item.weight) === 0 && Number(item.reps) === 0);
+      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group, item);
 
       if (isCardio) {
         const m = parseInt(document.getElementById('editCardioMinutesInput').value, 10) || 0;
@@ -2060,25 +1810,18 @@
         const speed = parseFloat(document.getElementById('editCardioSpeedInput').value) || 0;
         const incline = parseFloat(document.getElementById('editCardioInclineInput').value) || 0;
         const newTotalSec = (m * 60) + s;
-        
-        item.set_duration_sec = newTotalSec;
-        item.duration_sec = newTotalSec;
-        item.speed = speed;
-        item.incline = incline;
-        item.calories = calculateCardioCalories(speed, incline, newTotalSec);
-        item.weight = 0;
-        item.reps = 0;
-        item.unit = "--";
-        item.weight_kg = 0;
+        Object.assign(item, {
+          set_duration_sec: newTotalSec, duration_sec: newTotalSec,
+          speed, incline, calories: calculateCardioCalories(speed, incline, newTotalSec),
+          weight: 0, reps: 0, unit: "--", weight_kg: 0
+        });
       } else {
         const newWeight = parseFloat(document.getElementById('editSetWeightInput').value) || 0;
         const newReps = parseInt(document.getElementById('editSetRepsInput').value, 10) || 0;
-
-        item.weight = newWeight;
-        item.reps = newReps;
-        item.side = editingSideTemp;
-        item.weight_kg = (item.unit === 'LB') ? Number((newWeight * 0.453592).toFixed(1)) : newWeight;
-
+        Object.assign(item, {
+          weight: newWeight, reps: newReps, side: editingSideTemp,
+          weight_kg: (item.unit === 'LB') ? Number((newWeight * 0.453592).toFixed(1)) : newWeight
+        });
         saveMachineHistory(item.exercise_name, newWeight, newReps, item.unit);
         if (currentSelectedMachine === item.exercise_name) {
           document.getElementById('inputWeight').value = newWeight;
@@ -2099,35 +1842,23 @@
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "updateSingleSet", data: item })
-      }).catch(e => console.warn("背景同步更新異常:", e));
+      }).catch(e => console.warn(e));
     }
 
     function deleteSetFromModal() {
       const idx = parseInt(document.getElementById('editSetIndex').value, 10);
       const item = workoutLogs[idx];
-      if (!item) {
-        closeEditSetModal();
-        return;
-      }
+      if (!item) { closeEditSetModal(); return; }
 
-      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group) || 
-                       item.unit === "--" || 
-                       (Number(item.weight) === 0 && Number(item.reps) === 0);
-      const confirmText = isCardio ? `確定刪除 ${item.exercise_name} 第 ${item.set_num} 段？` : `確定刪除 ${item.exercise_name} 第 ${item.set_num} 組？`;
-      if (!confirm(confirmText)) return;
+      const isCardio = isCardioEquipment(item.exercise_name, item.muscle_group, item);
+      if (!confirm(`確定刪除 ${item.exercise_name} 第 ${item.set_num} ${isCardio ? '段' : '組'}？`)) return;
 
       const exName = item.exercise_name;
       const deletedItem = Object.assign({}, item);
-
       workoutLogs.splice(idx, 1);
 
       let count = 0;
-      workoutLogs.forEach(l => {
-        if (l.exercise_name === exName) {
-          count++;
-          l.set_num = count;
-        }
-      });
+      workoutLogs.forEach(l => { if (l.exercise_name === exName) { count++; l.set_num = count; } });
       machineProgress[exName] = count;
 
       if (currentSelectedMachine === exName) {
@@ -2136,7 +1867,6 @@
       }
 
       renderCompletedMachinesList();
-
       const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
       if (historicalWorkouts[todayStr]) {
         historicalWorkouts[todayStr].logs = workoutLogs;
@@ -2150,7 +1880,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "deleteSingleSet", data: deletedItem })
-      }).catch(e => console.warn("背景同步刪除異常:", e));
+      }).catch(e => console.warn(e));
     }
 
     // ==========================================
@@ -2164,186 +1894,123 @@
     function renderWorkoutTimelineUI() {
       const container = document.getElementById('workoutTimelineContainer');
       if (!container) return;
-
       if (timelineEvents.length === 0) {
-        container.innerHTML = `
-          <div class="text-slate-500 text-center py-3 bg-slate-950/60 rounded-xl border border-dashed border-slate-800">
-            開始訓練後，每組動作時間與休息秒數將自動在此串連成時間線
-          </div>
-        `;
+        container.innerHTML = `<div class="text-slate-500 text-center py-3 bg-slate-950/60 rounded-xl border border-dashed border-slate-800">開始訓練後，每組動作時間與休息秒數將自動在此串連成時間線</div>`;
         return;
       }
-
       container.innerHTML = timelineEvents.map(evt => {
         let colorClass = "text-slate-300";
         if (evt.includes("開始訓練") || evt.includes("結束訓練")) colorClass = "text-emerald-400 font-bold";
         else if (evt.includes("開始此機")) colorClass = "text-indigo-400 font-semibold";
         else if (evt.includes("結束此機")) colorClass = "text-rose-400";
         else if (evt.includes("帶氧") || evt.includes("速:")) colorClass = "text-sky-400 font-medium";
-
         return `<div class="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 ${colorClass}">${evt}</div>`;
       }).join('');
-
       container.scrollTop = container.scrollHeight;
     }
 
-    const unitToggleTrack = document.getElementById('unitToggleTrack');
-    const unitSlider = document.getElementById('unitSlider');
-    const labelKg = document.getElementById('labelKg');
-    const labelLb = document.getElementById('labelLb');
-    const unitText = document.getElementById('unitText');
-
-    unitToggleTrack.addEventListener('click', () => setUnit(currentUnit === 'KG' ? 'LB' : 'KG'));
+    document.getElementById('unitToggleTrack')?.addEventListener('click', () => setUnit(currentUnit === 'KG' ? 'LB' : 'KG'));
 
     function setUnit(unit) {
       currentUnit = unit;
-      if (unitText) unitText.innerText = unit;
-      if (unit === 'LB') {
-        unitSlider.classList.add('translate-x-full');
-        labelLb.classList.replace('text-slate-400', 'text-white');
-        labelKg.classList.replace('text-white', 'text-slate-400');
-      } else {
-        unitSlider.classList.remove('translate-x-full');
-        labelKg.classList.replace('text-slate-400', 'text-white');
-        labelLb.classList.replace('text-white', 'text-slate-400');
-      }
+      document.getElementById('unitText').innerText = unit;
+      const isLb = (unit === 'LB');
+      document.getElementById('unitSlider')?.classList.toggle('translate-x-full', isLb);
+      document.getElementById('labelLb')?.classList.toggle('text-white', isLb);
+      document.getElementById('labelLb')?.classList.toggle('text-slate-400', !isLb);
+      document.getElementById('labelKg')?.classList.toggle('text-white', !isLb);
+      document.getElementById('labelKg')?.classList.toggle('text-slate-400', isLb);
     }
 
     function stepValue(type, amount) {
-      if (type === 'weight') {
-        const el = document.getElementById('inputWeight');
-        let current = parseFloat(el.value) || 0;
-        let next = Math.max(0, current + amount);
-        el.value = Math.round(next * 10) / 10;
-      } else {
-        const el = document.getElementById('inputReps');
-        let current = parseInt(el.value, 10) || 0;
-        el.value = Math.max(1, current + amount);
-      }
+      const el = document.getElementById(type === 'weight' ? 'inputWeight' : 'inputReps');
+      if (!el) return;
+      const cur = parseFloat(el.value) || 0;
+      el.value = type === 'weight' ? (Math.round(Math.max(0, cur + amount) * 10) / 10) : Math.max(1, cur + amount);
     }
 
     function renderCompletedMachinesList() {
       const container = document.getElementById('completedMachinesList');
       const badge = document.getElementById('completedCountBadge');
       if (!container) return;
-      
+
       const completedNames = Object.keys(machineProgress).filter(name => machineProgress[name] > 0);
       if (badge) badge.innerText = `${completedNames.length} 部器材`;
 
       if (completedNames.length === 0) {
-        container.innerHTML = `
-          <li class="text-slate-500 text-xs text-center py-4 bg-slate-950/60 rounded-xl border border-dashed border-slate-800">
-            尚未有完成的器材紀錄，完成第 1 組後將顯示於此
-          </li>
-        `;
+        container.innerHTML = `<li class="text-slate-500 text-xs text-center py-4 bg-slate-950/60 rounded-xl border border-dashed border-slate-800">尚未有完成的器材紀錄，完成第 1 組後將顯示於此</li>`;
         return;
       }
 
       container.innerHTML = completedNames.map(name => {
         const setsCount = machineProgress[name];
-        const thisMachineLogs = workoutLogs.filter(l => l.exercise_name === name);
-        const isCardio = isCardioEquipment(name, thisMachineLogs[0] ? thisMachineLogs[0].muscle_group : "");
+        const thisLogs = workoutLogs.filter(l => l.exercise_name === name);
+        const isCardio = isCardioEquipment(name, thisLogs[0]?.muscle_group, thisLogs[0]);
 
-        let headerSummaryHtml = "";
-
+        let headerSummary = "";
         if (isCardio) {
-          let totalSec = 0;
-          let totalCal = 0;
-          let weightedSpeedSum = 0;
-          let weightedInclineSum = 0;
-
-          thisMachineLogs.forEach(l => {
+          let totalSec = 0, totalCal = 0, weightedSpeed = 0;
+          thisLogs.forEach(l => {
             const sec = l.set_duration_sec || 0;
             totalSec += sec;
             totalCal += (l.calories || 0);
-            weightedSpeedSum += ((l.speed || 0) * sec);
-            weightedInclineSum += ((l.incline || 0) * sec);
+            weightedSpeed += ((l.speed || 0) * sec);
           });
-
-          const avgSpeed = totalSec > 0 ? (weightedSpeedSum / totalSec).toFixed(1) : "0.0";
-          const avgIncline = totalSec > 0 ? (weightedInclineSum / totalSec).toFixed(1) : "0.0";
-          const m = Math.floor(totalSec / 60);
-          const s = totalSec % 60;
-          const totalDurStr = `${m}分${s}秒`;
-
-          headerSummaryHtml = `
+          const avgSpd = totalSec > 0 ? (weightedSpeed / totalSec).toFixed(1) : "0.0";
+          headerSummary = `
             <div class="text-[11px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/40 font-semibold flex items-center gap-1.5">
-              <span>共${setsCount}段 (${totalDurStr})</span>
-              <span>•</span>
-              <span>均速 ${avgSpeed}</span>
-              <span>•</span>
-              <span class="text-amber-400">🔥${totalCal}kcal</span>
+              <span>共${setsCount}段 (${Math.floor(totalSec/60)}分${totalSec%60}秒)</span>
+              <span>•</span><span>均速 ${avgSpd}</span><span>•</span><span class="text-amber-400">🔥${totalCal}kcal</span>
             </div>
           `;
         } else {
-          headerSummaryHtml = `
-            <span class="text-emerald-400 font-mono font-bold text-xs bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
-              ✅ 已做 ${setsCount} 組
-            </span>
-          `;
+          headerSummary = `<span class="text-emerald-400 font-mono font-bold text-xs bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">✅ 已做 ${setsCount} 組</span>`;
         }
-        
-        const setsPillsHtml = workoutLogs
-          .map((l, globalIdx) => {
-            if (l.exercise_name !== name) return null;
-            const isCardio = isCardioEquipment(l.exercise_name, l.muscle_group) || 
-                             l.unit === "--" || 
-                             (Number(l.weight) === 0 && Number(l.reps) === 0);
-            const sideLabel = (l.side === "L") ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '');
-            
-            let label = "";
-            if (isCardio) {
-              const dur = l.set_duration_sec || l.duration_sec || 0;
-              const m = Math.floor(dur / 60);
-              const s = dur % 60;
-              const spd = l.speed ? `速${l.speed}` : '';
-              const inc = l.incline ? `斜${l.incline}%` : '';
-              const cal = l.calories ? `🔥${l.calories}` : '';
-              label = `段${l.set_num}: <b>${m > 0 ? m + '分' : ''}${s}秒</b> <span class="text-[10px] text-sky-400">(${[spd, inc, cal].filter(Boolean).join(' ')})</span>`;
-            } else {
-              label = `第${l.set_num}組: ${sideLabel} <b>${l.weight}${l.unit}×${l.reps}</b>`;
-            }
 
-            return `
-              <button type="button" onclick="openEditSetModal(${globalIdx})" 
-                      class="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 px-2 py-1 rounded-lg text-slate-200 active:scale-90 transition-all font-mono text-[11px]">
-                <span>${label}</span>
-                <span class="text-indigo-400 text-[10px]">✏️</span>
-              </button>
-            `;
-          })
-          .filter(Boolean)
-          .join('');
+        const pills = workoutLogs.map((l, idx) => {
+          if (l.exercise_name !== name) return null;
+          const isC = isCardioEquipment(l.exercise_name, l.muscle_group, l);
+          const dur = l.set_duration_sec || l.duration_sec || 0;
+          const label = isC 
+            ? `段${l.set_num}: <b>${Math.floor(dur/60) > 0 ? Math.floor(dur/60) + '分' : ''}${dur%60}秒</b> <span class="text-[10px] text-sky-400">(${[l.speed?`速${l.speed}`:'', l.incline?`斜${l.incline}%`:'', l.calories?`🔥${l.calories}`:''].filter(Boolean).join(' ')})</span>`
+            : `第${l.set_num}組: ${l.side === "L" ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '')} <b>${l.weight}${l.unit}×${l.reps}</b>`;
+
+          return `
+            <button type="button" onclick="openEditSetModal(${idx})" 
+                    class="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 px-2 py-1 rounded-lg text-slate-200 active:scale-90 transition-all font-mono text-[11px]">
+              <span>${label}</span>
+              <span class="text-indigo-400 text-[10px]">✏️</span>
+            </button>
+          `;
+        }).filter(Boolean).join('');
 
         return `
           <li class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2 transition-all">
             <div class="flex justify-between items-center flex-wrap gap-1">
               <span class="text-slate-200 font-bold">${name}</span>
-              ${headerSummaryHtml}
+              ${headerSummary}
             </div>
-            <div class="flex flex-wrap gap-1.5 pt-0.5">
-              ${setsPillsHtml}
-            </div>
+            <div class="flex flex-wrap gap-1.5 pt-0.5">${pills}</div>
           </li>
         `;
       }).join('');
     }
 
     // ==========================================
-    // 13. 結束訓練 (徹底清除 ActiveSession 防止重新打開誤恢復)
+    // 13. 結束訓練
     // ==========================================
-    document.getElementById('btnFinishWorkout').addEventListener('click', async () => {
+    document.getElementById('btnFinishWorkout')?.addEventListener('click', async () => {
       if (isWorkoutEnded) return;
-      if (!isWorkoutStarted || workoutLogs.length === 0) { 
-        alert("尚未開始或今日尚未記錄任何組數！"); 
-        return; 
-      }
+      if (isMachineActive) btnToggleMachine?.click();
+
+      if (!isWorkoutStarted) { alert("尚未開始訓練！請先點擊上方「開始訓練」。"); return; }
+      const totalSec = getAccurateElapsedWorkoutSeconds();
+      if (workoutLogs.length === 0 && totalSec < 10) { alert("今日尚未進行任何訓練！"); return; }
       if (!confirm("確定結束今日訓練並儲存至 Google Sheet？結束後將鎖定今日記錄。")) return;
 
       isWorkoutEnded = true;
       isWorkoutStarted = false;
       isWorkoutPaused = false;
-      
       clearInterval(totalWorkoutTimerInterval);
       clearInterval(backgroundTimerInterval);
       clearInterval(machineTimerInterval);
@@ -2351,17 +2018,14 @@
 
       const nowEndTime = new Date().toTimeString().split(' ')[0];
       endTimeStamp.innerText = nowEndTime;
+      addTimelineEntry(`🏁 ${nowEndTime} 結束訓練 (總時長: ${Math.round(totalSec / 60)}分鐘)`);
 
-      const totalAccurateSec = getAccurateElapsedWorkoutSeconds();
-      addTimelineEntry(`🏁 ${nowEndTime} 結束訓練 (總時長: ${Math.round(totalAccurateSec / 60)}分鐘)`);
-
-      btnPauseWorkout.classList.add('hidden');
-      document.getElementById('badgeWorkoutEnded').classList.remove('hidden');
+      btnPauseWorkout?.classList.add('hidden');
+      document.getElementById('badgeWorkoutEnded')?.classList.remove('hidden');
 
       btnToggleMachine.disabled = true;
       btnToggleMachine.className = "flex-1 w-full bg-slate-800 text-slate-500 opacity-40 cursor-not-allowed rounded-xl font-bold text-xs transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px]";
       btnToggleMachineText.innerText = "訓練已結束";
-
       updateLogSetButtonState();
 
       const finishBtn = document.getElementById('btnFinishWorkout');
@@ -2370,19 +2034,18 @@
       finishBtn.className = "bg-slate-800 text-slate-400 py-3.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60";
       finishBtnText.innerText = "儲存中...";
 
-      const muscleSummaries = Array.from(new Set(workoutLogs.map(l => l.muscle_group))).join(", ");
+      let muscleSummaries = Array.from(new Set(workoutLogs.map(l => l.muscle_group))).join(", ") || (currentMuscleGroup || "帶氧");
 
       const summaryPayload = {
         date: document.getElementById('displayDate').innerText,
         start_time: startTimeStamp.innerText,
         end_time: nowEndTime,
         muscle_group: muscleSummaries,
-        total_duration_sec: totalAccurateSec,
+        total_duration_sec: totalSec,
         timeline_text: timelineEvents.join("\n"),
         logs: workoutLogs
       };
 
-      // 【Bug 2 修復】：結束時直接徹底銷毀 Active Session，杜絕重開後復活計時
       clearActiveSession();
 
       try {
@@ -2391,7 +2054,6 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: "finishWorkout", data: summaryPayload })
         });
-        
         saveWorkoutToLocalHistory(summaryPayload);
         finishBtnText.innerText = "✅ 已結束訓練";
         alert("✅ 訓練數據及時間線已成功歸檔至 Google Sheet！");
@@ -2401,22 +2063,18 @@
       }
     });
 
-    document.getElementById('btnTriggerAiAnalysis').addEventListener('click', async () => {
-      if (workoutLogs.length === 0) { alert("請先完成並記錄至少 1 組動作才進行 AI 分析！"); return; }
-
+    document.getElementById('btnTriggerAiAnalysis')?.addEventListener('click', async () => {
+      if (workoutLogs.length === 0) { alert("請先完成並記錄至少 1 組/段動作才進行 AI 分析！"); return; }
       const aiBtn = document.getElementById('btnTriggerAiAnalysis');
       aiBtn.disabled = true;
       aiBtn.innerHTML = `<span class="animate-spin mr-1">⏳</span> 分析中...`;
-
-      const muscleSummaries = Array.from(new Set(workoutLogs.map(l => l.muscle_group))).join(", ");
-      const totalAccurateSec = getAccurateElapsedWorkoutSeconds();
 
       const summaryPayload = {
         date: document.getElementById('displayDate').innerText,
         start_time: startTimeStamp.innerText,
         end_time: endTimeStamp.innerText || new Date().toTimeString().split(' ')[0],
-        muscle_group: muscleSummaries,
-        total_duration_sec: totalAccurateSec,
+        muscle_group: Array.from(new Set(workoutLogs.map(l => l.muscle_group))).join(", "),
+        total_duration_sec: getAccurateElapsedWorkoutSeconds(),
         timeline_summary: timelineEvents.join("\n"),
         logs: workoutLogs
       };
@@ -2429,13 +2087,11 @@
         });
         const result = await res.json();
         const advice = result.ai_advice || "今日動作完成良好，強度與節奏掌握穩定！";
-
         fetch(CONFIG.GAS_WEBAPP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: "saveAiAdvice", data: { ai_advice: advice } })
         }).catch(e => console.warn(e));
-
         showAiModal(advice);
       } catch (err) {
         showAiModal("無法連線至家中 Local AI，請檢查 Cloudflare Tunnel 及 n8n 是否運作中。");
@@ -2447,13 +2103,14 @@
 
     function showAiModal(text) {
       document.getElementById('aiAdviceContent').innerText = text;
-      document.getElementById('aiModalOverlay').classList.remove('hidden');
+      document.getElementById('aiModalOverlay')?.classList.remove('hidden');
     }
 
     function closeAiModal() {
-      document.getElementById('aiModalOverlay').classList.add('hidden');
+      document.getElementById('aiModalOverlay')?.classList.add('hidden');
     }
 
+    // 記憶體動態建立 Canvas 壓縮相片，不佔用 DOM 空間
     function compressImageToBase64(file, maxDimension, quality) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -2468,7 +2125,7 @@
               width = Math.round((width * maxDimension) / height);
               height = maxDimension;
             }
-            const canvas = document.getElementById('compressCanvas');
+            const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
@@ -2492,36 +2149,22 @@
     function normalizeDateStr(str) {
       if (!str) return "";
       const parts = String(str).replace(/'/g, "").trim().split(/[-\/]/);
-      if (parts.length >= 3) {
-        const y = parts[0];
-        const m = parts[1].padStart(2, '0');
-        const d = parts[2].padStart(2, '0');
-        return `${y}-${m}-${d}`;
-      }
-      return str;
+      return parts.length >= 3 ? `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}` : str;
     }
 
     function initCalendarView() {
       const yearSelect = document.getElementById('calYearSelect');
       const monthSelect = document.getElementById('calMonthSelect');
-      
       const currentYear = new Date().getFullYear();
-      let yearHtml = "";
-      for (let y = currentYear - 4; y <= currentYear + 1; y++) {
-        yearHtml += `<option value="${y}" ${y === calendarSelectedYear ? 'selected' : ''}>${y} 年</option>`;
-      }
+
+      let yearHtml = "", monthHtml = "";
+      for (let y = currentYear - 4; y <= currentYear + 1; y++) yearHtml += `<option value="${y}" ${y === calendarSelectedYear ? 'selected' : ''}>${y} 年</option>`;
+      for (let m = 0; m < 12; m++) monthHtml += `<option value="${m}" ${m === calendarSelectedMonth ? 'selected' : ''}>${m + 1} 月</option>`;
+
       yearSelect.innerHTML = yearHtml;
-
-      let monthHtml = "";
-      for (let m = 0; m < 12; m++) {
-        monthHtml += `<option value="${m}" ${m === calendarSelectedMonth ? 'selected' : ''}>${m + 1} 月</option>`;
-      }
       monthSelect.innerHTML = monthHtml;
-
       renderCalendarGrid();
-
-      const todayStr = document.getElementById('displayDate').innerText;
-      selectCalendarDate(normalizeDateStr(todayStr));
+      selectCalendarDate(normalizeDateStr(document.getElementById('displayDate').innerText));
     }
 
     function onCalendarSelectChange() {
@@ -2532,13 +2175,8 @@
 
     function changeMonth(offset) {
       calendarSelectedMonth += offset;
-      if (calendarSelectedMonth < 0) {
-        calendarSelectedMonth = 11;
-        calendarSelectedYear--;
-      } else if (calendarSelectedMonth > 11) {
-        calendarSelectedMonth = 0;
-        calendarSelectedYear++;
-      }
+      if (calendarSelectedMonth < 0) { calendarSelectedMonth = 11; calendarSelectedYear--; }
+      else if (calendarSelectedMonth > 11) { calendarSelectedMonth = 0; calendarSelectedYear++; }
       document.getElementById('calYearSelect').value = calendarSelectedYear;
       document.getElementById('calMonthSelect').value = calendarSelectedMonth;
       renderCalendarGrid();
@@ -2550,25 +2188,18 @@
 
       const firstDayIndex = new Date(calendarSelectedYear, calendarSelectedMonth, 1).getDay();
       const daysInMonth = new Date(calendarSelectedYear, calendarSelectedMonth + 1, 0).getDate();
-
-      for (let i = 0; i < firstDayIndex; i++) {
-        grid.innerHTML += `<div class="h-11 rounded-xl bg-slate-950/20 border border-transparent opacity-20"></div>`;
-      }
+      for (let i = 0; i < firstDayIndex; i++) grid.innerHTML += `<div class="h-11 rounded-xl bg-slate-950/20 border border-transparent opacity-20"></div>`;
 
       const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
 
       for (let day = 1; day <= daysInMonth; day++) {
-        const mStr = String(calendarSelectedMonth + 1).padStart(2, '0');
-        const dStr = String(day).padStart(2, '0');
-        const fullDateStr = `${calendarSelectedYear}-${mStr}-${dStr}`;
-
+        const fullDateStr = `${calendarSelectedYear}-${String(calendarSelectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const isToday = (fullDateStr === todayStr);
         const isSelected = (fullDateStr === calendarActiveSelectedDate);
-        const dayData = historicalWorkouts[fullDateStr];
-        const hasWorkout = dayData && (dayData.logs && dayData.logs.length > 0);
+        const hasWorkout = historicalWorkouts[fullDateStr]?.logs?.length > 0;
 
-        let borderClass = isSelected ? 'border-2 border-indigo-500 bg-indigo-950/30' : (isToday ? 'border border-sky-500/80 bg-slate-900' : 'border border-slate-800 bg-slate-950/60');
-        let textClass = isToday ? 'text-sky-400 font-black' : 'text-slate-300';
+        const borderClass = isSelected ? 'border-2 border-indigo-500 bg-indigo-950/30' : (isToday ? 'border border-sky-500/80 bg-slate-900' : 'border border-slate-800 bg-slate-950/60');
+        const textClass = isToday ? 'text-sky-400 font-black' : 'text-slate-300';
 
         grid.innerHTML += `
           <div onclick="selectCalendarDate('${fullDateStr}')" 
@@ -2584,21 +2215,16 @@
       const cleanDate = normalizeDateStr(dateStr);
       calendarActiveSelectedDate = cleanDate;
       document.getElementById('selectedDateTitle').innerText = cleanDate;
-
       renderCalendarGrid();
 
       const container = document.getElementById('selectedDateDetailsContainer');
       const badge = document.getElementById('daySummaryBadge');
       const workout = historicalWorkouts[cleanDate];
 
-      if (!workout || (!workout.logs || workout.logs.length === 0)) {
+      if (!workout?.logs?.length) {
         badge.className = "text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-slate-800 text-slate-400";
         badge.innerText = "該日無操練";
-        container.innerHTML = `
-          <div class="text-slate-500 text-xs text-center py-6 bg-slate-950/40 rounded-xl border border-dashed border-slate-800/80">
-            該日期沒有任何訓練記錄 🛋️
-          </div>
-        `;
+        container.innerHTML = `<div class="text-slate-500 text-xs text-center py-6 bg-slate-950/40 rounded-xl border border-dashed border-slate-800/80">該日期沒有任何訓練記錄 🛋️</div>`;
         return;
       }
 
@@ -2607,46 +2233,35 @@
 
       const muscleGroups = {};
       workout.logs.forEach(l => {
-        const mGroup = l.muscle_group || '其他';
-        if (!muscleGroups[mGroup]) muscleGroups[mGroup] = {};
-        if (!muscleGroups[mGroup][l.exercise_name]) muscleGroups[mGroup][l.exercise_name] = [];
-        muscleGroups[mGroup][l.exercise_name].push(l);
+        const mg = l.muscle_group || '其他';
+        if (!muscleGroups[mg]) muscleGroups[mg] = {};
+        if (!muscleGroups[mg][l.exercise_name]) muscleGroups[mg][l.exercise_name] = [];
+        muscleGroups[mg][l.exercise_name].push(l);
       });
 
-      let muscleGroupsHtml = Object.entries(muscleGroups).map(([muscleName, machineDict]) => {
-        let totalSetsInMuscle = 0;
-        Object.values(machineDict).forEach(sets => totalSetsInMuscle += sets.length);
+      const muscleGroupsHtml = Object.entries(muscleGroups).map(([muscleName, machineDict]) => {
+        let totalSets = 0;
+        Object.values(machineDict).forEach(sets => totalSets += sets.length);
 
         const machinesHtml = Object.entries(machineDict).map(([mName, sets]) => {
-          const isCardio = isCardioEquipment(mName, muscleName);
-
-          const setRowsHtml = sets.map((s, idx) => {
+          const isCardio = isCardioEquipment(mName, muscleName, sets[0]);
+          const setRows = sets.map((s, idx) => {
             const sideTag = (s.side === "L") ? '<span class="text-amber-400 mr-1 font-bold">[左手 L]</span>' : (s.side === "R" ? '<span class="text-amber-400 mr-1 font-bold">[右手 R]</span>' : '');
-            
-            let displayVal = "";
-            if (isCardio) {
-              const dur = s.set_duration_sec || s.duration_sec || 0;
-              const m = Math.floor(dur / 60);
-              const sec = dur % 60;
-              const spd = s.speed ? `速:${s.speed}` : '';
-              const inc = s.incline ? `斜:${s.incline}%` : '';
-              const cal = s.calories ? `🔥${s.calories}kcal` : '';
-              displayVal = `${m > 0 ? m + '分' : ''}${sec}秒 (${[spd, inc, cal].filter(Boolean).join(' | ')})`;
-            } else {
-              displayVal = `${s.weight} ${s.unit} ×${s.reps} 下`;
-            }
+            const dur = s.set_duration_sec || s.duration_sec || 0;
+            const extra = [s.speed ? `速:${s.speed}` : '', s.incline ? `斜:${s.incline}%` : '', s.calories ? `🔥${s.calories}kcal` : ''].filter(Boolean).join(' | ');
+            const displayVal = isCardio 
+              ? `${Math.floor(dur/60)}分${dur%60}秒 (${extra})`
+              : `${s.weight} ${s.unit} ×${s.reps} 下`;
 
             return `
               <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/50 last:border-none font-mono">
                 <div class="flex items-center gap-1.5">
                   <span class="text-slate-500 text-[11px] w-9">第 ${s.set_num || (idx + 1)} ${isCardio ? '段' : '組'}</span>
                   ${sideTag}
-                  <span class="text-slate-100 font-bold">
-                    ${displayVal}
-                  </span>
+                  <span class="text-slate-100 font-bold">${displayVal}</span>
                 </div>
                 <div class="text-[11px] text-slate-400 flex items-center gap-2">
-                  <span class="text-emerald-400/90">做 ${s.set_duration_sec || s.duration_sec || 0}s</span>
+                  <span class="text-emerald-400/90">做 ${dur}s</span>
                   <span class="text-slate-600">/</span>
                   <span class="text-amber-400/90">休 ${s.rest_duration_sec || 0}s</span>
                 </div>
@@ -2657,16 +2272,10 @@
           return `
             <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/90 space-y-1.5">
               <div class="flex justify-between items-center pb-1 border-b border-slate-800">
-                <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
-                  <span>🏋️</span> ${mName}
-                </span>
-                <span class="text-indigo-400 font-mono text-[11px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
-                  ${sets.length} ${isCardio ? '段' : '組'}
-                </span>
+                <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5"><span>🏋️</span> ${mName}</span>
+                <span class="text-indigo-400 font-mono text-[11px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">${sets.length} ${isCardio ? '段' : '組'}</span>
               </div>
-              <div class="space-y-0.5">
-                ${setRowsHtml}
-              </div>
+              <div class="space-y-0.5">${setRows}</div>
             </div>
           `;
         }).join('');
@@ -2674,15 +2283,10 @@
         return `
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between px-1">
-              <span class="text-xs font-black text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span class="w-1.5 h-3 bg-indigo-500 rounded-full inline-block"></span>
-                ${muscleName} 部位訓練
-              </span>
-              <span class="text-[11px] text-slate-400 font-mono">小計: ${totalSetsInMuscle} ${muscleName === '帶氧' ? '段' : '組'}</span>
+              <span class="text-xs font-black text-indigo-400 uppercase tracking-wider flex items-center gap-1.5"><span class="w-1.5 h-3 bg-indigo-500 rounded-full inline-block"></span>${muscleName} 部位訓練</span>
+              <span class="text-[11px] text-slate-400 font-mono">小計: ${totalSets} ${muscleName === '帶氧' ? '段' : '組'}</span>
             </div>
-            <div class="space-y-2">
-              ${machinesHtml}
-            </div>
+            <div class="space-y-2">${machinesHtml}</div>
           </div>
         `;
       }).join('');
@@ -2693,27 +2297,15 @@
             <span>訓練部位: <b class="text-white">${workout.muscle_group || '綜合'}</b></span>
             <span>總時長: <b class="text-white">${workout.total_duration_min ? workout.total_duration_min + ' 分鐘' : '--'}</b></span>
           </div>
-          <div class="text-[11px] text-slate-400 font-mono">
-            時間: ${workout.start_time || '--'} 至 ${workout.end_time || '--'}
-          </div>
+          <div class="text-[11px] text-slate-400 font-mono">時間: ${workout.start_time || '--'} 至 ${workout.end_time || '--'}</div>
         </div>
-
-        <div class="space-y-4">
-          ${muscleGroupsHtml}
-        </div>
-
-        ${workout.ai_advice ? `
-          <div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1">
-            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span>
-            <p class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${workout.ai_advice}</p>
-          </div>
-        ` : ''}
+        <div class="space-y-4">${muscleGroupsHtml}</div>
+        ${workout.ai_advice ? `<div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1"><span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span><p class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${workout.ai_advice}</p></div>` : ''}
       `;
     }
 
     function saveWorkoutToLocalHistory(summaryPayload) {
-      const d = normalizeDateStr(summaryPayload.date);
-      historicalWorkouts[d] = {
+      historicalWorkouts[normalizeDateStr(summaryPayload.date)] = {
         muscle_group: summaryPayload.muscle_group,
         start_time: summaryPayload.start_time,
         end_time: summaryPayload.end_time,
@@ -2726,12 +2318,9 @@
 
     function loadLocalHistoryToCache() {
       const raw = localStorage.getItem('gym_historical_workouts_cache');
-      if (raw) {
-        try { historicalWorkouts = JSON.parse(raw); } catch(e){}
-      }
+      if (raw) { try { historicalWorkouts = JSON.parse(raw); } catch(e){} }
       if (workoutLogs.length > 0) {
-        const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
-        historicalWorkouts[todayStr] = {
+        historicalWorkouts[normalizeDateStr(document.getElementById('displayDate').innerText)] = {
           muscle_group: currentMuscleGroup,
           start_time: startTimeStamp.innerText,
           end_time: endTimeStamp.innerText || "--",
@@ -2748,51 +2337,37 @@
         if (data.status === "success" && data.history) {
           const cleanHistory = {};
           for (const [rawDate, val] of Object.entries(data.history)) {
-            const cleanKey = normalizeDateStr(rawDate);
-            cleanHistory[cleanKey] = val;
+            cleanHistory[normalizeDateStr(rawDate)] = val;
           }
           historicalWorkouts = Object.assign(historicalWorkouts, cleanHistory);
           localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
-          
-          if (currentSelectedMachine) {
-            loadMachineHistory(currentSelectedMachine);
-          }
+          if (currentSelectedMachine) loadMachineHistory(currentSelectedMachine);
         }
       } catch (e) {
-        console.warn("背景靜默同步失敗 (使用本地快取)", e);
+        console.warn("靜默同步失敗", e);
       }
     }
 
     async function refreshCalendarDataFromSheets() {
       const badge = document.getElementById('daySummaryBadge');
-      badge.innerText = "同步中...";
+      if (badge) badge.innerText = "同步中...";
       try {
         const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory`);
         const data = await res.json();
         if (data.status === "success" && data.history) {
           const cleanHistory = {};
           for (const [rawDate, val] of Object.entries(data.history)) {
-            const cleanKey = normalizeDateStr(rawDate);
-            cleanHistory[cleanKey] = val;
+            cleanHistory[normalizeDateStr(rawDate)] = val;
           }
-
           historicalWorkouts = Object.assign(historicalWorkouts, cleanHistory);
           localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
-          
           renderCalendarGrid();
           if (calendarActiveSelectedDate) selectCalendarDate(calendarActiveSelectedDate);
-          
-          if (currentSelectedMachine) {
-            loadMachineHistory(currentSelectedMachine);
-          }
-
-          alert("✅ 歷史紀錄已與 Google Sheet 完整同步！");
-        } else {
-          renderCalendarGrid();
+          if (currentSelectedMachine) loadMachineHistory(currentSelectedMachine);
+          alert("✅ 歷史紀錄已完整同步！");
         }
       } catch (err) {
-        console.warn("無法取得雲端歷史記錄", err);
-        renderCalendarGrid();
+        console.warn("無法取得歷史記錄", err);
       }
     }
   </script>
