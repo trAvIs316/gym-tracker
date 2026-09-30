@@ -5,12 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AI Gym Tracker Pro</title>
 
+  <!-- 🏋️ 自訂手機桌面 App 圖示 (啞鈴風格) 與 PWA 宣告 -->
+  <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <link rel="shortcut icon" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gym Tracker">
+
   <!-- Content Security Policy 強化 -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
     style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
-    img-src 'self' data: https://lh3.googleusercontent.com;
+    img-src 'self' data: https://lh3.googleusercontent.com https://img.icons8.com;
     connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.trycloudflare.com;
   ">
 
@@ -32,7 +42,7 @@
     .breath-red { animation: redBreath 1.6s infinite ease-in-out; border: 3px solid rgba(239, 68, 68, 0.85) !important; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3.5 pb-32 font-sans select-none">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 pb-32 font-sans select-none">
 
   <!-- 全螢幕呼吸燈指示層 -->
   <div id="screenBreathingOverlay" class="fixed inset-0 pointer-events-none z-50 transition-all duration-700"></div>
@@ -49,51 +59,54 @@
   <!-- 頁面 1：訓練 Tracker 主頁面                                                -->
   <!-- ========================================================================= -->
   <div id="viewTrackerPage">
-    <header class="sticky top-0 z-30 mb-4 bg-slate-900/95 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-xl space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <button id="btnStartWorkout" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1.5">
+    <!-- 優化後 Header：分層佈局，徹底解決擠迫與斷行 -->
+    <header class="sticky top-0 z-30 mb-3 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl space-y-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 flex-1 min-w-0">
+          <button id="btnStartWorkout" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1 whitespace-nowrap">
             <span>▶</span>
             <span>開始訓練</span>
           </button>
-          <button id="btnPauseWorkout" class="hidden bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40">
+          <button id="btnPauseWorkout" class="hidden bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40 whitespace-nowrap">
             暫停
           </button>
-          <span id="badgeWorkoutEnded" class="hidden bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold">
-            🏁 訓練已結束
+          <span id="badgeWorkoutEnded" class="hidden bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap">
+            🏁 已結算
           </span>
-        </div>
 
-        <div class="flex items-center gap-1.5">
-          <button onclick="switchView('calendar')" class="flex items-center gap-1 text-xs text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-900 px-3 py-2 rounded-xl border border-indigo-700/50 active:scale-95 transition-all font-bold">
+          <button onclick="switchView('calendar')" class="flex items-center gap-1 text-xs text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-900 px-2.5 py-2 rounded-xl border border-indigo-700/50 active:scale-95 transition-all font-bold whitespace-nowrap">
             <span>📅</span>
-            <span>歷史日曆</span>
+            <span>日曆</span>
           </button>
-          <button onclick="promptForApiKey()" title="設定 API Key" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all">
+          <button onclick="promptForApiKey()" title="設定 API Key" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-2 rounded-xl border border-slate-700 active:scale-95 transition-all">
             ⚙️
           </button>
         </div>
 
-        <div class="text-right">
-          <span class="text-[10px] text-slate-500 uppercase tracking-wider block">訓練時間</span>
-          <span id="totalWorkoutTimer" class="text-3xl font-black font-mono text-emerald-400">00:00:00</span>
+        <div class="text-right flex-shrink-0">
+          <span class="text-[9px] text-slate-500 uppercase tracking-wider block leading-none mb-0.5">訓練時間</span>
+          <span id="totalWorkoutTimer" class="text-2xl font-black font-mono text-emerald-400 leading-none">00:00:00</span>
         </div>
       </div>
 
-      <div class="flex justify-between items-center text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 font-mono">
-        <div>開始: <span id="startTimeStamp" class="text-slate-200 font-semibold">--:--:--</span></div>
-        <div>結束: <span id="endTimeStamp" class="text-slate-200 font-semibold">--:--:--</span></div>
-        <div class="flex items-center gap-1.5 text-slate-500">
-          <span id="displayDate">--</span>
-          <span id="displayDayName" class="text-slate-400 font-sans">--</span>
-          <span id="liveClock" class="text-sky-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">00:00:00</span>
+      <!-- 三列整齊網格資訊列，徹底防止換行截斷 -->
+      <div class="grid grid-cols-3 gap-1 pt-2 border-t border-slate-800/80 text-[10px] font-mono text-slate-400 text-center">
+        <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate">
+          開始: <span id="startTimeStamp" class="text-slate-200 font-bold">--:--:--</span>
+        </div>
+        <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate">
+          結束: <span id="endTimeStamp" class="text-slate-200 font-bold">--:--:--</span>
+        </div>
+        <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate flex items-center justify-center gap-1">
+          <span id="displayDate" class="text-sky-400 font-bold">--</span>
+          <span id="displayDayName" class="text-slate-300">--</span>
         </div>
       </div>
     </header>
 
-    <main class="space-y-4">
+    <main class="space-y-3.5">
       <!-- 2. 選擇機種 -->
-      <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
         <div class="flex justify-between items-center">
           <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">選擇機種</label>
           <button onclick="openAddNewMachineModal()" class="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 px-3 py-1 rounded-lg border border-emerald-700/50 active:scale-95 font-bold">
@@ -108,12 +121,12 @@
           <div class="flex items-center gap-2 pb-1.5 border-b border-slate-800/60">
             <span class="text-slate-400 font-semibold">📋 上次訓練記錄:</span>
             <div class="flex items-center gap-1.5">
-              <span id="lastWorkoutDateBadge" class="text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold">無過往記錄</span>
+              <span id="lastWorkoutDateBadge" class="text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold">未連接</span>
               <span id="lastWorkoutDaysAgo" class="text-[11px] text-amber-400 font-semibold"></span>
             </div>
           </div>
           <div id="lastWorkoutSetsContainer" class="flex flex-col items-start gap-1.5 pt-0.5">
-            <span class="text-slate-600 text-[11px] italic">尚未有此器材的歷史訓練數據</span>
+            <span class="text-slate-600 text-[11px] italic" id="lastWorkoutPlaceholder">請先設定 API Key 載入歷史數據</span>
           </div>
         </div>
 
@@ -140,7 +153,7 @@
       </section>
 
       <!-- 3. 第 N 組 / 第 N 段操作面板 -->
-      <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <div class="font-bold text-base flex items-center gap-2">
             <span id="currentSetLabelPrefix">第 <span id="currentSetNum" class="text-indigo-400 text-lg">1</span> 組</span>
@@ -272,7 +285,7 @@
       </section>
 
       <!-- 4. 今日已完成機種清單 -->
-      <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
           <span>今日已完成機種 (點擊可修改數據)</span>
           <span id="completedCountBadge" class="text-[11px] font-mono text-emerald-400 font-bold">0 部器材</span>
@@ -281,7 +294,7 @@
       </section>
 
       <!-- 5. 訓練時間線 -->
-      <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2.5">
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
           <span>⏱️ 訓練時間線 (Timeline)</span>
           <span class="text-[10px] text-slate-500 font-mono">實時流水帳</span>
@@ -310,22 +323,22 @@
   <!-- 頁面 2：歷史日曆與日期紀錄檢視頁                                          -->
   <!-- ========================================================================= -->
   <div id="viewCalendarPage" class="hidden space-y-4">
-    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-xl flex justify-between items-center">
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex justify-between items-center">
       <button onclick="switchView('tracker')" class="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 active:scale-95 transition-all font-bold">
-        <span>⬅️</span>
-        <span>返回 Tracker</span>
+        <span>⬅</span>
+        <span>返回</span>
       </button>
 
       <h2 class="text-sm font-bold text-white flex items-center gap-1.5">
         <span>📅</span> 訓練歷史月曆
       </h2>
 
-      <button onclick="refreshCalendarDataFromSheets()" class="text-xs text-sky-400 hover:text-sky-300 bg-sky-950/60 px-2.5 py-2 rounded-xl border border-sky-800/40 active:scale-95">
+      <button onclick="refreshCalendarDataFromSheets()" class="text-xs text-sky-400 hover:text-sky-300 bg-sky-950/60 px-2.5 py-2 rounded-xl border border-sky-800/40 active:scale-95 font-bold">
         🔄 同步
       </button>
     </header>
 
-    <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
       <div class="flex items-center justify-between gap-2">
         <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 active:scale-95">◀</button>
         <div class="flex items-center gap-2">
@@ -348,7 +361,7 @@
       <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1.5 text-xs"></div>
     </section>
 
-    <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 min-h-[160px]">
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3 min-h-[160px]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold text-slate-400">選擇日期:</span>
@@ -576,9 +589,61 @@
     </div>
   </div>
 
+  <!-- 🔒 專屬九宮格純數字 PIN 碼設定 Modal (全遮蔽防偷看 + 任意長度) -->
+  <div id="apiKeyPinModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+        <h3 class="font-bold text-sm text-white flex items-center gap-1.5">
+          <span>🔒</span> <span>設定個人存取 PIN 碼</span>
+        </h3>
+        <button type="button" onclick="closeApiKeyPinModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+
+      <div class="text-center space-y-1">
+        <span class="text-[11px] text-slate-400 block font-semibold">請輸入純數字 PIN 密碼</span>
+        <!-- 密碼遮蔽顯示器 (••••) -->
+        <div class="h-12 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center tracking-[0.4em] text-2xl font-mono text-indigo-400 font-black px-3 select-none" id="pinDisplayMask">
+          ------
+        </div>
+        <span id="pinStatusHint" class="text-[10px] text-slate-500 block">輸入完成後請點擊下方按鈕認證</span>
+      </div>
+
+      <!-- 九宮格大按鈕鍵盤 -->
+      <div class="space-y-2 pt-1 font-mono text-lg font-bold text-slate-200">
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="pressPinDigit('1')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">1</button>
+          <button type="button" onclick="pressPinDigit('2')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">2</button>
+          <button type="button" onclick="pressPinDigit('3')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">3</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="pressPinDigit('4')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">4</button>
+          <button type="button" onclick="pressPinDigit('5')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">5</button>
+          <button type="button" onclick="pressPinDigit('6')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">6</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="pressPinDigit('7')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">7</button>
+          <button type="button" onclick="pressPinDigit('8')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">8</button>
+          <button type="button" onclick="pressPinDigit('9')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">9</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="clearPinInput()" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs font-bold text-amber-400">清空</button>
+          <button type="button" onclick="pressPinDigit('0')" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">0</button>
+          <button type="button" onclick="backspacePinDigit()" class="py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-base font-black text-rose-400">⌫</button>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-slate-800/80">
+        <button type="button" onclick="closeApiKeyPinModal()" class="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs active:scale-95 transition-all">取消</button>
+        <button type="button" onclick="savePinFromModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1">
+          <span>✓</span> <span>儲存並認證</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==========================================
-    // 0. 安全金鑰生命週期與 XSS 防護
+    // 0. 安全金鑰生命週期、九宮格與 XSS 防護
     // ==========================================
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
@@ -590,7 +655,7 @@
         .replace(/'/g, '&#39;');
     }
 
-    // 1. 唯有在 URL 真實帶有 ?key= 時才主動更新，徹底杜絕空值覆蓋
+    // 只有在 URL 真實帶有 ?key= 時才主動更新，徹底杜絕空值覆蓋
     (function initApiKeyFromUrl() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -603,23 +668,76 @@
       } catch (_) {}
     })();
 
-    // 2. 永遠以 localStorage 內的值為唯一基準
     function getGymApiKey() {
       return (localStorage.getItem('gym_api_key') || "").trim();
     }
 
+    // 九宮格狀態
+    let currentInputPin = "";
+
     function promptForApiKey() {
-      const current = getGymApiKey();
-      const input = prompt("請輸入 Gym-Tracker 的 API 存取金鑰 (輸入後將永久記住於此設備):", current);
-      if (input !== null) {
-        const clean = input.trim();
-        if (clean) {
-          localStorage.setItem('gym_api_key', clean);
-          alert("✅ API Key 已安全儲存於此設備！");
-          fetchMachineSettingsFromSheets();
-          silentSyncGoogleSheetHistory();
-        }
+      const savedKey = getGymApiKey();
+      currentInputPin = savedKey;
+      updatePinMaskDisplay();
+      
+      const hintEl = document.getElementById('pinStatusHint');
+      if (hintEl) {
+        hintEl.innerText = savedKey ? "目前已設定密碼 (以 • 遮蔽保護)" : "尚未設定密碼，請輸入純數字 PIN 碼";
       }
+      document.getElementById('apiKeyPinModal')?.classList.remove('hidden');
+    }
+
+    function closeApiKeyPinModal() {
+      document.getElementById('apiKeyPinModal')?.classList.add('hidden');
+    }
+
+    function pressPinDigit(digit) {
+      if (currentInputPin.length >= 12) return; // 彈性支援 4 至 12 位
+      currentInputPin += digit;
+      updatePinMaskDisplay();
+    }
+
+    function backspacePinDigit() {
+      currentInputPin = currentInputPin.slice(0, -1);
+      updatePinMaskDisplay();
+    }
+
+    function clearPinInput() {
+      currentInputPin = "";
+      updatePinMaskDisplay();
+    }
+
+    function updatePinMaskDisplay() {
+      const displayEl = document.getElementById('pinDisplayMask');
+      if (!displayEl) return;
+      if (!currentInputPin) {
+        displayEl.innerText = "------";
+        displayEl.className = "h-12 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center tracking-[0.4em] text-2xl font-mono text-slate-700 font-black px-3 select-none";
+      } else {
+        displayEl.innerText = "•".repeat(currentInputPin.length);
+        displayEl.className = "h-12 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center tracking-[0.4em] text-2xl font-mono text-indigo-400 font-black px-3 select-none";
+      }
+    }
+
+    function savePinFromModal() {
+      const clean = currentInputPin.trim();
+      if (!clean) {
+        localStorage.removeItem('gym_api_key');
+        localStorage.removeItem('gym_historical_workouts_cache');
+        historicalWorkouts = {};
+        refreshActiveEquipmentList();
+        closeApiKeyPinModal();
+        alert("已清除密碼！");
+        return;
+      }
+
+      localStorage.setItem('gym_api_key', clean);
+      closeApiKeyPinModal();
+      alert("✅ 數字 PIN 碼已安全儲存！");
+
+      // 重新載入數據
+      fetchMachineSettingsFromSheets();
+      silentSyncGoogleSheetHistory();
     }
 
     // ==========================================
@@ -666,7 +784,6 @@
     let timelineEvents = [];
     let historicalWorkouts = {};
 
-    // 統一後端請求函式 (自動掛載 API Key)
     async function sendGasRequest(action, data = {}) {
       const curKey = getGymApiKey();
       if (!curKey) {
@@ -854,8 +971,6 @@
     // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
       initCurrentDate();
-      updateLiveClock();
-      setInterval(updateLiveClock, 1000);
 
       const cached = localStorage.getItem('gym_custom_machines_meta');
       if (cached) {
@@ -863,14 +978,24 @@
       }
 
       renderMuscleButtons();
+
+      // 【核心阻斷】：只有在已設定 API Key 時，才讀取本地歷史快取與執行背景同步
+      const hasKey = !!getGymApiKey();
+      if (hasKey) {
+        loadLocalHistoryToCache();
+        silentSyncGoogleSheetHistory();
+      } else {
+        historicalWorkouts = {};
+      }
+
       refreshActiveEquipmentList();
       renderCompletedMachinesList();
       renderWorkoutTimelineUI();
 
       restoreActiveSession();
-      fetchMachineSettingsFromSheets();
-      loadLocalHistoryToCache();
-      silentSyncGoogleSheetHistory();
+      if (hasKey) {
+        fetchMachineSettingsFromSheets();
+      }
 
       updateLogSetButtonState();
 
@@ -890,14 +1015,9 @@
       const dateEl = document.getElementById('displayDate');
       if (dateEl) dateEl.innerText = `${yyyy}-${mm}-${dd}`;
 
-      const days = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+      const days = ["日", "一", "二", "三", "四", "五", "六"];
       const dayEl = document.getElementById('displayDayName');
-      if (dayEl) dayEl.innerText = days[now.getDay()];
-    }
-
-    function updateLiveClock() {
-      const liveClockEl = document.getElementById('liveClock');
-      if (liveClockEl) liveClockEl.innerText = new Date().toTimeString().split(' ')[0];
+      if (dayEl) dayEl.innerText = `週${days[now.getDay()]}`;
     }
 
     async function fetchMachineSettingsFromSheets() {
@@ -1034,7 +1154,7 @@
       if (!machineName || isWorkoutEnded) return;
 
       if (isMachineActive && currentSelectedMachine && currentSelectedMachine !== machineName) {
-        if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) return;
+        if (!confirm(`⚠️️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) return;
         resetMachineTimerUI();
       }
 
@@ -1118,6 +1238,17 @@
       const dateBadge = document.getElementById('lastWorkoutDateBadge');
       const daysAgoText = document.getElementById('lastWorkoutDaysAgo');
       if (!name) return;
+
+      // 【核心阻斷】：若無 API Key，直接顯示未設定狀態，不展示任何舊資料
+      if (!getGymApiKey()) {
+        if (dateBadge) {
+          dateBadge.innerText = "未設定 Key";
+          dateBadge.className = "text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800";
+        }
+        if (daysAgoText) daysAgoText.innerText = "";
+        if (container) container.innerHTML = `<span class="text-slate-600 text-[11px] italic">點擊右上角 ⚙️ 設定 API Key 載入歷史數據</span>`;
+        return;
+      }
 
       const setting = customMachineSettings[name] || {};
       const targetId = setting.machine_id || "";
@@ -2205,6 +2336,14 @@
     }
 
     function initCalendarView() {
+      if (!getGymApiKey()) {
+        promptForApiKey();
+        if (!getGymApiKey()) {
+          switchView('tracker');
+          return;
+        }
+      }
+
       const yearSelect = document.getElementById('calYearSelect');
       const monthSelect = document.getElementById('calMonthSelect');
       const currentYear = new Date().getFullYear();
@@ -2371,6 +2510,11 @@
     }
 
     function loadLocalHistoryToCache() {
+      // 核心安全阻斷：若無 API Key，直接清空，絕不從 localStorage 讀取舊快取
+      if (!getGymApiKey()) {
+        historicalWorkouts = {};
+        return;
+      }
       const raw = localStorage.getItem('gym_historical_workouts_cache');
       if (raw) { try { historicalWorkouts = JSON.parse(raw); } catch(e){} }
       if (workoutLogs.length > 0) {
