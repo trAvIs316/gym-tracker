@@ -131,12 +131,12 @@
         </div>
       </section>
 
-      <!-- 3. 第 N 組操作面板 -->
+      <!-- 3. 第 N 組 / 第 N 段操作面板 -->
       <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <div class="font-bold text-base flex items-center gap-2">
-            <span>第 <span id="currentSetNum" class="text-indigo-400 text-lg">1</span> 組</span>
-            <span id="cardioModeTag" class="hidden text-[10px] font-bold bg-sky-950 text-sky-400 px-2 py-0.5 rounded border border-sky-800/40">帶氧強度模式</span>
+            <span id="currentSetLabelPrefix">第 <span id="currentSetNum" class="text-indigo-400 text-lg">1</span> 組</span>
+            <span id="cardioModeTag" class="hidden text-[10px] font-bold bg-sky-950 text-sky-400 px-2 py-0.5 rounded border border-sky-800/40">帶氧分段計時</span>
           </div>
           
           <div id="unitToggleTrack" class="relative w-20 h-7 bg-slate-950 rounded-full p-0.5 flex items-center cursor-pointer border border-slate-800 transition-opacity">
@@ -166,7 +166,7 @@
 
         <div class="grid grid-cols-12 gap-2.5 items-stretch pt-1">
           <div class="col-span-8 flex flex-col justify-between space-y-2.5">
-            <!-- 重訓控制 -->
+            <!-- 重訓重量次數控制盤 -->
             <div id="weightRepsControlsContainer" class="space-y-2.5">
               <div id="sideSelectorContainer" class="hidden p-2 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
                 <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
@@ -214,12 +214,17 @@
               </div>
             </div>
 
-            <!-- 帶氧速度/斜度專用控制盤 -->
+            <!-- 帶氧速度/斜度專用控制盤 (分段打點核心) -->
             <div id="cardioControlsContainer" class="hidden space-y-2.5">
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-sky-900/40 flex justify-between items-center text-xs">
+                <span class="text-slate-400 font-semibold">此分段時長:</span>
+                <span id="cardioSplitTimerDisplay" class="font-mono font-bold text-sky-300 text-sm">00:00</span>
+              </div>
+
               <div>
                 <div class="text-[11px] text-sky-400 mb-1 font-semibold flex justify-between">
                   <span>速度 / 檔位 (Speed / Level)</span>
-                  <span class="text-[10px] text-slate-500">km/h 或 階級</span>
+                  <span class="text-[10px] text-slate-500">km/h</span>
                 </div>
                 <div class="flex items-center gap-1">
                   <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepCardioValue('speed', -1)">-1.0</button>
@@ -233,7 +238,7 @@
               <div>
                 <div class="text-[11px] text-sky-400 mb-1 font-semibold flex justify-between">
                   <span>斜度 / 阻力 (Incline / Resistance)</span>
-                  <span class="text-[10px] text-slate-500">% 坡度或段位</span>
+                  <span class="text-[10px] text-slate-500">%</span>
                 </div>
                 <div class="flex items-center gap-1">
                   <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold text-slate-300" onclick="stepCardioValue('incline', -1)">-1.0</button>
@@ -253,7 +258,7 @@
 
           <div class="col-span-4 flex flex-col justify-between pl-1">
             <div class="text-center p-1.5 bg-slate-950 rounded-xl border border-slate-800 mb-2">
-              <span class="text-[10px] text-slate-400 block font-semibold">使用時間:</span>
+              <span class="text-[10px] text-slate-400 block font-semibold">此機總使用:</span>
               <span id="machineTimerDisplay" class="font-mono font-bold text-sky-400 text-base">00:00</span>
             </div>
 
@@ -306,7 +311,7 @@
   <div id="viewCalendarPage" class="hidden space-y-4">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-xl flex justify-between items-center">
       <button onclick="switchView('tracker')" class="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 active:scale-95 transition-all font-bold">
-        <span>⬅️️</span>
+        <span>⬅️</span>
         <span>返回 Tracker</span>
       </button>
 
@@ -357,7 +362,7 @@
     </section>
   </div>
 
-  <!-- 修改單組數據專用 Modal (修復卡死Bug，並支援速度與斜度修改) -->
+  <!-- 修改單組數據專用 Modal (即時關閉與回饋) -->
   <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
@@ -369,7 +374,7 @@
 
       <input type="hidden" id="editSetIndex">
 
-      <!-- 重訓模式下的修改欄位 -->
+      <!-- 重訓模式 -->
       <div id="editStrengthFields" class="space-y-3 text-xs">
         <div id="editSideGroup" class="hidden">
           <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
@@ -402,11 +407,11 @@
         </div>
       </div>
 
-      <!-- 帶氧模式下的修改時間/速度/斜度欄位 -->
+      <!-- 帶氧模式修改面板 -->
       <div id="editCardioFields" class="hidden space-y-3 text-xs">
         <div>
           <div class="flex justify-between items-center mb-1">
-            <label class="text-[11px] text-slate-400 font-semibold block">🏃 運動時間</label>
+            <label class="text-[11px] text-slate-400 font-semibold block">🏃 此段運動時間</label>
             <span id="editCardioTimeText" class="text-sky-400 font-mono font-bold text-xs">0 分 0 秒</span>
           </div>
           <div class="grid grid-cols-2 gap-2 pb-1.5">
@@ -433,7 +438,7 @@
             <input type="number" id="editCardioSpeedInput" step="0.1" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500">
           </div>
           <div>
-            <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">斜度 / 阻力</label>
+            <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">斜度 / 阻力 (%)</label>
             <input type="number" id="editCardioInclineInput" step="0.5" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500">
           </div>
         </div>
@@ -446,7 +451,7 @@
     </div>
   </div>
 
-  <!-- 器材設定與拍照 Modal (加入預設速度與斜度) -->
+  <!-- 器材設定與拍照 Modal -->
   <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -582,7 +587,7 @@
       GAS_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbzCG1aWVi4tOSzcebh-dklZFgqsiuqlm6SrqSAKPI6tdPVdmKjpu79qj-gxK47OpdAxHg/exec",
       DEFAULT_WEIGHT_KG: 20,
       DEFAULT_REPS: 10,
-      USER_WEIGHT_KG: 70 // 用於帶氧卡路里計算
+      USER_WEIGHT_KG: 70
     };
 
     const ACTIVE_SESSION_KEY = 'gym_active_workout_session';
@@ -619,12 +624,10 @@
       if (muscle === "帶氧") return true;
       if (!name) return false;
       const lower = name.toLowerCase();
-      const cardioKeywords = ["跑", "樓梯", "划船", "單車", "車", "橢圓", "跳繩", "踏步", "treadmill", "stair", "bike", "row", "cardio", "機"];
-      if (muscle === "帶氧") return true;
       return ["跑", "樓梯", "划船", "單車", "踏步", "treadmill", "stair", "bike", "cardio"].some(k => lower.includes(k));
     }
 
-    // ACSM 帶氧消耗卡路里估算公式 (kcal)
+    // ACSM 運動卡路里估算公式 (kcal)
     function calculateCardioCalories(speedKmh, inclinePct, durationSec, userWeightKg = CONFIG.USER_WEIGHT_KG) {
       if (!durationSec || durationSec <= 0) return 0;
       const speed = Math.max(0, parseFloat(speedKmh) || 0);
@@ -632,14 +635,9 @@
       const speedMMin = speed * (1000 / 60);
       const durationMin = durationSec / 60;
       
-      let vo2 = 0;
-      if (speed <= 6.0) {
-        // 步行/踏步公式
-        vo2 = (0.1 * speedMMin) + (1.8 * speedMMin * incline) + 3.5;
-      } else {
-        // 慢跑/跑步公式
-        vo2 = (0.2 * speedMMin) + (0.9 * speedMMin * incline) + 3.5;
-      }
+      let vo2 = (speed <= 6.0) 
+        ? ((0.1 * speedMMin) + (1.8 * speedMMin * incline) + 3.5)
+        : ((0.2 * speedMMin) + (0.9 * speedMMin * incline) + 3.5);
       
       const calories = (vo2 * userWeightKg / 1000) * 5 * durationMin;
       return Math.round(calories);
@@ -702,7 +700,7 @@
       } else {
         btn.disabled = false;
         btn.className = "w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5";
-        text.innerText = isCardio ? "記錄此段帶氧 (Log Cardio)" : "記錄此組 (Log Set)";
+        text.innerText = isCardio ? "🏃 記錄此段並換速 (Log Split)" : "記錄此組 (Log Set)";
       }
     }
 
@@ -785,6 +783,7 @@
             btnToggleMachineText.innerText = "結束此機";
             btnToggleMachine.className = "flex-1 w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px] animate-pulse";
             updateMachineTimerDisplay();
+            clearInterval(machineTimerInterval);
             machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
           }
 
@@ -984,8 +983,7 @@
     }
 
     function selectMachine(machineName) {
-      if (!machineName) return;
-      if (isWorkoutEnded) return;
+      if (!machineName || isWorkoutEnded) return;
 
       if (isMachineActive && currentSelectedMachine && currentSelectedMachine !== machineName) {
         if (!confirm(`⚠️ 當前「${currentSelectedMachine}」正在計時中！切換將會中斷當前計時。是否確定切換？`)) {
@@ -1048,6 +1046,11 @@
       const completedSets = machineProgress[machineName] || 0;
       const setEl = document.getElementById('currentSetNum');
       if (setEl) setEl.innerText = completedSets + 1;
+
+      const prefixEl = document.getElementById('currentSetLabelPrefix');
+      if (prefixEl) {
+        prefixEl.innerHTML = `第 <span id="currentSetNum" class="text-indigo-400 text-lg">${completedSets + 1}</span> ${isCardio ? '段' : '組'}`;
+      }
 
       loadMachineHistory(machineName);
       updateLogSetButtonState();
@@ -1385,7 +1388,7 @@
 
       if (!machineName) return;
 
-      const confirmMsg = `⚠️️ 確定要徹底刪除器材「${machineName}」(${machineId}) 嗎？`;
+      const confirmMsg = `⚠️ 確定要徹底刪除器材「${machineName}」(${machineId}) 嗎？`;
       if (!confirm(confirmMsg)) return;
 
       delete customMachineSettings[machineName];
@@ -1516,6 +1519,15 @@
       const s = String(diffSec % 60).padStart(2, '0');
       const timerEl = document.getElementById('machineTimerDisplay');
       if (timerEl) timerEl.innerText = `${m}:${s}`;
+
+      // 若為帶氧模式，同步更新該分段的即時計時
+      const splitEl = document.getElementById('cardioSplitTimerDisplay');
+      if (splitEl) {
+        let splitSec = currentSetStartEpoch ? Math.floor((Date.now() - currentSetStartEpoch) / 1000) : diffSec;
+        const sm = String(Math.floor(splitSec / 60)).padStart(2, '0');
+        const ss = String(splitSec % 60).padStart(2, '0');
+        splitEl.innerText = `${sm}:${ss}`;
+      }
     }
 
     function startWorkoutTimerLoop() {
@@ -1663,7 +1675,7 @@
     }
 
     // ==========================================
-    // 8. 此機使用時間
+    // 8. 此機使用時間 (結束此機)
     // ==========================================
     const btnToggleMachine = document.getElementById('btnToggleMachine');
     const btnToggleMachineText = document.getElementById('btnToggleMachineText');
@@ -1687,6 +1699,7 @@
       }
 
       const nowTime = new Date().toTimeString().split(' ')[0];
+      const isCardio = isCardioEquipment(currentSelectedMachine, currentMuscleGroup);
 
       if (!isMachineActive) {
         isMachineActive = true;
@@ -1704,6 +1717,16 @@
         clearInterval(machineTimerInterval);
         machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
+        // 如果是帶氧，且有正在進行中的分段尚未保存，提示使用者
+        if (isCardio && currentSetStartEpoch) {
+          const splitSec = Math.floor((Date.now() - currentSetStartEpoch) / 1000);
+          if (splitSec >= 10) {
+            if (confirm(`檢測到當前分段已進行 ${splitSec} 秒，是否先將此段記錄存檔？`)) {
+              document.getElementById('btnLogSet').click();
+            }
+          }
+        }
+
         clearInterval(machineTimerInterval);
         isMachineActive = false;
         const totalMachineSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
@@ -1736,13 +1759,16 @@
       lastSetLogEpoch = null;
       setBreathingOverlay('off');
       document.getElementById('machineTimerDisplay').innerText = "00:00";
+      const splitEl = document.getElementById('cardioSplitTimerDisplay');
+      if (splitEl) splitEl.innerText = "00:00";
+
       btnToggleMachineText.innerText = "開始此機";
       btnToggleMachine.className = "flex-1 w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px]";
       updateLogSetButtonState();
     }
 
     // ==========================================
-    // 9. 記錄此組 (Log Set) - 帶氧真實計算速度/斜度/卡路里
+    // 9. 記錄此組 / 分段打點 (Log Set / Split)
     // ==========================================
     document.getElementById('btnLogSet').addEventListener('click', () => {
       if (isWorkoutEnded) return;
@@ -1791,12 +1817,16 @@
           incline: incline,
           calories: calories,
           set_duration_sec: setDurationSec,
-          rest_duration_sec: restDurationSec,
+          rest_duration_sec: 0,
           machine_duration_sec: machineSec
         };
 
         const durStr = setDurationSec >= 60 ? `${Math.floor(setDurationSec/60)}分${setDurationSec%60}秒` : `${setDurationSec}秒`;
-        addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNumberBeingSaved}段: ${durStr} | 速度:${speed} 斜度:${incline}% (約消粍 ${calories} kcal)`);
+        addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNumberBeingSaved}段: ${durStr} | 速:${speed} 斜:${incline}% (約消粍 ${calories} kcal)`);
+
+        // 【關鍵分段重置】：總機器計時不停，但當前段落秒數歸零重新起算
+        currentSetStartEpoch = Date.now();
+        lastSetLogEpoch = null;
       } else {
         const w = parseFloat(document.getElementById('inputWeight').value) || 0;
         const r = parseInt(document.getElementById('inputReps').value, 10) || 0;
@@ -1836,13 +1866,13 @@
         if (setting.is_unilateral) {
           selectSide(actualSide === 'L' ? 'R' : 'L');
         }
+
+        lastSetLogEpoch = Date.now();
+        currentSetStartEpoch = null;
       }
 
       workoutLogs.push(singleLog);
       machineProgress[currentSelectedMachine] = setNumberBeingSaved;
-
-      lastSetLogEpoch = Date.now();
-      currentSetStartEpoch = null;
       setBreathingOverlay('off');
 
       persistActiveSession();
@@ -1861,7 +1891,7 @@
     });
 
     // ==========================================
-    // 10. 修改與刪除組數 (核心Bug修復：確保UI即時關閉並回饋)
+    // 10. 修改與刪除組數 (非同步背景更新，視窗即時關閉)
     // ==========================================
     let editingSideTemp = "Both";
 
@@ -1888,7 +1918,7 @@
                        item.unit === "--" || 
                        (Number(item.weight) === 0 && Number(item.reps) === 0);
 
-      const titlePrefix = isCardio ? "修改帶氧記錄" : "修改組數記錄";
+      const titlePrefix = isCardio ? "修改帶氧分段記錄" : "修改組數記錄";
       document.getElementById('editSetModalTitle').innerText = `${titlePrefix}: ${item.exercise_name} (第 ${item.set_num} ${isCardio ? '段' : '組'})`;
 
       const strengthFields = document.getElementById('editStrengthFields');
@@ -1906,8 +1936,8 @@
         document.getElementById('editCardioSecondsInput').value = secs;
         document.getElementById('editCardioTimeText').innerText = `${mins} 分 ${secs} 秒`;
 
-        document.getElementById('editCardioSpeedInput').value = item.speed || 6.0;
-        document.getElementById('editCardioInclineInput').value = item.incline || 0.0;
+        document.getElementById('editCardioSpeedInput').value = item.speed !== undefined ? item.speed : 6.0;
+        document.getElementById('editCardioInclineInput').value = item.incline !== undefined ? item.incline : 0.0;
 
         document.getElementById('editCardioMinutesInput').oninput = updateCardioEditText;
         document.getElementById('editCardioSecondsInput').oninput = updateCardioEditText;
@@ -1969,7 +1999,6 @@
       }
     }
 
-    // 【關鍵修復】本地先行完成更新與關閉視窗，再背景同步 Google Sheets
     function saveEditSetModal() {
       const idx = parseInt(document.getElementById('editSetIndex').value, 10);
       const item = workoutLogs[idx];
@@ -2014,7 +2043,7 @@
         }
       }
 
-      // 1. 本地更新及關閉 Modal
+      // 1. 本地更新與立即關閉視窗 (解決按鈕卡住問題)
       renderCompletedMachinesList();
       const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
       if (historicalWorkouts[todayStr]) {
@@ -2024,7 +2053,7 @@
       persistActiveSession();
       closeEditSetModal();
 
-      // 2. 背景同步至 Google Sheets (Fire-and-forget，避免卡死)
+      // 2. 非同步背景同步至 Google Sheets
       fetch(CONFIG.GAS_WEBAPP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2032,7 +2061,6 @@
       }).catch(e => console.warn("背景同步更新異常:", e));
     }
 
-    // 【關鍵修復】刪除組數本地先行更新並關閉
     function deleteSetFromModal() {
       const idx = parseInt(document.getElementById('editSetIndex').value, 10);
       const item = workoutLogs[idx];
@@ -2077,7 +2105,6 @@
       persistActiveSession();
       closeEditSetModal();
 
-      // 背景發送刪除命令
       fetch(CONFIG.GAS_WEBAPP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2154,6 +2181,7 @@
       }
     }
 
+    // 渲染今日已完成清單 (含帶氧加權均速與總結算)
     function renderCompletedMachinesList() {
       const container = document.getElementById('completedMachinesList');
       const badge = document.getElementById('completedCountBadge');
@@ -2173,13 +2201,51 @@
 
       container.innerHTML = completedNames.map(name => {
         const setsCount = machineProgress[name];
+        const thisMachineLogs = workoutLogs.filter(l => l.exercise_name === name);
+        const isCardio = isCardioEquipment(name, thisMachineLogs[0] ? thisMachineLogs[0].muscle_group : "");
+
+        let headerSummaryHtml = "";
+
+        if (isCardio) {
+          let totalSec = 0;
+          let totalCal = 0;
+          let weightedSpeedSum = 0;
+          let weightedInclineSum = 0;
+
+          thisMachineLogs.forEach(l => {
+            const sec = l.set_duration_sec || 0;
+            totalSec += sec;
+            totalCal += (l.calories || 0);
+            weightedSpeedSum += ((l.speed || 0) * sec);
+            weightedInclineSum += ((l.incline || 0) * sec);
+          });
+
+          const avgSpeed = totalSec > 0 ? (weightedSpeedSum / totalSec).toFixed(1) : "0.0";
+          const avgIncline = totalSec > 0 ? (weightedInclineSum / totalSec).toFixed(1) : "0.0";
+          const m = Math.floor(totalSec / 60);
+          const s = totalSec % 60;
+          const totalDurStr = `${m}分${s}秒`;
+
+          headerSummaryHtml = `
+            <div class="text-[11px] font-mono text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/40 font-semibold flex items-center gap-1.5">
+              <span>共${setsCount}段 (${totalDurStr})</span>
+              <span>•</span>
+              <span>均速 ${avgSpeed}</span>
+              <span>•</span>
+              <span class="text-amber-400">🔥${totalCal}kcal</span>
+            </div>
+          `;
+        } else {
+          headerSummaryHtml = `
+            <span class="text-emerald-400 font-mono font-bold text-xs bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+              ✅ 已做 ${setsCount} 組
+            </span>
+          `;
+        }
         
         const setsPillsHtml = workoutLogs
           .map((l, globalIdx) => {
             if (l.exercise_name !== name) return null;
-            const isCardio = isCardioEquipment(l.exercise_name, l.muscle_group) || 
-                             l.unit === "--" || 
-                             (Number(l.weight) === 0 && Number(l.reps) === 0);
             const sideLabel = (l.side === "L") ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '');
             
             let label = "";
@@ -2189,7 +2255,8 @@
               const s = dur % 60;
               const spd = l.speed ? `速${l.speed}` : '';
               const inc = l.incline ? `斜${l.incline}%` : '';
-              label = `段${l.set_num}: <b>${m > 0 ? m + '分' : ''}${s}秒</b> <span class="text-[10px] text-sky-400">(${[spd, inc].filter(Boolean).join(' ')})</span>`;
+              const cal = l.calories ? `🔥${l.calories}` : '';
+              label = `段${l.set_num}: <b>${m > 0 ? m + '分' : ''}${s}秒</b> <span class="text-[10px] text-sky-400">(${[spd, inc, cal].filter(Boolean).join(' ')})</span>`;
             } else {
               label = `第${l.set_num}組: ${sideLabel} <b>${l.weight}${l.unit}×${l.reps}</b>`;
             }
@@ -2206,12 +2273,10 @@
           .join('');
 
         return `
-          <li class="p-3 rounded-xl bg-slate-950 border border-emerald-500/30 text-xs space-y-2 transition-all">
-            <div class="flex justify-between items-center">
+          <li class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2 transition-all">
+            <div class="flex justify-between items-center flex-wrap gap-1">
               <span class="text-slate-200 font-bold">${name}</span>
-              <span class="text-emerald-400 font-mono font-bold text-xs bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
-                ✅ 已做 ${setsCount} ${isCardioEquipment(name, "") ? '段' : '組'}
-              </span>
+              ${headerSummaryHtml}
             </div>
             <div class="flex flex-wrap gap-1.5 pt-0.5">
               ${setsPillsHtml}
@@ -2373,9 +2438,9 @@
       });
     }
 
-    // =========================================================================
+    // ==========================================
     // 14. 歷史日曆系統
-    // =========================================================================
+    // ==========================================
     let calendarSelectedYear = new Date().getFullYear();
     let calendarSelectedMonth = new Date().getMonth();
     let calendarActiveSelectedDate = "";
@@ -2509,10 +2574,9 @@
         Object.values(machineDict).forEach(sets => totalSetsInMuscle += sets.length);
 
         const machinesHtml = Object.entries(machineDict).map(([mName, sets]) => {
+          const isCardio = isCardioEquipment(mName, muscleName);
+
           const setRowsHtml = sets.map((s, idx) => {
-            const isCardio = isCardioEquipment(s.exercise_name, s.muscle_group) || 
-                             s.unit === "--" || 
-                             (Number(s.weight) === 0 && Number(s.reps) === 0);
             const sideTag = (s.side === "L") ? '<span class="text-amber-400 mr-1 font-bold">[左手 L]</span>' : (s.side === "R" ? '<span class="text-amber-400 mr-1 font-bold">[右手 R]</span>' : '');
             
             let displayVal = "";
@@ -2553,7 +2617,7 @@
                   <span>🏋️</span> ${mName}
                 </span>
                 <span class="text-indigo-400 font-mono text-[11px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
-                  ${sets.length} ${isCardioEquipment(mName, "") ? '段' : '組'}
+                  ${sets.length} ${isCardio ? '段' : '組'}
                 </span>
               </div>
               <div class="space-y-0.5">
