@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AI Gym Tracker Pro</title>
+
+  <!-- Content Security Policy 強化 -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+    style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+    img-src 'self' data: https://lh3.googleusercontent.com;
+    connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.trycloudflare.com;
+  ">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -54,10 +64,15 @@
           </span>
         </div>
 
-        <button onclick="switchView('calendar')" class="flex items-center gap-1 text-xs text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-900 px-3 py-2 rounded-xl border border-indigo-700/50 active:scale-95 transition-all font-bold">
-          <span>📅</span>
-          <span>歷史日曆</span>
-        </button>
+        <div class="flex items-center gap-1.5">
+          <button onclick="switchView('calendar')" class="flex items-center gap-1 text-xs text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-900 px-3 py-2 rounded-xl border border-indigo-700/50 active:scale-95 transition-all font-bold">
+            <span>📅</span>
+            <span>歷史日曆</span>
+          </button>
+          <button onclick="promptForApiKey()" title="設定 API Key" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all">
+            ⚙️
+          </button>
+        </div>
 
         <div class="text-right">
           <span class="text-[10px] text-slate-500 uppercase tracking-wider block">訓練時間</span>
@@ -388,7 +403,7 @@
             <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" onclick="stepEditValue('reps', -1)">-1</button>
             <input type="number" id="editSetRepsInput" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500">
             <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 1)">+1</button>
-            <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 5)">+5</button>
+            <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 5)">+5</button>
           </div>
         </div>
       </div>
@@ -563,7 +578,52 @@
 
   <script>
     // ==========================================
-    // 1. 環境設定與全域狀態 (簡潔瘦身版)
+    // 0. 安全金鑰生命週期與 XSS 防護
+    // ==========================================
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // 1. 唯有在 URL 真實帶有 ?key= 時才主動更新，徹底杜絕空值覆蓋
+    (function initApiKeyFromUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const k = params.get('key');
+        if (k && k.trim() !== "") {
+          localStorage.setItem('gym_api_key', k.trim());
+          const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      } catch (_) {}
+    })();
+
+    // 2. 永遠以 localStorage 內的值為唯一基準
+    function getGymApiKey() {
+      return (localStorage.getItem('gym_api_key') || "").trim();
+    }
+
+    function promptForApiKey() {
+      const current = getGymApiKey();
+      const input = prompt("請輸入 Gym-Tracker 的 API 存取金鑰 (輸入後將永久記住於此設備):", current);
+      if (input !== null) {
+        const clean = input.trim();
+        if (clean) {
+          localStorage.setItem('gym_api_key', clean);
+          alert("✅ API Key 已安全儲存於此設備！");
+          fetchMachineSettingsFromSheets();
+          silentSyncGoogleSheetHistory();
+        }
+      }
+    }
+
+    // ==========================================
+    // 1. 環境設定與全域狀態
     // ==========================================
     const CONFIG = {
       N8N_TUNNEL_URL: "https://example-random-subdomain.trycloudflare.com/webhook",
@@ -606,7 +666,33 @@
     let timelineEvents = [];
     let historicalWorkouts = {};
 
-    // 整合為單一帶氧辨識函式
+    // 統一後端請求函式 (自動掛載 API Key)
+    async function sendGasRequest(action, data = {}) {
+      const curKey = getGymApiKey();
+      if (!curKey) {
+        promptForApiKey();
+        return { status: "error", message: "Missing API Key" };
+      }
+
+      try {
+        const payload = {
+          action: action,
+          apiKey: curKey,
+          data: data
+        };
+
+        const res = await fetch(CONFIG.GAS_WEBAPP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        return await res.json();
+      } catch (err) {
+        console.warn("GAS 請求失敗:", err);
+        return { status: "error", message: err.toString() };
+      }
+    }
+
     function isCardioEquipment(name, muscle, item = null) {
       if (item && (item.unit === "--" || (Number(item.weight) === 0 && Number(item.reps) === 0 && item.speed !== undefined))) return true;
       if (muscle === "帶氧") return true;
@@ -815,8 +901,11 @@
     }
 
     async function fetchMachineSettingsFromSheets() {
+      const curKey = getGymApiKey();
+      if (!curKey) return;
+
       try {
-        const res = await fetch(CONFIG.GAS_WEBAPP_URL);
+        const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?apiKey=${encodeURIComponent(curKey)}`);
         const data = await res.json();
         if (data.status === "success" && data.machines && data.machines.length > 0) {
           data.machines.forEach(m => {
@@ -920,18 +1009,19 @@
       slider.innerHTML = machines.map(name => {
         const setting = customMachineSettings[name] || {};
         const hasImg = setting.image_url && setting.image_url.length > 10;
+        const safeName = escapeHtml(name);
 
         return `
           <div class="machine-card relative flex-shrink-0 w-44 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer transition-all active:scale-95"
                id="card-${encodeURIComponent(name)}"
                onclick="selectMachine('${name.replace(/'/g, "\\'")}')">
             <div class="w-full h-32 bg-slate-900/90 flex items-center justify-center overflow-hidden border-b border-slate-800 p-1">
-              ${hasImg ? `<img src="${setting.image_url}" class="w-full h-full object-contain rounded-lg">` : `<span class="text-3xl">🏋️️</span>`}
+              ${hasImg ? `<img src="${escapeHtml(setting.image_url)}" class="w-full h-full object-contain rounded-lg">` : `<span class="text-3xl">🏋</span>`}
             </div>
             <div class="p-2 text-center">
-              <div class="text-xs font-bold text-slate-200 truncate">${name}</div>
+              <div class="text-xs font-bold text-slate-200 truncate">${safeName}</div>
               <div class="flex items-center justify-center gap-1 mt-1">
-                ${setting.machine_id ? `<span class="text-[9px] font-mono text-indigo-400 bg-indigo-950/80 px-1 rounded border border-indigo-800/40">${setting.machine_id}</span>` : ''}
+                ${setting.machine_id ? `<span class="text-[9px] font-mono text-indigo-400 bg-indigo-950/80 px-1 rounded border border-indigo-800/40">${escapeHtml(setting.machine_id)}</span>` : ''}
                 ${setting.is_unilateral ? `<span class="text-[9px] font-bold text-amber-400 bg-amber-950/60 px-1 rounded border border-amber-800/40">單手</span>` : ''}
               </div>
             </div>
@@ -1093,7 +1183,7 @@
               <div class="inline-flex items-center gap-2 bg-slate-900 border border-sky-900/50 px-2.5 py-1 rounded-lg font-mono text-xs shadow-sm">
                 <span class="text-slate-400 font-semibold">第 ${setNum} 段:</span>
                 <span class="text-sky-300 font-bold">${m > 0 ? m + '分' : ''}${sec}秒</span>
-                <span class="text-sky-400/80 text-[11px]">${extra}</span>
+                <span class="text-sky-400/80 text-[11px]">${escapeHtml(extra)}</span>
               </div>
             `;
           } else {
@@ -1101,9 +1191,9 @@
             return `
               <div class="inline-flex items-center gap-2 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg font-mono text-xs shadow-sm">
                 <span class="text-slate-400 font-semibold">${sideTag}第 ${setNum} 組:</span>
-                <span class="text-amber-300 font-bold">${s.weight} ${s.unit || 'KG'}</span>
+                <span class="text-amber-300 font-bold">${Number(s.weight)} ${escapeHtml(s.unit || 'KG')}</span>
                 <span class="text-slate-500">×</span>
-                <span class="text-white font-bold">${s.reps} 下</span>
+                <span class="text-white font-bold">${Number(s.reps)} 下</span>
               </div>
             `;
           }
@@ -1129,14 +1219,14 @@
       if (!details) return;
 
       details.innerHTML = isCardio ? `
-        <span>🏃 預設速度: <b class="text-sky-300">${setting.default_speed || '6.0'} km/h</b></span>
-        <span>📈 預設斜度: <b class="text-sky-300">${setting.default_incline || '0.0'} %</b></span>
-        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${setting.notes || '無'}</b></span>
+        <span>🏃 預設速度: <b class="text-sky-300">${escapeHtml(setting.default_speed || '6.0')} km/h</b></span>
+        <span>📈 預設斜度: <b class="text-sky-300">${escapeHtml(setting.default_incline || '0.0')} %</b></span>
+        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${escapeHtml(setting.notes || '無')}</b></span>
       ` : `
-        <span>💺 坐位: <b class="text-slate-200">${setting.seat || '未設定'}</b></span>
-        <span>↔️ 扶手: <b class="text-slate-200">${setting.handle || '未設定'}</b></span>
-        <span>📐 角度: <b class="text-slate-200">${setting.backrest || '未設定'}</b></span>
-        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${setting.notes || '無'}</b></span>
+        <span>💺 坐位: <b class="text-slate-200">${escapeHtml(setting.seat || '未設定')}</b></span>
+        <span>↔️ 扶手: <b class="text-slate-200">${escapeHtml(setting.handle || '未設定')}</b></span>
+        <span>📐 角度: <b class="text-slate-200">${escapeHtml(setting.backrest || '未設定')}</b></span>
+        <span class="text-slate-400">📝 備註: <b class="text-slate-300">${escapeHtml(setting.notes || '無')}</b></span>
       `;
     }
 
@@ -1279,11 +1369,7 @@
       refreshActiveEquipmentList();
       closeMachineSettingModal();
 
-      fetch(CONFIG.GAS_WEBAPP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "deleteMachineSetting", data: { machine_id: machineId, machine_name: machineName } })
-      }).catch(e => console.warn(e));
+      sendGasRequest("deleteMachineSetting", { machine_id: machineId, machine_name: machineName });
     }
 
     async function saveMachineSettingsFromModal() {
@@ -1320,21 +1406,12 @@
         image_url: tempModalImgBase64.startsWith('http') ? tempModalImgBase64 : ""
       };
 
-      try {
-        const response = await fetch(CONFIG.GAS_WEBAPP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "saveMachineSetting", data: payload })
-        });
-        const resJson = await response.json();
-        if (resJson.status === "success") {
-          if (resJson.image_url) customMachineSettings[machineName].image_url = resJson.image_url;
-          if (resJson.machine_id) customMachineSettings[machineName].machine_id = resJson.machine_id;
-          localStorage.setItem('gym_custom_machines_meta', JSON.stringify(customMachineSettings));
-          refreshActiveEquipmentList();
-        }
-      } catch (err) {
-        console.warn("同步出錯:", err);
+      const res = await sendGasRequest("saveMachineSetting", payload);
+      if (res && res.status === "success") {
+        if (res.image_url) customMachineSettings[machineName].image_url = res.image_url;
+        if (res.machine_id) customMachineSettings[machineName].machine_id = res.machine_id;
+        localStorage.setItem('gym_custom_machines_meta', JSON.stringify(customMachineSettings));
+        refreshActiveEquipmentList();
       }
     }
 
@@ -1406,11 +1483,11 @@
         addTimelineEntry(`🟢 ${nowTime} 開始訓練`);
         persistActiveSession();
 
-        fetch(CONFIG.GAS_WEBAPP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "logStartTime", data: { date: document.getElementById('displayDate').innerText, start_time: nowTime, muscle_group: currentMuscleGroup } })
-        }).catch(e => console.warn(e));
+        sendGasRequest("logStartTime", {
+          date: document.getElementById('displayDate').innerText,
+          start_time: nowTime,
+          muscle_group: currentMuscleGroup
+        });
       }
     });
 
@@ -1513,7 +1590,7 @@
     }
 
     // ==========================================
-    // 8. 此機操作 (Lazy Commit 時間線)
+    // 8. 此機操作
     // ==========================================
     const btnToggleMachine = document.getElementById('btnToggleMachine');
     const btnToggleMachineText = document.getElementById('btnToggleMachineText');
@@ -1546,7 +1623,6 @@
       } else {
         const totalMachineSec = Math.floor((Date.now() - machineStartEpoch) / 1000);
 
-        // 帶氧自動儲存
         if (isCardio) {
           const splitSec = currentSetStartEpoch ? Math.floor((Date.now() - currentSetStartEpoch) / 1000) : totalMachineSec;
           if (splitSec >= 5) autoLogCardioSplit(splitSec);
@@ -1612,11 +1688,7 @@
       const durStr = durationSec >= 60 ? `${Math.floor(durationSec/60)}分${durationSec%60}秒` : `${durationSec}秒`;
       addTimelineEntry(`🏃 ${nowTime} ${currentSelectedMachine} 第${setNum}段: ${durStr} | 速:${speed} 斜:${incline}% (約消粍 ${calories} kcal)`);
 
-      fetch(CONFIG.GAS_WEBAPP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "saveSingleSet", data: singleLog })
-      }).catch(e => console.warn(e));
+      sendGasRequest("saveSingleSet", singleLog);
 
       document.getElementById('currentSetNum').innerText = setNum + 1;
       renderCompletedMachinesList();
@@ -1644,7 +1716,7 @@
     }
 
     // ==========================================
-    // 9. 記錄組數 (瘦身整合 Base Object)
+    // 9. 記錄組數
     // ==========================================
     document.getElementById('btnLogSet')?.addEventListener('click', () => {
       if (isWorkoutEnded || !isWorkoutStarted || isWorkoutPaused || !isMachineActive || !currentSelectedMachine) return;
@@ -1714,11 +1786,7 @@
       setBreathingOverlay('off');
       persistActiveSession();
 
-      fetch(CONFIG.GAS_WEBAPP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "saveSingleSet", data: singleLog })
-      }).catch(e => console.warn(e));
+      sendGasRequest("saveSingleSet", singleLog);
 
       document.getElementById('currentSetNum').innerText = setNum + 1;
       renderCompletedMachinesList();
@@ -1726,7 +1794,7 @@
     });
 
     // ==========================================
-    // 10. 修改與刪除組數 (非同步背景同步)
+    // 10. 修改與刪除組數
     // ==========================================
     let editingSideTemp = "Both";
 
@@ -1838,11 +1906,7 @@
       persistActiveSession();
       closeEditSetModal();
 
-      fetch(CONFIG.GAS_WEBAPP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "updateSingleSet", data: item })
-      }).catch(e => console.warn(e));
+      sendGasRequest("updateSingleSet", item);
     }
 
     function deleteSetFromModal() {
@@ -1876,11 +1940,7 @@
       persistActiveSession();
       closeEditSetModal();
 
-      fetch(CONFIG.GAS_WEBAPP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "deleteSingleSet", data: deletedItem })
-      }).catch(e => console.warn(e));
+      sendGasRequest("deleteSingleSet", deletedItem);
     }
 
     // ==========================================
@@ -1904,7 +1964,7 @@
         else if (evt.includes("開始此機")) colorClass = "text-indigo-400 font-semibold";
         else if (evt.includes("結束此機")) colorClass = "text-rose-400";
         else if (evt.includes("帶氧") || evt.includes("速:")) colorClass = "text-sky-400 font-medium";
-        return `<div class="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 ${colorClass}">${evt}</div>`;
+        return `<div class="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 ${colorClass}">${escapeHtml(evt)}</div>`;
       }).join('');
       container.scrollTop = container.scrollHeight;
     }
@@ -1946,6 +2006,7 @@
         const setsCount = machineProgress[name];
         const thisLogs = workoutLogs.filter(l => l.exercise_name === name);
         const isCardio = isCardioEquipment(name, thisLogs[0]?.muscle_group, thisLogs[0]);
+        const safeName = escapeHtml(name);
 
         let headerSummary = "";
         if (isCardio) {
@@ -1972,8 +2033,8 @@
           const isC = isCardioEquipment(l.exercise_name, l.muscle_group, l);
           const dur = l.set_duration_sec || l.duration_sec || 0;
           const label = isC 
-            ? `段${l.set_num}: <b>${Math.floor(dur/60) > 0 ? Math.floor(dur/60) + '分' : ''}${dur%60}秒</b> <span class="text-[10px] text-sky-400">(${[l.speed?`速${l.speed}`:'', l.incline?`斜${l.incline}%`:'', l.calories?`🔥${l.calories}`:''].filter(Boolean).join(' ')})</span>`
-            : `第${l.set_num}組: ${l.side === "L" ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '')} <b>${l.weight}${l.unit}×${l.reps}</b>`;
+            ? `段${l.set_num}: <b>${Math.floor(dur/60) > 0 ? Math.floor(dur/60) + '分' : ''}${dur%60}秒</b> <span class="text-[10px] text-sky-400">(${escapeHtml([l.speed?`速${l.speed}`:'', l.incline?`斜${l.incline}%`:'', l.calories?`🔥${l.calories}`:''].filter(Boolean).join(' '))})</span>`
+            : `第${l.set_num}組: ${l.side === "L" ? '<span class="text-amber-400">L</span>' : (l.side === "R" ? '<span class="text-amber-400">R</span>' : '')} <b>${Number(l.weight)}${escapeHtml(l.unit)}×${Number(l.reps)}</b>`;
 
           return `
             <button type="button" onclick="openEditSetModal(${idx})" 
@@ -1987,7 +2048,7 @@
         return `
           <li class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2 transition-all">
             <div class="flex justify-between items-center flex-wrap gap-1">
-              <span class="text-slate-200 font-bold">${name}</span>
+              <span class="text-slate-200 font-bold">${safeName}</span>
               ${headerSummary}
             </div>
             <div class="flex flex-wrap gap-1.5 pt-0.5">${pills}</div>
@@ -2048,18 +2109,14 @@
 
       clearActiveSession();
 
-      try {
-        await fetch(CONFIG.GAS_WEBAPP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "finishWorkout", data: summaryPayload })
-        });
+      const res = await sendGasRequest("finishWorkout", summaryPayload);
+      if (res && res.status === "success") {
         saveWorkoutToLocalHistory(summaryPayload);
         finishBtnText.innerText = "✅ 已結束訓練";
         alert("✅ 訓練數據及時間線已成功歸檔至 Google Sheet！");
-      } catch (err) {
+      } else {
         finishBtnText.innerText = "已結束 (離線)";
-        alert("已送出儲存請求，請確認 Google Sheet 連線。");
+        alert("已送出儲存請求，請確認網路與 API Key 設定。");
       }
     });
 
@@ -2087,11 +2144,7 @@
         });
         const result = await res.json();
         const advice = result.ai_advice || "今日動作完成良好，強度與節奏掌握穩定！";
-        fetch(CONFIG.GAS_WEBAPP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "saveAiAdvice", data: { ai_advice: advice } })
-        }).catch(e => console.warn(e));
+        sendGasRequest("saveAiAdvice", { ai_advice: advice });
         showAiModal(advice);
       } catch (err) {
         showAiModal("無法連線至家中 Local AI，請檢查 Cloudflare Tunnel 及 n8n 是否運作中。");
@@ -2110,7 +2163,6 @@
       document.getElementById('aiModalOverlay')?.classList.add('hidden');
     }
 
-    // 記憶體動態建立 Canvas 壓縮相片，不佔用 DOM 空間
     function compressImageToBase64(file, maxDimension, quality) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -2242,16 +2294,18 @@
       const muscleGroupsHtml = Object.entries(muscleGroups).map(([muscleName, machineDict]) => {
         let totalSets = 0;
         Object.values(machineDict).forEach(sets => totalSets += sets.length);
+        const safeMuscleName = escapeHtml(muscleName);
 
         const machinesHtml = Object.entries(machineDict).map(([mName, sets]) => {
           const isCardio = isCardioEquipment(mName, muscleName, sets[0]);
+          const safeMName = escapeHtml(mName);
           const setRows = sets.map((s, idx) => {
             const sideTag = (s.side === "L") ? '<span class="text-amber-400 mr-1 font-bold">[左手 L]</span>' : (s.side === "R" ? '<span class="text-amber-400 mr-1 font-bold">[右手 R]</span>' : '');
             const dur = s.set_duration_sec || s.duration_sec || 0;
             const extra = [s.speed ? `速:${s.speed}` : '', s.incline ? `斜:${s.incline}%` : '', s.calories ? `🔥${s.calories}kcal` : ''].filter(Boolean).join(' | ');
             const displayVal = isCardio 
-              ? `${Math.floor(dur/60)}分${dur%60}秒 (${extra})`
-              : `${s.weight} ${s.unit} ×${s.reps} 下`;
+              ? `${Math.floor(dur/60)}分${dur%60}秒 (${escapeHtml(extra)})`
+              : `${Number(s.weight)} ${escapeHtml(s.unit)} ×${Number(s.reps)} 下`;
 
             return `
               <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/50 last:border-none font-mono">
@@ -2272,7 +2326,7 @@
           return `
             <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/90 space-y-1.5">
               <div class="flex justify-between items-center pb-1 border-b border-slate-800">
-                <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5"><span>🏋️</span> ${mName}</span>
+                <span class="font-bold text-slate-200 text-xs flex items-center gap-1.5"><span>🏋️</span> ${safeMName}</span>
                 <span class="text-indigo-400 font-mono text-[11px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">${sets.length} ${isCardio ? '段' : '組'}</span>
               </div>
               <div class="space-y-0.5">${setRows}</div>
@@ -2283,7 +2337,7 @@
         return `
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between px-1">
-              <span class="text-xs font-black text-indigo-400 uppercase tracking-wider flex items-center gap-1.5"><span class="w-1.5 h-3 bg-indigo-500 rounded-full inline-block"></span>${muscleName} 部位訓練</span>
+              <span class="text-xs font-black text-indigo-400 uppercase tracking-wider flex items-center gap-1.5"><span class="w-1.5 h-3 bg-indigo-500 rounded-full inline-block"></span>${safeMuscleName} 部位訓練</span>
               <span class="text-[11px] text-slate-400 font-mono">小計: ${totalSets} ${muscleName === '帶氧' ? '段' : '組'}</span>
             </div>
             <div class="space-y-2">${machinesHtml}</div>
@@ -2294,13 +2348,13 @@
       container.innerHTML = `
         <div class="p-3 bg-indigo-950/20 border border-indigo-800/40 rounded-xl text-xs space-y-1">
           <div class="flex justify-between text-indigo-300 font-semibold">
-            <span>訓練部位: <b class="text-white">${workout.muscle_group || '綜合'}</b></span>
+            <span>訓練部位: <b class="text-white">${escapeHtml(workout.muscle_group || '綜合')}</b></span>
             <span>總時長: <b class="text-white">${workout.total_duration_min ? workout.total_duration_min + ' 分鐘' : '--'}</b></span>
           </div>
-          <div class="text-[11px] text-slate-400 font-mono">時間: ${workout.start_time || '--'} 至 ${workout.end_time || '--'}</div>
+          <div class="text-[11px] text-slate-400 font-mono">時間: ${escapeHtml(workout.start_time || '--')} 至 ${escapeHtml(workout.end_time || '--')}</div>
         </div>
         <div class="space-y-4">${muscleGroupsHtml}</div>
-        ${workout.ai_advice ? `<div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1"><span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span><p class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${workout.ai_advice}</p></div>` : ''}
+        ${workout.ai_advice ? `<div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1"><span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span><p class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(workout.ai_advice)}</p></div>` : ''}
       `;
     }
 
@@ -2331,8 +2385,11 @@
     }
 
     async function silentSyncGoogleSheetHistory() {
+      const curKey = getGymApiKey();
+      if (!curKey) return;
+
       try {
-        const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory`);
+        const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory&apiKey=${encodeURIComponent(curKey)}`);
         const data = await res.json();
         if (data.status === "success" && data.history) {
           const cleanHistory = {};
@@ -2351,8 +2408,14 @@
     async function refreshCalendarDataFromSheets() {
       const badge = document.getElementById('daySummaryBadge');
       if (badge) badge.innerText = "同步中...";
+      const curKey = getGymApiKey();
+      if (!curKey) {
+        promptForApiKey();
+        return;
+      }
+
       try {
-        const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory`);
+        const res = await fetch(`${CONFIG.GAS_WEBAPP_URL}?action=getAllHistory&apiKey=${encodeURIComponent(curKey)}`);
         const data = await res.json();
         if (data.status === "success" && data.history) {
           const cleanHistory = {};
@@ -2365,6 +2428,8 @@
           if (calendarActiveSelectedDate) selectCalendarDate(calendarActiveSelectedDate);
           if (currentSelectedMachine) loadMachineHistory(currentSelectedMachine);
           alert("✅ 歷史紀錄已完整同步！");
+        } else {
+          alert(`同步失敗: ${data.message || '請確認 API Key 是否相符'}`);
         }
       } catch (err) {
         console.warn("無法取得歷史記錄", err);
