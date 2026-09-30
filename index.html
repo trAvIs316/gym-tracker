@@ -612,7 +612,9 @@
     let isMachineActive = false;
     let machineStartEpoch = null;
     let machineTimerInterval = null;
-
+    let machineStartLoggedToTimeline = false;
+    let pendingMachineTimelineEntry = null;
+    
     let lastSetLogEpoch = null;
     let currentSetStartEpoch = null;
     let backgroundTimerInterval = null;
@@ -1708,7 +1710,7 @@
     const btnToggleMachine = document.getElementById('btnToggleMachine');
     const btnToggleMachineText = document.getElementById('btnToggleMachineText');
 
-    btnToggleMachine.addEventListener('click', () => {
+   btnToggleMachine.addEventListener('click', () => {
       if (isWorkoutEnded) {
         alert("⚠️ 今日訓練已經結束並歸檔！請勿重新開始器材。");
         return;
@@ -1736,15 +1738,18 @@
         lastSetLogEpoch = null;
         setBreathingOverlay('off');
         
+        // 【核心修改】：暫存開始資訊，不立即寫入時間線
+        machineStartLoggedToTimeline = false;
+        pendingMachineTimelineEntry = `🏋️ ${nowTime} 開始此機: ${currentSelectedMachine} [${currentMuscleGroup}]`;
+
         btnToggleMachineText.innerText = "結束此機";
         btnToggleMachine.className = "flex-1 w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px] animate-pulse";
-        
-        addTimelineEntry(`🏋️ ${nowTime} 開始此機: ${currentSelectedMachine} [${currentMuscleGroup}]`);
 
         updateMachineTimerDisplay();
         clearInterval(machineTimerInterval);
         machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
+        // 若為帶氧且已有計時，提示是否儲存該段
         if (isCardio && currentSetStartEpoch) {
           const splitSec = Math.floor((Date.now() - currentSetStartEpoch) / 1000);
           if (splitSec >= 5) {
@@ -1761,7 +1766,13 @@
         const s = totalMachineSec % 60;
         const durStr = m > 0 ? `${m}分${s}秒` : `${s}秒`;
 
-        addTimelineEntry(`⏹️ ${nowTime} 結束此機: ${currentSelectedMachine} (總使用時間: ${durStr})`);
+        // 【核心修改】：只有在此機真正記錄過組數時，才寫入結束紀錄；未做過任何組數則完全不留痕跡
+        if (machineStartLoggedToTimeline) {
+          addTimelineEntry(`⏹️ ${nowTime} 結束此機: ${currentSelectedMachine} (總使用時間: ${durStr})`);
+        }
+
+        machineStartLoggedToTimeline = false;
+        pendingMachineTimelineEntry = null;
 
         lastSetLogEpoch = null;
         currentSetStartEpoch = null;
@@ -1775,7 +1786,7 @@
       updateLogSetButtonState();
       persistActiveSession();
     });
-
+    
     function resetMachineTimerUI() {
       if (isMachineActive) {
         clearInterval(machineTimerInterval);
@@ -1784,6 +1795,8 @@
       machineStartEpoch = null;
       currentSetStartEpoch = null;
       lastSetLogEpoch = null;
+      machineStartLoggedToTimeline = false;
+      pendingMachineTimelineEntry = null;
       setBreathingOverlay('off');
       document.getElementById('machineTimerDisplay').innerText = "00:00";
       const splitEl = document.getElementById('cardioSplitTimerDisplay');
@@ -1822,7 +1835,12 @@
       const actualSide = setting.is_unilateral ? currentSelectedSide : "Both";
 
       let singleLog = {};
-
+      
+      if (!machineStartLoggedToTimeline && pendingMachineTimelineEntry) {
+        addTimelineEntry(pendingMachineTimelineEntry);
+        machineStartLoggedToTimeline = true;
+      }
+      
       if (isCardio) {
         const speed = parseFloat(document.getElementById('inputCardioSpeed').value) || 0;
         const incline = parseFloat(document.getElementById('inputCardioIncline').value) || 0;
