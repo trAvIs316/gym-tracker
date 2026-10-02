@@ -57,10 +57,8 @@
   <!-- 頁面 1：訓練 (Tracker 主頁面)                                               -->
   <!-- ========================================================================= -->
   <div id="viewTrackerPage" class="space-y-3.5">
-    <!-- 1.1 長期置頂 Header：開始/結束/暫停 + 訓練時間 + 開始/結束/日期網格 -->
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl space-y-2">
       <div class="flex items-center justify-between gap-1.5">
-        <!-- 控制按鈕組 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-0">
           <button id="btnStartWorkout" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1 whitespace-nowrap">
             <span>▶</span>
@@ -80,14 +78,12 @@
           </span>
         </div>
 
-        <!-- 訓練時間總計器 -->
         <div class="text-right flex-shrink-0">
           <span class="text-[9px] text-slate-500 uppercase tracking-wider block leading-none mb-0.5">訓練時間</span>
           <span id="totalWorkoutTimer" class="text-2xl font-black font-mono text-emerald-400 leading-none">00:00:00</span>
         </div>
       </div>
 
-      <!-- 網格資訊列：開始、結束、日期 -->
       <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-slate-800/80 text-[10px] font-mono text-slate-400 text-center">
         <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate">
           開始: <span id="startTimeStamp" class="text-slate-200 font-bold">--:--:--</span>
@@ -103,9 +99,7 @@
     </header>
 
     <main class="space-y-3.5">
-      <!-- 2. 選擇機種 (1.2 對應訓練部位改放在機種上方) -->
       <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-        <!-- 訓練部位選擇列 (放在機種正上方) -->
         <div class="space-y-1.5 pb-1 border-b border-slate-800/80">
           <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider flex justify-between items-center">
             <span>對應訓練部位 (單選)</span>
@@ -123,7 +117,6 @@
 
         <div id="machineCardsSlider" class="flex gap-3 overflow-x-auto no-scrollbar py-1 min-h-[140px]"></div>
 
-        <!-- 上次訓練完整記錄卡片 -->
         <div id="lastWeightContainer" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
           <div class="flex items-center gap-2 pb-1.5 border-b border-slate-800/60">
             <span class="text-slate-400 font-semibold">📋 上次訓練記錄:</span>
@@ -159,7 +152,6 @@
         </div>
       </section>
 
-      <!-- 3. 操作面板 -->
       <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <div class="font-bold text-base flex items-center gap-2">
@@ -167,7 +159,6 @@
             <span id="cardioModeTag" class="hidden text-[10px] font-bold bg-sky-950 text-sky-400 px-2 py-0.5 rounded border border-sky-800/40">帶氧分段計時</span>
           </div>
           
-          <!-- 1.3 單位切換膠囊 (點擊自動換算數值) -->
           <div id="unitToggleTrack" class="relative w-24 h-8 bg-slate-950 rounded-full p-1 flex items-center cursor-pointer border border-slate-800 transition-opacity select-none shadow-inner">
             <div id="unitSlider" class="absolute left-1 top-1 w-[calc(50%-4px)] h-6 bg-indigo-600 rounded-full transition-transform duration-200 shadow-md"></div>
             <span id="labelKg" class="relative z-10 w-1/2 text-center text-[11px] font-black text-white">KG</span>
@@ -185,7 +176,6 @@
 
         <div class="grid grid-cols-12 gap-2.5 items-stretch pt-1">
           <div class="col-span-8 flex flex-col justify-between space-y-2.5">
-            <!-- 重訓重量次數控制盤 -->
             <div id="weightRepsControlsContainer" class="space-y-2.5">
               <div id="sideSelectorContainer" class="hidden p-2 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
                 <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
@@ -232,7 +222,6 @@
               </div>
             </div>
 
-            <!-- 帶氧速度/斜度專用控制盤 -->
             <div id="cardioControlsContainer" class="hidden space-y-2.5">
               <div class="bg-slate-950 p-2.5 rounded-xl border border-sky-900/40 flex justify-between items-center text-xs">
                 <span class="text-slate-400 font-semibold">此分段時長:</span>
@@ -287,7 +276,6 @@
         </div>
       </section>
 
-      <!-- 4. 今日已完成機種清單 -->
       <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
           <span>今日已完成機種 (點擊可修改數據)</span>
@@ -296,7 +284,6 @@
         <ul id="completedMachinesList" class="space-y-2.5"></ul>
       </section>
 
-      <!-- 5. 訓練時間線 -->
       <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
           <span>⏱️ 訓練時間線 (Timeline)</span>
@@ -308,7 +295,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 頁面 2：歷史回顧 (2.1 淨化設計：移除返回與同步按鈕)                       -->
+  <!-- 頁面 2：歷史回顧                                                           -->
   <!-- ========================================================================= -->
   <div id="viewCalendarPage" class="hidden space-y-3.5">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
@@ -357,7 +344,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 頁面 3：AI 分析 (獨立完整分頁)                                             -->
+  <!-- 頁面 3：AI 分析                                                            -->
   <!-- ========================================================================= -->
   <div id="viewAiPage" class="hidden space-y-3.5">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
@@ -390,7 +377,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 頁面 4：設定 (3.1 獨立分頁模式，不再是彈出視窗)                           -->
+  <!-- 頁面 4：設定                                                               -->
   <!-- ========================================================================= -->
   <div id="viewSettingsPage" class="hidden space-y-3.5">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl">
@@ -399,7 +386,6 @@
       </h2>
     </header>
 
-    <!-- 個人體重輸入區 (含 KG / LB 膠囊切換滑塊) -->
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <div>
@@ -407,7 +393,6 @@
           <span class="text-[10px] text-slate-400">用作精確計算每組卡路里 (kcal)</span>
         </div>
         
-        <!-- 體重專屬膠囊按鈕 -->
         <div id="modalWeightUnitToggle" onclick="toggleModalWeightUnit()" class="relative w-24 h-7 bg-slate-950 rounded-full p-0.5 flex items-center cursor-pointer border border-slate-700 select-none shadow-inner">
           <div id="modalWeightUnitSlider" class="absolute left-0.5 top-0.5 w-[calc(50%-2px)] h-6 bg-indigo-600 rounded-full transition-transform duration-200 shadow-md"></div>
           <span id="modalWeightLabelKg" class="relative z-10 w-1/2 text-center text-[10px] font-black text-white">KG</span>
@@ -423,7 +408,6 @@
       <span class="text-[10px] text-slate-500 block leading-tight">切換單位會自動即時換算（如 70kg ↔ 154lb），儲存後只影響往後記錄，歷史數值不受影響。</span>
     </section>
 
-    <!-- PIN 碼設定區 -->
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
       <div class="text-center space-y-1">
         <span class="text-xs text-slate-300 block font-semibold">🔒 存取密鑰 (純數字 PIN 碼)</span>
@@ -463,9 +447,8 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 底部懸浮膠囊導航列 (4 大核心類別切換)                                      -->
+  <!-- 底部懸浮膠囊導航列 (4 大純 Icon 精簡按鈕)                                 -->
   <!-- ========================================================================= -->
-
   <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
     <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2">
       <button id="navTabTracker" onclick="switchMainView('tracker')" title="訓練" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90">
@@ -483,19 +466,20 @@
     </nav>
   </div>
 
-  <!-- 修改單組數據專用 Modal -->
+  <!-- ========================================================================= -->
+  <!-- 單組數據修改 Modal (保留單一實例)                                          -->
+  <!-- ========================================================================= -->
   <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
         <h3 class="font-bold text-sm text-white flex items-center gap-1.5">
-          <span>✏️️</span> <span id="editSetModalTitle">修改組數記錄</span>
+          <span>✏️</span> <span id="editSetModalTitle">修改組數記錄</span>
         </h3>
         <button onclick="closeEditSetModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
       </div>
 
       <input type="hidden" id="editSetIndex">
 
-      <!-- 重訓模式 -->
       <div id="editStrengthFields" class="space-y-3 text-xs">
         <div id="editSideGroup" class="hidden">
           <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
@@ -528,7 +512,6 @@
         </div>
       </div>
 
-      <!-- 帶氧模式修改面板 -->
       <div id="editCardioFields" class="hidden space-y-3 text-xs">
         <div>
           <div class="flex justify-between items-center mb-1">
@@ -572,7 +555,9 @@
     </div>
   </div>
 
-  <!-- 器材設定與拍照 Modal -->
+  <!-- ========================================================================= -->
+  <!-- 器材設定與拍照 Modal (保留單一實例)                                        -->
+  <!-- ========================================================================= -->
   <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -707,8 +692,7 @@
       return (localStorage.getItem('gym_api_key') || "").trim();
     }
 
-    // 4 大主分類切換邏輯
-function switchMainView(viewName) {
+    function switchMainView(viewName) {
       const views = {
         tracker: document.getElementById('viewTrackerPage'),
         calendar: document.getElementById('viewCalendarPage'),
@@ -727,7 +711,6 @@ function switchMainView(viewName) {
         if (views[k]) views[k].classList.toggle('hidden', k !== viewName);
         if (tabs[k]) {
           const isActive = (k === viewName);
-          // 純 Icon 選中與未選中樣式
           tabs[k].className = isActive 
             ? "w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90"
             : "w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90";
@@ -741,7 +724,6 @@ function switchMainView(viewName) {
       }
     }
 
-    // 體重狀態與單位管理
     let modalWeightUnit = localStorage.getItem('gym_user_weight_unit') || 'KG';
 
     function getUserWeight() {
@@ -794,7 +776,6 @@ function switchMainView(viewName) {
       el.value = Math.max(10, Math.round((cur + step) * 10) / 10);
     }
 
-    // 設定頁 PIN 碼
     let currentInputPin = "";
 
     function initSettingsPageView() {
@@ -1513,7 +1494,7 @@ function switchMainView(viewName) {
         <span class="text-slate-400">📝 備註: <b class="text-slate-300">${escapeHtml(setting.notes || '無')}</b></span>
       ` : `
         <span>💺 坐位: <b class="text-slate-200">${escapeHtml(setting.seat || '未設定')}</b></span>
-        <span>↔️️ 扶手: <b class="text-slate-200">${escapeHtml(setting.handle || '未設定')}</b></span>
+        <span>↔️ 扶手: <b class="text-slate-200">${escapeHtml(setting.handle || '未設定')}</b></span>
         <span>📐 角度: <b class="text-slate-200">${escapeHtml(setting.backrest || '未設定')}</b></span>
         <span class="text-slate-400">📝 備註: <b class="text-slate-300">${escapeHtml(setting.notes || '無')}</b></span>
       `;
@@ -1853,7 +1834,7 @@ function switchMainView(viewName) {
             banner.className = "p-2.5 rounded-xl bg-rose-950/70 border border-rose-600 flex items-center justify-between transition-all";
             dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
             text.className = "text-xs font-bold text-rose-300";
-            text.innerText = "⚠ 休息過久 (已超 2 分鐘)";
+            text.innerText = "⚠️ 休息過久 (已超 2 分鐘)";
             timer.className = "font-mono font-black text-sm text-rose-400";
           } else if (restDiff >= 90) {
             setBreathingOverlay('yellow');
@@ -1927,7 +1908,7 @@ function switchMainView(viewName) {
         machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
         const pauseExtra = (isWorkoutPaused && pauseStartEpoch) ? (Date.now() - pauseStartEpoch) : 0;
-        const totalMachineSec = Math.max(0, Math.floor((Date.now() - machineStartEpoch - (machinePausedMs + pauseExtra)) / 1000));
+        const totalMachineSec = Math.max(0, Math.floor((now - machineStartEpoch - (machinePausedMs + pauseExtra)) / 1000));
 
         if (isCardio) {
           const splitSec = currentSetStartEpoch 
@@ -2280,7 +2261,7 @@ function switchMainView(viewName) {
     }
 
     // ==========================================
-    // 11. 時間線與 1.3 單位即時自動換算 (KG ↔ LB)
+    // 11. 時間線與單位即時自動換算 (KG ↔ LB)
     // ==========================================
     function addTimelineEntry(text) {
       timelineEvents.push(text);
@@ -2423,7 +2404,7 @@ function switchMainView(viewName) {
     }
 
     // ==========================================
-    // 13. 結束訓練 (置頂按鈕觸發)
+    // 13. 結束訓練
     // ==========================================
     document.getElementById('btnFinishWorkout')?.addEventListener('click', async () => {
       if (isWorkoutEnded) return;
@@ -2513,7 +2494,6 @@ function switchMainView(viewName) {
       }
     });
 
-    // AI 分析執行
     document.getElementById('btnTriggerAiAnalysis')?.addEventListener('click', async () => {
       if (workoutLogs.length === 0) { alert("請先完成並記錄至少 1 組/段動作才進行 AI 分析！"); return; }
       const aiBtn = document.getElementById('btnTriggerAiAnalysis');
@@ -2579,7 +2559,7 @@ function switchMainView(viewName) {
     }
 
     // =========================================================================
-    // 14. 歷史日曆系統 (無返回與同步按鈕，切換即自動載入)
+    // 14. 歷史日曆系統
     // =========================================================================
     let calendarSelectedYear = new Date().getFullYear();
     let calendarSelectedMonth = new Date().getMonth();
