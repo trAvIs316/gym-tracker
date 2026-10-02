@@ -3041,7 +3041,7 @@ ${timelineEvents.slice(-8).join(" -> ")}
       });
     }
 
-    // Chatbot 訊息發送邏輯 (具備 CSCS & ISSN 人設)
+// Chatbot 訊息發送邏輯 (完整注入 CSCS & ISSN 認證 AI 健身教練規範)
     async function sendChatMessage() {
       const inputEl = document.getElementById('inputChatMessage');
       const text = inputEl.value.trim();
@@ -3050,6 +3050,7 @@ ${timelineEvents.slice(-8).join(" -> ")}
       const container = document.getElementById('chatMessagesContainer');
       const btn = document.getElementById('btnSendChat');
 
+      // 使用者訊息氣泡
       container.innerHTML += `
         <div class="flex justify-end">
           <div class="bg-indigo-600 text-white p-2.5 rounded-xl max-w-[85%] text-xs shadow-md">
@@ -3060,24 +3061,50 @@ ${timelineEvents.slice(-8).join(" -> ")}
       inputEl.value = "";
       btn.disabled = true;
 
+      // AI 等待氣泡
       const loadingId = "chat_loading_" + Date.now();
       container.innerHTML += `
         <div id="${loadingId}" class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-400 max-w-[85%] text-xs flex items-center gap-1">
-          <span class="animate-spin text-sm">⏳</span> <span>教練分析中...</span>
+          <span class="animate-spin text-sm">⏳</span> <span>CSCS & ISSN 教練分析中...</span>
         </div>
       `;
       container.scrollTop = container.scrollHeight;
 
-      const userWeightKg = getUserWeight();
+      // 取得即時生理數據與今日訓練狀態
+      const userWeightKg = getUserWeight(); // 基準 70.8 - 72.6 kg
       const userWeightLb = Math.round(userWeightKg * 2.20462262);
+      const totalMin = Math.round(getAccurateElapsedWorkoutSeconds() / 60);
+      const todaySummary = workoutLogs.map(l => `${l.exercise_name}: ${l.set_num}組 (${l.weight}${l.unit}×${l.reps})`).slice(-5).join(', ') || "今日尚無做組";
 
-      const fullPrompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。
-學員身高 173cm，基準體重 ${userWeightLb}lb (${userWeightKg}kg)，增肌肌肥大目標，BMR 約 1,650-1,700 kcal。
-當前訓練動作/器材：${currentSelectedMachine || "一般肌力訓練"}。
+      // 完整 AI 健身教練 CSCS + ISSN 專業 Prompt
+      const fullPrompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。你的職責是結合學員的個人生理數據與即時訓練進展，進行力量超負荷分析，並提供精確到「克數（g）」與「大卡（kcal）」的運動後飲食營養補充處方。
 
+### 學員固定個人生理檔案（已鎖定）：
+- 身高：173 cm
+- 基準體重 BW：${userWeightLb}lb (${userWeightKg} kg)
+- 核心目標：肌肥大（增肌 Hypertrophy，維持精瘦體態）
+- 基礎代謝率 BMR 約略值：約 1,650 - 1,700 kcal / 日
+
+### 當前訓練實時動態：
+- 當前操作器材/動作：${currentSelectedMachine || "一般肌力訓練"}
+- 今日訓練累計時長：約 ${totalMin} 分鐘
+- 近期組數摘要：${todaySummary}
+
+### 核心指導準則：
+1. **力量與超負荷（Performance & Overload）**：
+   - 主力動作評估推比：[推比 = 組訓練重量(kg) / ${userWeightKg}kg]。
+   - 著重肌肥大有效刺激與動作生物力學安全，指出下次加重或增次的具體數值。
+2. **營養處方（Post-Workout Nutrition Prescription）**：
+   - 涉及飲食時，必須精確到「克數（g）」與「卡路里（kcal）」。
+   - 全日蛋白質：每公斤 1.6 - 2.0g (${Math.round(userWeightKg * 1.6)}g - ${Math.round(userWeightKg * 2.0)}g/日)。
+   - 練後 2 小時黃金窗口：建議 30g - 40g 高生物價蛋白質（如乳清蛋白 1.5 匙或熟雞胸肉 150g），觸發白胺酸（Leucine）MPS 門檻。
+   - 碳水化合物：0.8 - 1.2g/kg (${Math.round(userWeightKg * 0.8)}g - ${Math.round(userWeightKg * 1.2)}g 碳水)，給予白飯、香蕉、Bagel 等具體食物轉換範例。
+   - 水分：運動超過 60 分鐘提醒補充 500 - 750ml 水分與電解質。
+
+---
 學員提問：${text}
 
-請以繁體中文回答，口吻專業、科學且直接切中要點。若牽涉飲食營養，必須精確到「克數（g）」與「大卡（kcal）」；若涉及動作訓練，請依運動生物力學、白胺酸門檻與漸進超負荷原理指導。字數控制在 120-220 字內，方便手機閱讀。`;
+請以繁體中文回答。口吻專業、科學、客觀且直接給出具體執行方案。格式條理分明，若涉及多個維度請適度分點條列。`;
 
       const res = await sendGasRequest("callGemini", { prompt: fullPrompt });
       const loadingEl = document.getElementById(loadingId);
@@ -3090,7 +3117,7 @@ ${timelineEvents.slice(-8).join(" -> ")}
       } else {
         if (loadingEl) {
           loadingEl.className = "bg-rose-950/60 p-2.5 rounded-xl border border-rose-800/60 text-rose-300 max-w-[85%]";
-          loadingEl.innerText = "無法取得教練回覆，請檢查網路或 API Key 設定。";
+          loadingEl.innerText = `無法取得教練回覆: ${res.message || '請檢查網路連線或 API Key 設定'}`;
         }
       }
 
