@@ -344,31 +344,57 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 頁面 3：AI 分析 (整合 Gemini 圖表 + 2-3句評語 + 教練 Chatbot)           -->
+  <!-- 頁面 3：AI 分析 (整合 CSCS & ISSN 認證 AI 教練)                           -->
   <!-- ========================================================================= -->
   <div id="viewAiPage" class="hidden space-y-3.5">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
       <h2 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
-        <span>🤖</span> <span>Gemini AI 智能教練</span>
+        <span>🤖</span> <span>CSCS & ISSN 力量與營養教練</span>
       </h2>
-      <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Google Cloud 驅動</span>
+      <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Gemini AI 驅動</span>
     </header>
 
     <!-- 快捷圖表分析按鈕區 -->
     <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-      <span class="text-xs font-bold text-slate-300 block">📊 智能圖表診斷 (一鍵生成圖表 + 評語)</span>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="triggerGeminiAnalysis('machine_progress')" class="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/50 p-2.5 rounded-xl text-left active:scale-95 transition-all">
-          <span class="text-base block mb-0.5">📈</span>
-          <span class="text-xs font-bold text-white block">器材進度趨勢</span>
-          <span class="text-[10px] text-slate-400 block truncate" id="aiBtnMachineName">CH-01 胸推機</span>
-        </button>
+      <span class="text-xs font-bold text-slate-300 block">📊 智能診斷 (一鍵生成圖表 + 科學分析報告)</span>
+      
+      <div class="grid grid-cols-2 gap-2.5">
+        <!-- 左邊按鈕：器材進度趨勢 + 器材即時下拉選單 -->
+        <div class="bg-indigo-950/80 border border-indigo-700/50 p-2.5 rounded-xl flex flex-col justify-between space-y-2">
+          <div class="space-y-1">
+            <span class="text-base block leading-none">📈</span>
+            <span class="text-xs font-bold text-white block">器材進度趨勢</span>
+            <span class="text-[10px] text-slate-400 block">總容量與 1RM 追蹤</span>
+          </div>
 
-        <button onclick="triggerGeminiAnalysis('weekly_split')" class="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/50 p-2.5 rounded-xl text-left active:scale-95 transition-all">
-          <span class="text-base block mb-0.5">📊</span>
-          <span class="text-xs font-bold text-white block">全週容量分佈</span>
-          <span class="text-[10px] text-slate-400 block">近 7 天各部位組數</span>
-        </button>
+          <!-- 器材即時下拉選單 -->
+          <div class="pt-1">
+            <select id="aiMachineSelector" onchange="onAiMachineSelectorChange(this.value)" class="w-full bg-slate-950 border border-indigo-500/50 rounded-lg px-2 py-1 text-[11px] font-bold text-indigo-200 focus:outline-none focus:border-indigo-400 truncate">
+              <option value="">載入器材中...</option>
+            </select>
+          </div>
+
+          <button onclick="triggerGeminiAnalysis('machine_progress')" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 py-1.5 rounded-lg text-xs font-bold text-white text-center transition-all shadow-md">
+            分析此器材
+          </button>
+        </div>
+
+        <!-- 右邊按鈕：今日訓練分析 -->
+        <div class="bg-indigo-950/80 border border-indigo-700/50 p-2.5 rounded-xl flex flex-col justify-between space-y-2">
+          <div class="space-y-1">
+            <span class="text-base block leading-none">🏋️</span>
+            <span class="text-xs font-bold text-white block">今日訓練分析</span>
+            <span class="text-[10px] text-slate-400 block">當日總評、能耗與處方</span>
+          </div>
+
+          <div class="text-[10px] text-emerald-400/90 font-mono py-1">
+            當日各機種容量對比
+          </div>
+
+          <button onclick="triggerGeminiAnalysis('today_workout')" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 py-1.5 rounded-lg text-xs font-bold text-white text-center transition-all shadow-md">
+            生成今日報告
+          </button>
+        </div>
       </div>
 
       <!-- 圖表畫布容器 (預設隱藏，點擊按鈕後展示) -->
@@ -382,14 +408,14 @@
         </div>
       </div>
 
-      <!-- 教練 2-3 句點評展示區 -->
-      <div id="aiAdviceBox" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+      <!-- 教練分析報告展示區 -->
+      <div id="aiAdviceBox" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1.5">
         <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">
-          <span>💬</span> <span>教練專屬分析點評：</span>
+          <span>💬</span> <span>CSCS & ISSN 教練專屬分析處方：</span>
         </span>
-        <p id="aiAdviceContent" class="text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
-          點擊上方按鈕開始分析，或在下方直接向教練提問！
-        </p>
+        <div id="aiAdviceContent" class="text-slate-300 leading-relaxed whitespace-pre-wrap font-sans text-xs">
+          點擊上方按鈕開始深度分析，或在下方直接向教練諮詢動作姿勢與飲食！
+        </div>
       </div>
     </section>
 
@@ -397,19 +423,19 @@
     <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
       <span class="text-xs font-bold text-slate-300 flex items-center justify-between">
         <span>💬 私人教練諮詢 (Chatbot)</span>
-        <span class="text-[10px] text-slate-500">支援繁體廣東話</span>
+        <span class="text-[10px] text-slate-500">CSCS / ISSN 力量與營養指導</span>
       </span>
 
       <!-- 聊天對話流 -->
-      <div id="chatMessagesContainer" class="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-56 overflow-y-auto space-y-2.5 text-xs font-sans">
+      <div id="chatMessagesContainer" class="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-60 overflow-y-auto space-y-2.5 text-xs font-sans">
         <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-300 max-w-[85%]">
-          👋 你好！我是你的 AI 健身教練。今天訓練感覺如何？有關動作姿勢、組間休息或酸痛問題，隨時問我！
+          👋 你好！我是你的 AI 力量訓練科學教練兼運動營養數據分析師（具備 CSCS 與 ISSN 認證）。今天操練感覺如何？有關動作力學、組間張力、酸痛或練後飲食克數補充，隨時問我！
         </div>
       </div>
 
       <!-- 聊天發送列 -->
       <div class="flex items-center gap-2">
-        <input type="text" id="inputChatMessage" placeholder="例如: 我推胸手肘有少少痛，點解？" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+        <input type="text" id="inputChatMessage" placeholder="例如: 我推胸手肘微痛，且想問練後碳水點食？" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
         <button onclick="sendChatMessage()" id="btnSendChat" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md">
           發送
         </button>
@@ -431,7 +457,7 @@
       <div class="flex justify-between items-center">
         <div>
           <span class="text-xs font-bold text-white block">⚖️ 個人體重</span>
-          <span class="text-[10px] text-slate-400">用作精確計算每組卡路里 (kcal)</span>
+          <span class="text-[10px] text-slate-400">用作精確計算推比與每組卡路里 (kcal)</span>
         </div>
         
         <div id="modalWeightUnitToggle" onclick="toggleModalWeightUnit()" class="relative w-24 h-7 bg-slate-950 rounded-full p-0.5 flex items-center cursor-pointer border border-slate-700 select-none shadow-inner">
@@ -446,7 +472,7 @@
         <input type="number" id="inputUserWeight" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-10 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono font-black text-amber-400 focus:outline-none focus:border-indigo-500 text-lg">
         <button type="button" id="btnModalWeightPlus" onclick="stepUserWeight(1)" class="w-12 h-10 rounded-xl bg-indigo-950 hover:bg-indigo-900 border border-indigo-700/50 font-bold text-sm active:scale-95 text-indigo-300">+1</button>
       </div>
-      <span class="text-[10px] text-slate-500 block leading-tight">切換單位會自動即時換算（如 70kg ↔ 154lb），儲存後只影響往後記錄，歷史數值不受影響。</span>
+      <span class="text-[10px] text-slate-500 block leading-tight">切換單位會自動即時換算（如 70.8kg ↔ 156lb），儲存後影響往後記錄及 AI 推比計算。</span>
     </section>
 
     <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
@@ -487,13 +513,11 @@
     </section>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- 底部懸浮膠囊導航列 (4 大純 Icon 精簡按鈕)                                 -->
-  <!-- ========================================================================= -->
+  <!-- 底部懸浮膠囊導航列 (4 大純 Icon 精簡按鈕) -->
   <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
     <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2">
       <button id="navTabTracker" onclick="switchMainView('tracker')" title="訓練" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90">
-        🏋️
+        🏋️️
       </button>
       <button id="navTabCalendar" onclick="switchMainView('calendar')" title="歷史回顧" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
         📅
@@ -759,9 +783,7 @@
       } else if (viewName === 'settings') {
         initSettingsPageView();
       } else if (viewName === 'ai') {
-        const curM = currentSelectedMachine || "當前器材";
-        const lbl = document.getElementById('aiBtnMachineName');
-        if (lbl) lbl.innerText = curM;
+        populateAiMachineSelector();
       }
     }
 
@@ -769,7 +791,7 @@
 
     function getUserWeight() {
       const storedKg = parseFloat(localStorage.getItem('gym_user_weight_kg'));
-      return (!isNaN(storedKg) && storedKg > 0) ? storedKg : 70;
+      return (!isNaN(storedKg) && storedKg > 0) ? storedKg : 70.8;
     }
 
     function toggleModalWeightUnit() {
@@ -812,7 +834,7 @@
     function stepUserWeight(amount) {
       const el = document.getElementById('inputUserWeight');
       if (!el) return;
-      const cur = parseFloat(el.value) || (modalWeightUnit === 'LB' ? 154 : 70);
+      const cur = parseFloat(el.value) || (modalWeightUnit === 'LB' ? 156 : 70.8);
       const step = modalWeightUnit === 'LB' ? (amount * 2) : amount;
       el.value = Math.max(10, Math.round((cur + step) * 10) / 10);
     }
@@ -1174,6 +1196,7 @@
       }
 
       updateLogSetButtonState();
+      populateAiMachineSelector();
 
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && isWorkoutStarted && !isWorkoutEnded) {
@@ -1221,6 +1244,7 @@
           });
           localStorage.setItem('gym_custom_machines_meta', JSON.stringify(customMachineSettings));
           refreshActiveEquipmentList();
+          populateAiMachineSelector();
         }
       } catch (err) {
         console.warn("無法連線 Sheets API", err);
@@ -1286,6 +1310,7 @@
         updateActiveMachineSettingBanner("");
         toggleCardioModeUI(false);
       }
+      populateAiMachineSelector();
     }
 
     function renderMachineVisualCards(machines) {
@@ -1390,6 +1415,11 @@
       loadMachineHistory(machineName);
       updateLogSetButtonState();
       persistActiveSession();
+
+      const aiSelector = document.getElementById('aiMachineSelector');
+      if (aiSelector && aiSelector.value !== machineName) {
+        aiSelector.value = machineName;
+      }
     }
 
     function toggleCardioModeUI(isCardio) {
@@ -1922,7 +1952,7 @@
     btnToggleMachine?.addEventListener('click', async () => {
       if (isWorkoutEnded) { alert("⚠️ 今日訓練已經結束並歸檔！"); return; }
       if (!isWorkoutStarted) { alert("⚠️ 請先點擊最上方「開始訓練」。"); return; }
-      if (isWorkoutPaused) { alert("⚠️️ 訓練處於暫停狀態，請按繼續！"); return; }
+      if (isWorkoutPaused) { alert("⚠ 訓練處於暫停狀態，請按繼續！"); return; }
       if (!currentSelectedMachine) { alert("請先選擇或新增器材！"); return; }
 
       const nowTime = new Date().toTimeString().split(' ')[0];
@@ -2767,6 +2797,7 @@
           historicalWorkouts = Object.assign(historicalWorkouts, cleanHistory);
           localStorage.setItem('gym_historical_workouts_cache', JSON.stringify(historicalWorkouts));
           if (currentSelectedMachine) loadMachineHistory(currentSelectedMachine);
+          populateAiMachineSelector();
         }
       } catch (e) {
         console.warn("靜默同步失敗", e);
@@ -2774,28 +2805,67 @@
     }
 
     // ==========================================
-    // 15. Gemini AI 圖表生成與 Chatbot 核心
+    // 15. Gemini AI 圖表生成、器材下拉選單與 CSCS/ISSN 核心
     // ==========================================
     let aiChartInstance = null;
+
+    function populateAiMachineSelector() {
+      const selector = document.getElementById('aiMachineSelector');
+      if (!selector) return;
+
+      const allMachines = Object.keys(customMachineSettings);
+      if (allMachines.length === 0) {
+        selector.innerHTML = '<option value="">(尚未登記器材)</option>';
+        return;
+      }
+
+      selector.innerHTML = allMachines.map(m => {
+        const isSelected = (m === currentSelectedMachine);
+        return `<option value="${escapeHtml(m)}" ${isSelected ? 'selected' : ''}>${escapeHtml(m)}</option>`;
+      }).join('');
+
+      if (!currentSelectedMachine && allMachines.length > 0) {
+        currentSelectedMachine = allMachines[0];
+      }
+    }
+
+    function onAiMachineSelectorChange(machineName) {
+      if (!machineName) return;
+      currentSelectedMachine = machineName;
+      const s = customMachineSettings[machineName];
+      if (s && s.muscle_group) currentMuscleGroup = s.muscle_group;
+    }
 
     async function triggerGeminiAnalysis(type) {
       const contentEl = document.getElementById('aiAdviceContent');
       const chartContainer = document.getElementById('aiChartContainer');
       const chartTitle = document.getElementById('aiChartTitle');
 
-      contentEl.innerText = "⏳ 正在分析歷史數據並呼叫 Gemini AI...";
+      contentEl.innerHTML = `
+        <div class="flex items-center gap-2 text-indigo-400 py-2">
+          <span class="animate-spin text-base">⏳</span>
+          <span class="font-bold">CSCS & ISSN 智能教練正在深入計算推比與營養數據，請稍候...</span>
+        </div>
+      `;
       chartContainer.classList.remove('hidden');
 
+      const userWeightKg = getUserWeight();
+      const userWeightLb = Math.round(userWeightKg * 2.20462262);
+
       if (type === 'machine_progress') {
-        const targetMachine = currentSelectedMachine || Object.keys(customMachineSettings)[0];
+        const selector = document.getElementById('aiMachineSelector');
+        const targetMachine = (selector && selector.value) ? selector.value : (currentSelectedMachine || Object.keys(customMachineSettings)[0]);
+
         if (!targetMachine) {
-          alert("尚未選擇任何器材！");
+          alert("尚未登記或選擇任何器材！");
+          chartContainer.classList.add('hidden');
+          contentEl.innerText = "請先新增或選擇器材。";
           return;
         }
 
-        chartTitle.innerText = `${targetMachine} 總容量與 1RM 推移`;
+        chartTitle.innerText = `${targetMachine} 總容量與 1RM 追蹤趨勢`;
 
-        // 由本地歷史計算此機每次的總容量與 1RM
+        // 整理歷史容量與 1RM
         const datesMap = {};
         Object.keys(historicalWorkouts).sort().forEach(d => {
           const dayLogs = historicalWorkouts[d]?.logs || [];
@@ -2804,27 +2874,29 @@
             const r = parseInt(l.reps, 10) || 0;
             const vol = w * r;
             const est1RM = Math.round(w * (1 + r / 30) * 10) / 10;
-            if (!datesMap[d]) datesMap[d] = { volume: 0, max1RM: 0 };
+            if (!datesMap[d]) datesMap[d] = { volume: 0, max1RM: 0, sets: 0 };
             datesMap[d].volume += vol;
+            datesMap[d].sets += 1;
             if (est1RM > datesMap[d].max1RM) datesMap[d].max1RM = est1RM;
           });
         });
 
-        // 納入今天實時組數
+        // 累計今日實時組數
         const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
         workoutLogs.filter(l => l.exercise_name === targetMachine).forEach(l => {
           const w = parseFloat(l.weight_kg || l.weight) || 0;
           const r = parseInt(l.reps, 10) || 0;
           const vol = w * r;
           const est1RM = Math.round(w * (1 + r / 30) * 10) / 10;
-          if (!datesMap[todayStr]) datesMap[todayStr] = { volume: 0, max1RM: 0 };
+          if (!datesMap[todayStr]) datesMap[todayStr] = { volume: 0, max1RM: 0, sets: 0 };
           datesMap[todayStr].volume += vol;
+          datesMap[todayStr].sets += 1;
           if (est1RM > datesMap[todayStr].max1RM) datesMap[todayStr].max1RM = est1RM;
         });
 
         const labels = Object.keys(datesMap);
         if (labels.length === 0) {
-          contentEl.innerText = "此器材尚無足夠的操練歷史數據！請先進行至少 1 組訓練。";
+          contentEl.innerText = `器材【${targetMachine}】目前尚無足夠組數資料！請先在主頁面進行至少 1 組記錄。`;
           chartContainer.classList.add('hidden');
           return;
         }
@@ -2832,18 +2904,34 @@
         const volumes = labels.map(l => datesMap[l].volume);
         const oneRMs = labels.map(l => datesMap[l].max1RM);
 
-        // 繪製 Chart.js 折線圖
         renderChartOnCanvas('line', labels, [
           { label: '總容量 (kg)', data: volumes, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.2)', tension: 0.3 },
           { label: '推估 1RM (kg)', data: oneRMs, borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.3 }
         ]);
 
-        // 組裝 Prompt 給 Gemini
-        const historySummary = labels.map(l => `${l}: 容量${datesMap[l].volume}kg, 1RM ${datesMap[l].max1RM}kg`).join(' | ');
-        const prompt = `你是一位嚴謹但接地氣的專業健身教練。以下是學員在器材【${targetMachine}】的近期容量與1RM進展：
+        const historySummary = labels.map(l => `${l}: 容量${datesMap[l].volume}kg, 1RM ${datesMap[l].max1RM}kg (${datesMap[l].sets}組)`).join(' | ');
+
+        const prompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。
+
+### 學員固定個人生理檔案（已鎖定）：
+- 身高：173 cm
+- 基準體重 BW：${userWeightLb}lb (${userWeightKg} kg)
+- 核心目標：肌肥大（增肌 Hypertrophy，維持精瘦體態）
+- 基礎代謝率 BMR：約 1,650 - 1,700 kcal / 日
+
+### 分析目標器材：【${targetMachine}】
+- 近期歷史組數與進展：
 ${historySummary}
-學員體重：${getUserWeight()}kg。
-請給予 2 至 3 句簡明扼要、切中要點的繁體中文短評（包含漸進超負荷達成情況與下次建議起推重量）。不要廢話。`;
+- 今日即時做組：總容量 ${datesMap[todayStr] ? datesMap[todayStr].volume : 0} kg, 最高推估 1RM ${datesMap[todayStr] ? datesMap[todayStr].max1RM : 0} kg。
+
+請嚴格按照以下結構輸出深度分析報告（條理分明、避免客套贅字）：
+1. 🏋️ **訓練表現與推比分析**：以學員基準體重 (${userWeightKg} kg) 評估主力動作推比 [推比 = 組重量 / ${userWeightKg}kg]，分析神經肌肉徵召與肌力水準。
+2. 🔥 **總容量負荷與做組強度**：深度診斷漸進超負荷（Volume Overload）達成情況與疲勞度。
+3. 🍽️ **客製化練後飲食營養補充處方**：
+   - 練後黃金窗口（2 小時內）：以每公斤 1.6-2.0g 蛋白質標準，提供 30-40g 高生物價蛋白質指引（精確至克數 g 與食物推薦，確保白胺酸 Leucine 門檻觸發 MPS）。
+   - 碳水化合物補充：依做組負荷給予 0.8-1.2g/kg 碳水指引（精確至克數 g 與食物範例，如白飯、香蕉貝果）。
+   - 水分與電解質補充提醒。
+4. 📈 **下週期漸進超負荷指示**：明確給出下回進健身房時，該器材「起始重量（加重幅度）」或「目標次數」。`;
 
         const res = await sendGasRequest("callGemini", { prompt });
         if (res.status === "success") {
@@ -2852,42 +2940,78 @@ ${historySummary}
           contentEl.innerText = `AI 點評失敗: ${res.message}`;
         }
 
-      } else if (type === 'weekly_split') {
-        chartTitle.innerText = "近 7 天各部位訓練組數分佈";
+      } else if (type === 'today_workout') {
+        chartTitle.innerText = "今日訓練各器材總容量 (Volume Load) 對比";
 
-        const muscleStats = { '胸': 0, '背': 0, '膊': 0, '二頭': 0, '三頭': 0, '腳': 0, '腹': 0, '帶氧': 0 };
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
+        const todayLogs = workoutLogs;
+        if (!todayLogs || todayLogs.length === 0) {
+          contentEl.innerText = "今日尚未完成任何組數記錄！請先開始訓練並完成至少 1 組器材。";
+          chartContainer.classList.add('hidden');
+          return;
+        }
 
-        Object.keys(historicalWorkouts).forEach(d => {
-          const parts = d.split('-');
-          const pDate = new Date(parts[0], parts[1]-1, parts[2]);
-          const diffDays = (now.getTime() - pDate.getTime()) / (1000 * 3600 * 24);
-          if (diffDays <= 7) {
-            (historicalWorkouts[d]?.logs || []).forEach(l => {
-              const mg = l.muscle_group;
-              if (muscleStats[mg] !== undefined) muscleStats[mg] += 1;
-            });
+        const machineMap = {};
+        let totalWorkoutCal = 0;
+        let totalStrengthSets = 0;
+        let totalCardioSets = 0;
+
+        todayLogs.forEach(l => {
+          const mName = l.exercise_name || "未知器材";
+          const isCardio = isCardioEquipment(mName, l.muscle_group, l);
+          if (!machineMap[mName]) machineMap[mName] = { volume: 0, sets: 0, isCardio: isCardio, calories: 0 };
+
+          machineMap[mName].sets += 1;
+          const cal = parseFloat(l.calories) || 0;
+          machineMap[mName].calories += cal;
+          totalWorkoutCal += cal;
+
+          if (isCardio) {
+            totalCardioSets += 1;
+          } else {
+            totalStrengthSets += 1;
+            const w = parseFloat(l.weight_kg || l.weight) || 0;
+            const r = parseInt(l.reps, 10) || 0;
+            machineMap[mName].volume += (w * r);
           }
         });
 
-        // 加上今天
-        workoutLogs.forEach(l => {
-          const mg = l.muscle_group;
-          if (muscleStats[mg] !== undefined) muscleStats[mg] += 1;
-        });
-
-        const labels = Object.keys(muscleStats);
-        const setCounts = Object.values(muscleStats);
+        const labels = Object.keys(machineMap);
+        const volumes = labels.map(k => machineMap[k].volume);
 
         renderChartOnCanvas('bar', labels, [
-          { label: '已完成組數', data: setCounts, backgroundColor: 'rgba(99, 102, 241, 0.7)', borderColor: '#6366f1', borderRadius: 6 }
+          { label: '器材總容量 (kg)', data: volumes, backgroundColor: 'rgba(99, 102, 241, 0.7)', borderColor: '#6366f1', borderRadius: 6 }
         ]);
 
-        const statsText = labels.map(k => `${k}: ${muscleStats[k]}組`).join(' | ');
-        const prompt = `你是一位私人健身教練。以下是學員過去 7 天的部位訓練組數統計：
-${statsText}
-請給予 2 至 3 句專業評價（檢查是否有肌群嚴重偏科、恢復時間是否足夠，並提醒接下來的重點目標部位）。繁體中文回答。`;
+        const totalMin = Math.round(getAccurateElapsedWorkoutSeconds() / 60);
+        const machinesSummaryText = labels.map(k => {
+          return `${k}: ${machineMap[k].sets}組/段 (容量:${machineMap[k].volume}kg, 🔥${Math.round(machineMap[k].calories)}kcal)`;
+        }).join(' | ');
+
+        const prompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。
+
+### 學員固定個人生理檔案（已鎖定）：
+- 身高：173 cm
+- 基準體重 BW：${userWeightLb}lb (${userWeightKg} kg)
+- 核心目標：肌肥大（增肌 Hypertrophy，維持精瘦體態）
+- 基礎代謝率 BMR：約 1,650 - 1,700 kcal / 日
+
+### 今日訓練全場數據：
+- 當日部位：${currentMuscleGroup}
+- 訓練總時長：約 ${totalMin} 分鐘 (有效組數: 重訓 ${totalStrengthSets} 組, 帶氧 ${totalCardioSets} 段)
+- 系統累計總能耗：約 ${Math.round(totalWorkoutCal)} kcal
+- 器材明細：
+${machinesSummaryText}
+- 當日時間線流水帳：
+${timelineEvents.slice(-8).join(" -> ")}
+
+請嚴格遵守以下 4 大架構輸出專業報告（條列清晰，數據具體）：
+1. 🏋️ **訓練質量與容量總評**：評估時長、部位刺激密度、主力器材推比表現與力竭程度。
+2. 🔥 **總消耗卡路里推算**：結合代謝當量（METs 重訓取 5.0-6.0，高強度/帶氧取 7.0-8.5），列出精確的淨消耗卡路里區間。
+3. 🍽️ **當日/練後飲食補充處方**：
+   - 練後 2 小時黃金窗口：提供 30-40g 高生物價蛋白質（如乳清 1.5 匙或雞胸肉 150g），達白胺酸 MPS 刺激門檻。
+   - 碳水化合物儲備：依總噸位給出 0.8-1.2g/kg（約 58-87g 碳水）補充指引，並列出白飯、香蕉、Bagel 等具體食物轉換。
+   - 水分與電解質補充量（ml）。
+4. 📈 **下週期漸進超負荷指示**：明確點名哪些器材下次應增加 2.5kg 或增加 1-2 下。`;
 
         const res = await sendGasRequest("callGemini", { prompt });
         if (res.status === "success") {
@@ -2917,7 +3041,7 @@ ${statsText}
       });
     }
 
-    // Chatbot 訊息發送邏輯
+    // Chatbot 訊息發送邏輯 (具備 CSCS & ISSN 人設)
     async function sendChatMessage() {
       const inputEl = document.getElementById('inputChatMessage');
       const text = inputEl.value.trim();
@@ -2926,7 +3050,6 @@ ${statsText}
       const container = document.getElementById('chatMessagesContainer');
       const btn = document.getElementById('btnSendChat');
 
-      // 使用者訊息氣泡
       container.innerHTML += `
         <div class="flex justify-end">
           <div class="bg-indigo-600 text-white p-2.5 rounded-xl max-w-[85%] text-xs shadow-md">
@@ -2937,20 +3060,24 @@ ${statsText}
       inputEl.value = "";
       btn.disabled = true;
 
-      // 等待氣泡
       const loadingId = "chat_loading_" + Date.now();
       container.innerHTML += `
         <div id="${loadingId}" class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-400 max-w-[85%] text-xs flex items-center gap-1">
-          <span class="animate-spin text-sm">⏳</span> <span>教練思考中...</span>
+          <span class="animate-spin text-sm">⏳</span> <span>教練分析中...</span>
         </div>
       `;
       container.scrollTop = container.scrollHeight;
 
-      const fullPrompt = `你是一位專業且熱心的私人健身教練，熟悉運動生理學與肌力訓練。
-學員體重：${getUserWeight()} kg。
-當前訓練器材：${currentSelectedMachine || "一般健身動作"}。
-學員問題：${text}
-請以口吻親切、有科學根據且簡潔的繁體中文/廣東話回答（控制在 100-150 字以內，方便手機閱讀）：`;
+      const userWeightKg = getUserWeight();
+      const userWeightLb = Math.round(userWeightKg * 2.20462262);
+
+      const fullPrompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。
+學員身高 173cm，基準體重 ${userWeightLb}lb (${userWeightKg}kg)，增肌肌肥大目標，BMR 約 1,650-1,700 kcal。
+當前訓練動作/器材：${currentSelectedMachine || "一般肌力訓練"}。
+
+學員提問：${text}
+
+請以繁體中文回答，口吻專業、科學且直接切中要點。若牽涉飲食營養，必須精確到「克數（g）」與「大卡（kcal）」；若涉及動作訓練，請依運動生物力學、白胺酸門檻與漸進超負荷原理指導。字數控制在 120-220 字內，方便手機閱讀。`;
 
       const res = await sendGasRequest("callGemini", { prompt: fullPrompt });
       const loadingEl = document.getElementById(loadingId);
@@ -2971,7 +3098,6 @@ ${statsText}
       container.scrollTop = container.scrollHeight;
     }
 
-    // 支援 Enter 鍵送出聊天
     document.getElementById('inputChatMessage')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendChatMessage();
     });
