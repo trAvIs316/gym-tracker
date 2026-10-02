@@ -465,19 +465,20 @@
   <!-- ========================================================================= -->
   <!-- 底部懸浮膠囊導航列 (4 大核心類別切換)                                      -->
   <!-- ========================================================================= -->
-  <div class="fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
-    <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-1">
-      <button id="navTabTracker" onclick="switchMainView('tracker')" class="px-3.5 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow-md shadow-indigo-950/60">
-        <span>🏋️</span> <span>訓練</span>
+
+  <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
+    <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2">
+      <button id="navTabTracker" onclick="switchMainView('tracker')" title="訓練" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90">
+        🏋️
       </button>
-      <button id="navTabCalendar" onclick="switchMainView('calendar')" class="px-3.5 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
-        <span>📅</span> <span>歷史回顧</span>
+      <button id="navTabCalendar" onclick="switchMainView('calendar')" title="歷史回顧" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+        📅
       </button>
-      <button id="navTabAi" onclick="switchMainView('ai')" class="px-3.5 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
-        <span>🤖</span> <span>AI 分析</span>
+      <button id="navTabAi" onclick="switchMainView('ai')" title="AI 分析" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+        🤖
       </button>
-      <button id="navTabSettings" onclick="switchMainView('settings')" class="px-3.5 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
-        <span>⚙️</span> <span>設定</span>
+      <button id="navTabSettings" onclick="switchMainView('settings')" title="設定" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+        ⚙️
       </button>
     </nav>
   </div>
@@ -707,7 +708,7 @@
     }
 
     // 4 大主分類切換邏輯
-    function switchMainView(viewName) {
+function switchMainView(viewName) {
       const views = {
         tracker: document.getElementById('viewTrackerPage'),
         calendar: document.getElementById('viewCalendarPage'),
@@ -726,9 +727,10 @@
         if (views[k]) views[k].classList.toggle('hidden', k !== viewName);
         if (tabs[k]) {
           const isActive = (k === viewName);
+          // 純 Icon 選中與未選中樣式
           tabs[k].className = isActive 
-            ? "px-3.5 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow-md shadow-indigo-950/60"
-            : "px-3.5 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 text-slate-400 hover:text-white";
+            ? "w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90"
+            : "w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90";
         }
       });
 
