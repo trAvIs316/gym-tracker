@@ -19,9 +19,10 @@
     connect-src 'self' https://script.google.com https://script.googleusercontent.com;
   ">
 
-  <!-- 引入 Tailwind CSS 與 Chart.js -->
+  <!-- 引入 Tailwind CSS, Chart.js 與 Markdown 解析器 marked.js -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -38,9 +39,26 @@
 
     .breath-yellow { animation: yellowBreath 2.2s infinite ease-in-out; border: 3px solid rgba(245, 158, 11, 0.75) !important; }
     .breath-red { animation: redBreath 1.6s infinite ease-in-out; border: 3px solid rgba(239, 68, 68, 0.85) !important; }
+
+    /* Markdown 渲染專用樣式 (支援表格、粗體、斜體、條列清單) */
+    .prose-gym { color: #cbd5e1; font-size: 0.8125rem; line-height: 1.6; }
+    .prose-gym h1, .prose-gym h2, .prose-gym h3 { color: #f8fafc; font-weight: 800; margin-top: 0.85rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem; }
+    .prose-gym h2 { font-size: 0.95rem; border-bottom: 1px solid rgba(51, 65, 85, 0.6); padding-bottom: 0.25rem; }
+    .prose-gym h3 { font-size: 0.875rem; color: #a5b4fc; }
+    .prose-gym strong { color: #fbbf24; font-weight: 700; }
+    .prose-gym em { color: #38bdf8; font-style: italic; }
+    .prose-gym p { margin-bottom: 0.6rem; }
+    .prose-gym ul { list-style-type: disc; margin-left: 1.25rem; margin-bottom: 0.65rem; }
+    .prose-gym ol { list-style-type: decimal; margin-left: 1.25rem; margin-bottom: 0.65rem; }
+    .prose-gym li { margin-bottom: 0.25rem; }
+    .prose-gym hr { border-color: rgba(51, 65, 85, 0.5); margin: 0.75rem 0; }
+    .prose-gym table { width: 100%; border-collapse: collapse; margin: 0.65rem 0; font-size: 0.75rem; }
+    .prose-gym th, .prose-gym td { border: 1px solid #334155; padding: 0.35rem 0.5rem; text-align: left; }
+    .prose-gym th { background-color: #1e293b; color: #93c5fd; font-weight: 700; }
+    .prose-gym tr:nth-child(even) { background-color: rgba(15, 23, 42, 0.4); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 pb-28 font-sans select-none">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 pb-28 font-sans">
 
   <!-- 全螢幕呼吸燈指示層 -->
   <div id="screenBreathingOverlay" class="fixed inset-0 pointer-events-none z-50 transition-all duration-700"></div>
@@ -56,7 +74,7 @@
   <!-- ========================================================================= -->
   <!-- 頁面 1：訓練 (Tracker 主頁面)                                               -->
   <!-- ========================================================================= -->
-  <div id="viewTrackerPage" class="space-y-3.5">
+  <div id="viewTrackerPage" class="space-y-3.5 select-none">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl space-y-2">
       <div class="flex items-center justify-between gap-1.5">
         <div class="flex items-center gap-1.5 flex-1 min-w-0">
@@ -297,7 +315,7 @@
   <!-- ========================================================================= -->
   <!-- 頁面 2：歷史回顧                                                           -->
   <!-- ========================================================================= -->
-  <div id="viewCalendarPage" class="hidden space-y-3.5">
+  <div id="viewCalendarPage" class="hidden space-y-3.5 select-none">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
       <h2 class="text-sm font-bold text-white flex items-center gap-2">
         <span>📅</span> <span>訓練歷史回顧月曆</span>
@@ -344,10 +362,10 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 頁面 3：AI 分析 (整合 CSCS & ISSN 認證 AI 教練)                           -->
+  <!-- 頁面 3：AI 分析 (支援 Markdown 渲染 + 全面文字自由選取)                  -->
   <!-- ========================================================================= -->
   <div id="viewAiPage" class="hidden space-y-3.5">
-    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between select-none">
       <h2 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
         <span>🤖</span> <span>CSCS & ISSN 力量與營養教練</span>
       </h2>
@@ -355,7 +373,7 @@
     </header>
 
     <!-- 快捷圖表分析按鈕區 -->
-    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3 select-none">
       <span class="text-xs font-bold text-slate-300 block">📊 智能診斷 (一鍵生成圖表 + 科學分析報告)</span>
       
       <div class="grid grid-cols-2 gap-2.5">
@@ -397,7 +415,7 @@
         </div>
       </div>
 
-      <!-- 圖表畫布容器 (預設隱藏，點擊按鈕後展示) -->
+      <!-- 圖表畫布容器 (預設隱藏) -->
       <div id="aiChartContainer" class="hidden p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
         <div class="flex justify-between items-center pb-1 border-b border-slate-800/80">
           <span id="aiChartTitle" class="text-xs font-bold text-indigo-300">進度圖表</span>
@@ -408,12 +426,12 @@
         </div>
       </div>
 
-      <!-- 教練分析報告展示區 -->
-      <div id="aiAdviceBox" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1.5">
-        <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+      <!-- 教練分析報告展示區 (支援自由選取與 Markdown 渲染) -->
+      <div id="aiAdviceBox" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1.5 select-text cursor-text">
+        <span class="text-xs font-bold text-emerald-400 flex items-center gap-1 select-none">
           <span>💬</span> <span>CSCS & ISSN 教練專屬分析處方：</span>
         </span>
-        <div id="aiAdviceContent" class="text-slate-300 leading-relaxed whitespace-pre-wrap font-sans text-xs">
+        <div id="aiAdviceContent" class="prose-gym select-text cursor-text">
           點擊上方按鈕開始深度分析，或在下方直接向教練諮詢動作姿勢與飲食！
         </div>
       </div>
@@ -421,21 +439,21 @@
 
     <!-- AI Chatbot 對話互動區 -->
     <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-      <span class="text-xs font-bold text-slate-300 flex items-center justify-between">
+      <span class="text-xs font-bold text-slate-300 flex items-center justify-between select-none">
         <span>💬 私人教練諮詢 (Chatbot)</span>
         <span class="text-[10px] text-slate-500">CSCS / ISSN 力量與營養指導</span>
       </span>
 
-      <!-- 聊天對話流 -->
-      <div id="chatMessagesContainer" class="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-60 overflow-y-auto space-y-2.5 text-xs font-sans">
-        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-300 max-w-[85%]">
-          👋 你好！我是你的 AI 力量訓練科學教練兼運動營養數據分析師（具備 CSCS 與 ISSN 認證）。今天操練感覺如何？有關動作力學、組間張力、酸痛或練後飲食克數補充，隨時問我！
+      <!-- 聊天對話流 (支援自由選取文字) -->
+      <div id="chatMessagesContainer" class="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-72 overflow-y-auto space-y-2.5 text-xs select-text cursor-text">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-slate-300 max-w-[90%] prose-gym select-text">
+          我是你的 <strong>CSCS & ISSN</strong> 力量與運動營養教練。隨時發問訓練動作、痛症排查或飲食克數建議。
         </div>
       </div>
 
       <!-- 聊天發送列 -->
-      <div class="flex items-center gap-2">
-        <input type="text" id="inputChatMessage" placeholder="例如: 我推胸手肘微痛，且想問練後碳水點食？" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+      <div class="flex items-center gap-2 select-none">
+        <input type="text" id="inputChatMessage" placeholder="例如: 我今日做到手痛，邊個項目引致？" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 select-text">
         <button onclick="sendChatMessage()" id="btnSendChat" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md">
           發送
         </button>
@@ -446,7 +464,7 @@
   <!-- ========================================================================= -->
   <!-- 頁面 4：設定                                                               -->
   <!-- ========================================================================= -->
-  <div id="viewSettingsPage" class="hidden space-y-3.5">
+  <div id="viewSettingsPage" class="hidden space-y-3.5 select-none">
     <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl">
       <h2 class="text-sm font-bold text-white flex items-center gap-2">
         <span>⚙️</span> <span>系統設定與個人體重</span>
@@ -513,11 +531,11 @@
     </section>
   </div>
 
-  <!-- 底部懸浮膠囊導航列 (4 大純 Icon 精簡按鈕) -->
-  <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
+  <!-- 底部懸浮膠囊導航列 -->
+  <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none select-none">
     <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2">
       <button id="navTabTracker" onclick="switchMainView('tracker')" title="訓練" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90">
-        🏋️️
+        🏋
       </button>
       <button id="navTabCalendar" onclick="switchMainView('calendar')" title="歷史回顧" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
         📅
@@ -532,7 +550,7 @@
   </div>
 
   <!-- 單組數據修改 Modal -->
-  <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
         <h3 class="font-bold text-sm text-white flex items-center gap-1.5">
@@ -557,7 +575,7 @@
           <div class="flex items-center gap-1">
             <button type="button" class="w-9 h-8 rounded bg-slate-800 text-white font-bold" onclick="stepEditValue('weight', -2.5)">-2.5</button>
             <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" onclick="stepEditValue('weight', -1)">-1</button>
-            <input type="number" id="editSetWeightInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500">
+            <input type="number" id="editSetWeightInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
             <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('weight', 1)">+1</button>
             <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('weight', 2.5)">+2.5</button>
           </div>
@@ -568,7 +586,7 @@
           <div class="flex items-center gap-1">
             <button type="button" class="w-9 h-8 rounded bg-slate-800 text-white font-bold" onclick="stepEditValue('reps', -5)">-5</button>
             <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" onclick="stepEditValue('reps', -1)">-1</button>
-            <input type="number" id="editSetRepsInput" inputmode="numeric" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500">
+            <input type="number" id="editSetRepsInput" inputmode="numeric" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
             <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 1)">+1</button>
             <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" onclick="stepEditValue('reps', 5)">+5</button>
           </div>
@@ -584,11 +602,11 @@
           <div class="grid grid-cols-2 gap-2 pb-1.5">
             <div>
               <span class="text-[10px] text-slate-500 block mb-0.5">分鐘 (Minutes)</span>
-              <input type="number" id="editCardioMinutesInput" min="0" max="600" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500">
+              <input type="number" id="editCardioMinutesInput" min="0" max="600" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500 select-text">
             </div>
             <div>
               <span class="text-[10px] text-slate-500 block mb-0.5">秒數 (Seconds)</span>
-              <input type="number" id="editCardioSecondsInput" min="0" max="59" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500">
+              <input type="number" id="editCardioSecondsInput" min="0" max="59" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500 select-text">
             </div>
           </div>
           <div class="grid grid-cols-4 gap-1 pt-1">
@@ -602,11 +620,11 @@
         <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
           <div>
             <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">速度 (km/h)</label>
-            <input type="number" id="editCardioSpeedInput" step="0.1" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500">
+            <input type="number" id="editCardioSpeedInput" step="0.1" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500 select-text">
           </div>
           <div>
             <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">斜度 / 阻力 (%)</label>
-            <input type="number" id="editCardioInclineInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500">
+            <input type="number" id="editCardioInclineInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500 select-text">
           </div>
         </div>
       </div>
@@ -619,7 +637,7 @@
   </div>
 
   <!-- 器材設定與拍照 Modal -->
-  <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
         <h3 class="font-bold text-base text-white flex items-center gap-1.5">
@@ -640,7 +658,7 @@
 
       <div>
         <label class="text-[11px] text-slate-400 block mb-1">器材名稱 (顯示別名)</label>
-        <input type="text" id="modalMachineNameInput" placeholder="例如: 跑步機 / 樓梯機 / 雙槓機" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 text-xs">
+        <input type="text" id="modalMachineNameInput" placeholder="例如: 跑步機 / 樓梯機 / 雙槓機" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 text-xs select-text">
       </div>
 
       <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
@@ -685,31 +703,31 @@
       <div class="space-y-2 text-xs">
         <div>
           <label class="text-[11px] text-slate-400 block mb-1">💺 坐位高度 / 距離</label>
-          <input type="text" id="settingSeat" placeholder="例: 3號孔 / 刻度4 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          <input type="text" id="settingSeat" placeholder="例: 3號孔 / 刻度4 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
         </div>
         <div>
           <label class="text-[11px] text-slate-400 block mb-1">↔️ 扶手握距</label>
-          <input type="text" id="settingHandle" placeholder="例: 闊握第2格 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          <input type="text" id="settingHandle" placeholder="例: 闊握第2格 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
         </div>
         <div>
           <label class="text-[11px] text-slate-400 block mb-1">📐 靠背角度</label>
-          <input type="text" id="settingBackrest" placeholder="例: 倒數第2段 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          <input type="text" id="settingBackrest" placeholder="例: 倒數第2段 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
         </div>
 
         <div class="grid grid-cols-2 gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
           <div>
             <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">🏃 預設速度 (Speed)</label>
-            <input type="text" id="settingDefaultSpeed" placeholder="例: 6.5 (km/h)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500">
+            <input type="text" id="settingDefaultSpeed" placeholder="例: 6.5 (km/h)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500 select-text">
           </div>
           <div>
             <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">📈 預設斜度 (Incline)</label>
-            <input type="text" id="settingDefaultIncline" placeholder="例: 3.0 (%)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500">
+            <input type="text" id="settingDefaultIncline" placeholder="例: 3.0 (%)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500 select-text">
           </div>
         </div>
 
         <div>
           <label class="text-[11px] text-slate-400 block mb-1">📝 個人備註</label>
-          <input type="text" id="settingNotes" placeholder="例: 心率維持 135" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          <input type="text" id="settingNotes" placeholder="例: 心率維持 135" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
         </div>
       </div>
 
@@ -1943,8 +1961,8 @@
       }, 1000);
     }
 
-    // ==========================================
-    // 8. 此機操作
+ // ==========================================
+    // 8. 此機操作 (已修復 now 未宣告導致的點擊無反應 Bug)
     // ==========================================
     const btnToggleMachine = document.getElementById('btnToggleMachine');
     const btnToggleMachineText = document.getElementById('btnToggleMachineText');
@@ -1955,13 +1973,14 @@
       if (isWorkoutPaused) { alert("⚠ 訓練處於暫停狀態，請按繼續！"); return; }
       if (!currentSelectedMachine) { alert("請先選擇或新增器材！"); return; }
 
+      const now = Date.now(); // 關鍵修復：定義 now
       const nowTime = new Date().toTimeString().split(' ')[0];
       const isCardio = isCardioEquipment(currentSelectedMachine, currentMuscleGroup);
 
       if (!isMachineActive) {
         isMachineActive = true;
-        machineStartEpoch = Date.now();
-        currentSetStartEpoch = Date.now();
+        machineStartEpoch = now;
+        currentSetStartEpoch = now;
         machinePausedMs = 0;
         setPausedMs = 0;
         lastSetLogEpoch = null;
@@ -1977,7 +1996,7 @@
         clearInterval(machineTimerInterval);
         machineTimerInterval = setInterval(updateMachineTimerDisplay, 1000);
       } else {
-        const pauseExtra = (isWorkoutPaused && pauseStartEpoch) ? (Date.now() - pauseStartEpoch) : 0;
+        const pauseExtra = (isWorkoutPaused && pauseStartEpoch) ? (now - pauseStartEpoch) : 0;
         const totalMachineSec = Math.max(0, Math.floor((now - machineStartEpoch - (machinePausedMs + pauseExtra)) / 1000));
 
         if (isCardio) {
@@ -2006,6 +2025,10 @@
         machinePausedMs = 0;
         setPausedMs = 0;
         setBreathingOverlay('off');
+
+        document.getElementById('machineTimerDisplay').innerText = "00:00";
+        const splitEl = document.getElementById('cardioSplitTimerDisplay');
+        if (splitEl) splitEl.innerText = "00:00";
 
         btnToggleMachineText.innerText = "開始此機";
         btnToggleMachine.className = "flex-1 w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px]";
@@ -2225,7 +2248,7 @@
     function updateCardioEditText() {
       const m = parseInt(document.getElementById('editCardioMinutesInput').value, 10) || 0;
       const s = parseInt(document.getElementById('editCardioSecondsInput').value, 10) || 0;
-      document.getElementById('editCardioTimeText').innerText = `${m} 分 ${s} 秒`;
+      document.getElementById('editCardioTimeText').innerText = `${m} 分 ${secs} 秒`;
     }
 
     function stepCardioEditTime(secondsToAdd) {
@@ -2737,7 +2760,7 @@
       }).join('');
 
       container.innerHTML = `
-        <div class="p-3 bg-indigo-950/20 border border-indigo-800/40 rounded-xl text-xs space-y-1.5">
+        <div class="p-3 bg-indigo-950/20 border border-indigo-800/40 rounded-xl text-xs space-y-1.5 select-text">
           <div class="flex justify-between text-indigo-300 font-semibold">
             <span>訓練部位: <b class="text-white">${escapeHtml(workout.muscle_group || '綜合')}</b></span>
             <span>總時長: <b class="text-white">${workout.total_duration_min ? workout.total_duration_min + ' 分鐘' : '--'}</b></span>
@@ -2747,8 +2770,8 @@
             <span class="text-amber-300 font-bold bg-amber-950/80 border border-amber-700/50 px-2 py-0.5 rounded">總消耗: 🔥${Math.round(totalDayCalories)} kcal</span>
           </div>
         </div>
-        <div class="space-y-4">${muscleGroupsHtml}</div>
-        ${workout.ai_advice ? `<div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1"><span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span><p class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(workout.ai_advice)}</p></div>` : ''}
+        <div class="space-y-4 select-text">${muscleGroupsHtml}</div>
+        ${workout.ai_advice ? `<div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-1 select-text"><span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🤖 AI 教練建議</span><div class="prose-gym">${marked.parse(workout.ai_advice)}</div></div>` : ''}
       `;
     }
 
@@ -2805,7 +2828,7 @@
     }
 
     // ==========================================
-    // 15. Gemini AI 圖表生成、器材下拉選單與 CSCS/ISSN 核心
+    // 15. Gemini AI 圖表生成、器材下拉選單與 CSCS/ISSN 核心 (無客套話 + 結構化)
     // ==========================================
     let aiChartInstance = null;
 
@@ -2865,7 +2888,6 @@
 
         chartTitle.innerText = `${targetMachine} 總容量與 1RM 追蹤趨勢`;
 
-        // 整理歷史容量與 1RM
         const datesMap = {};
         Object.keys(historicalWorkouts).sort().forEach(d => {
           const dayLogs = historicalWorkouts[d]?.logs || [];
@@ -2881,7 +2903,6 @@
           });
         });
 
-        // 累計今日實時組數
         const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
         workoutLogs.filter(l => l.exercise_name === targetMachine).forEach(l => {
           const w = parseFloat(l.weight_kg || l.weight) || 0;
@@ -2913,29 +2934,36 @@
 
         const prompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。
 
-### 學員固定個人生理檔案（已鎖定）：
-- 身高：173 cm
-- 基準體重 BW：${userWeightLb}lb (${userWeightKg} kg)
-- 核心目標：肌肥大（增肌 Hypertrophy，維持精瘦體態）
-- 基礎代謝率 BMR：約 1,650 - 1,700 kcal / 日
+### 格式與語氣核心要求：
+1. **嚴禁任何客氣寒暄語**（絕對不要出現「你好」、「我是你的...」、「很高興為你分析」等開場白，第一句立刻切入分析）。
+2. **輸出結構化且易讀**：善用清晰的小標題（##）、Point Form（條列清單 * ）、**粗體強調關鍵數字**、*斜體*、適量 Emoji（🏋️, 🔥, 🍽️, 📈, ⚖️）及 Markdown 格式。
 
-### 分析目標器材：【${targetMachine}】
-- 近期歷史組數與進展：
-${historySummary}
-- 今日即時做組：總容量 ${datesMap[todayStr] ? datesMap[todayStr].volume : 0} kg, 最高推估 1RM ${datesMap[todayStr] ? datesMap[todayStr].max1RM : 0} kg。
+### 學員固定檔案：
+- 身高：173 cm | 基準體重：${userWeightLb}lb (${userWeightKg} kg) | 目標：肌肥大 (Hypertrophy) | BMR：1,650-1,700 kcal
 
-請嚴格按照以下結構輸出深度分析報告（條理分明、避免客套贅字）：
-1. 🏋️ **訓練表現與推比分析**：以學員基準體重 (${userWeightKg} kg) 評估主力動作推比 [推比 = 組重量 / ${userWeightKg}kg]，分析神經肌肉徵召與肌力水準。
-2. 🔥 **總容量負荷與做組強度**：深度診斷漸進超負荷（Volume Overload）達成情況與疲勞度。
-3. 🍽️ **客製化練後飲食營養補充處方**：
-   - 練後黃金窗口（2 小時內）：以每公斤 1.6-2.0g 蛋白質標準，提供 30-40g 高生物價蛋白質指引（精確至克數 g 與食物推薦，確保白胺酸 Leucine 門檻觸發 MPS）。
-   - 碳水化合物補充：依做組負荷給予 0.8-1.2g/kg 碳水指引（精確至克數 g 與食物範例，如白飯、香蕉貝果）。
-   - 水分與電解質補充提醒。
-4. 📈 **下週期漸進超負荷指示**：明確給出下回進健身房時，該器材「起始重量（加重幅度）」或「目標次數」。`;
+### 分析器材：【${targetMachine}】
+- 歷史與今日組數：${historySummary}
+- 今日：總容量 ${datesMap[todayStr] ? datesMap[todayStr].volume : 0} kg, 1RM ${datesMap[todayStr] ? datesMap[todayStr].max1RM : 0} kg。
+
+請嚴格按以下 4 大區塊輸出（直接以 ## 開頭）：
+## 🏋️ 訓練表現與推比分析
+- 以 ${userWeightKg}kg 體重計算主力動作推比 [推比 = 組重量 / ${userWeightKg}kg]。
+- 診斷力量水平與神經徵召。
+
+## 🔥 總容量負荷與做組強度
+- 條列漸進超負荷達成情況與容量（Volume）推移。
+
+## 🍽️ 客製化練後飲食補充處方
+- **蛋白質**：練後 2 小時內補充 **30g - 40g** 高生物價蛋白質（附食物選項如乳清或雞胸肉，達白胺酸 Leucine 刺激門檻）。
+- **碳水化合物**：依做組負荷給予 **0.8 - 1.2g/kg** 碳水補充量（精確至克數與食物對照）。
+- **水份電解質**：補充指引。
+
+## 📈 下週期超負荷指令
+- 明確指定下回起始重量調整（如加 2.5kg）或目標次數。`;
 
         const res = await sendGasRequest("callGemini", { prompt });
         if (res.status === "success") {
-          contentEl.innerText = res.reply.trim();
+          contentEl.innerHTML = marked.parse(res.reply.trim());
         } else {
           contentEl.innerText = `AI 點評失敗: ${res.message}`;
         }
@@ -2943,7 +2971,12 @@ ${historySummary}
       } else if (type === 'today_workout') {
         chartTitle.innerText = "今日訓練各器材總容量 (Volume Load) 對比";
 
-        const todayLogs = workoutLogs;
+        const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
+        
+        let todayLogs = (workoutLogs && workoutLogs.length > 0) 
+          ? workoutLogs 
+          : (historicalWorkouts[todayStr]?.logs || []);
+
         if (!todayLogs || todayLogs.length === 0) {
           contentEl.innerText = "今日尚未完成任何組數記錄！請先開始訓練並完成至少 1 組器材。";
           chartContainer.classList.add('hidden');
@@ -2958,7 +2991,7 @@ ${historySummary}
         todayLogs.forEach(l => {
           const mName = l.exercise_name || "未知器材";
           const isCardio = isCardioEquipment(mName, l.muscle_group, l);
-          if (!machineMap[mName]) machineMap[mName] = { volume: 0, sets: 0, isCardio: isCardio, calories: 0 };
+          if (!machineMap[mName]) machineMap[mName] = { volume: 0, sets: 0, isCardio: isCardio, calories: 0, maxWeight: 0, maxReps: 0 };
 
           machineMap[mName].sets += 1;
           const cal = parseFloat(l.calories) || 0;
@@ -2972,6 +3005,10 @@ ${historySummary}
             const w = parseFloat(l.weight_kg || l.weight) || 0;
             const r = parseInt(l.reps, 10) || 0;
             machineMap[mName].volume += (w * r);
+            if (w > machineMap[mName].maxWeight) {
+              machineMap[mName].maxWeight = w;
+              machineMap[mName].maxReps = r;
+            }
           }
         });
 
@@ -2982,40 +3019,55 @@ ${historySummary}
           { label: '器材總容量 (kg)', data: volumes, backgroundColor: 'rgba(99, 102, 241, 0.7)', borderColor: '#6366f1', borderRadius: 6 }
         ]);
 
-        const totalMin = Math.round(getAccurateElapsedWorkoutSeconds() / 60);
+        const histData = historicalWorkouts[todayStr];
+        const totalMin = histData?.total_duration_min 
+          ? Math.round(histData.total_duration_min) 
+          : Math.round(getAccurateElapsedWorkoutSeconds() / 60);
+
         const machinesSummaryText = labels.map(k => {
-          return `${k}: ${machineMap[k].sets}組/段 (容量:${machineMap[k].volume}kg, 🔥${Math.round(machineMap[k].calories)}kcal)`;
+          return `${k}: ${machineMap[k].sets}組/段 (容量:${machineMap[k].volume}kg, 最高:${machineMap[k].maxWeight}kg×${machineMap[k].maxReps}下, 🔥${Math.round(machineMap[k].calories)}kcal)`;
         }).join(' | ');
+
+        const muscleGroupToday = histData?.muscle_group || currentMuscleGroup;
+        const timelineText = (timelineEvents && timelineEvents.length > 0)
+          ? timelineEvents.slice(-8).join(" -> ")
+          : (histData?.timeline_text || "今日已完成結算歸檔");
 
         const prompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。
 
-### 學員固定個人生理檔案（已鎖定）：
-- 身高：173 cm
-- 基準體重 BW：${userWeightLb}lb (${userWeightKg} kg)
-- 核心目標：肌肥大（增肌 Hypertrophy，維持精瘦體態）
-- 基礎代謝率 BMR：約 1,650 - 1,700 kcal / 日
+### 格式與語氣核心要求：
+1. **嚴禁任何客氣寒暄語**（直接開門見山，第一句立刻進報告）。
+2. **輸出結構化且易讀**：大量使用 Point Form（條列清單）、**粗體強調關鍵數字**、*斜體*、適量 Emoji（🏋️, 🔥, 🍽️, 📈, ⚖️）及 Markdown 格式。
 
-### 今日訓練全場數據：
-- 當日部位：${currentMuscleGroup}
-- 訓練總時長：約 ${totalMin} 分鐘 (有效組數: 重訓 ${totalStrengthSets} 組, 帶氧 ${totalCardioSets} 段)
-- 系統累計總能耗：約 ${Math.round(totalWorkoutCal)} kcal
-- 器材明細：
-${machinesSummaryText}
-- 當日時間線流水帳：
-${timelineEvents.slice(-8).join(" -> ")}
+### 學員固定檔案：
+- 身高：173 cm | 基準體重：${userWeightLb}lb (${userWeightKg} kg) | 目標：肌肥大 (Hypertrophy) | BMR：1,650-1,700 kcal
 
-請嚴格遵守以下 4 大架構輸出專業報告（條列清晰，數據具體）：
-1. 🏋️ **訓練質量與容量總評**：評估時長、部位刺激密度、主力器材推比表現與力竭程度。
-2. 🔥 **總消耗卡路里推算**：結合代謝當量（METs 重訓取 5.0-6.0，高強度/帶氧取 7.0-8.5），列出精確的淨消耗卡路里區間。
-3. 🍽️ **當日/練後飲食補充處方**：
-   - 練後 2 小時黃金窗口：提供 30-40g 高生物價蛋白質（如乳清 1.5 匙或雞胸肉 150g），達白胺酸 MPS 刺激門檻。
-   - 碳水化合物儲備：依總噸位給出 0.8-1.2g/kg（約 58-87g 碳水）補充指引，並列出白飯、香蕉、Bagel 等具體食物轉換。
-   - 水分與電解質補充量（ml）。
-4. 📈 **下週期漸進超負荷指示**：明確點名哪些器材下次應增加 2.5kg 或增加 1-2 下。`;
+### 今日全場訓練數據：
+- 當日部位：${muscleGroupToday}
+- 訓練總時長：約 ${totalMin} 分鐘 (重訓 ${totalStrengthSets} 組, 帶氧 ${totalCardioSets} 段)
+- 系統累計消耗：約 ${Math.round(totalWorkoutCal)} kcal
+- 器材明細：${machinesSummaryText}
+- 時間線流水帳：${timelineText}
+
+請嚴格按以下 4 大區塊輸出（直接以 ## 開頭）：
+## 🏋️ 全場訓練質量與容量總評
+- 評估部位刺激密度與總噸位。
+- 計算主力動作推比 [組重量 / ${userWeightKg}kg]。
+
+## 🔥 總消耗卡路里推算
+- 結合代謝當量（METs 5.0-6.0 及高強度 7.0-8.5），列出精確淨消耗區間。
+
+## 🍽️ 當日與練後飲食補充處方
+- **蛋白質**：練後 2 小時內補充 **30g - 40g** 高生物價蛋白質（附具體食物選項與克數）。
+- **碳水化合物**：依做組負荷給予 **0.8 - 1.2g/kg**（約 ${Math.round(userWeightKg * 0.8)}g - ${Math.round(userWeightKg * 1.2)}g 碳水），附白飯、香蕉、貝果等對照。
+- **水份電解質**：補充量。
+
+## 📈 下週期超負荷指令
+- 明確列出哪些器材下次增加 2.5kg 或增加 1-2 下。`;
 
         const res = await sendGasRequest("callGemini", { prompt });
         if (res.status === "success") {
-          contentEl.innerText = res.reply.trim();
+          contentEl.innerHTML = marked.parse(res.reply.trim());
         } else {
           contentEl.innerText = `AI 點評失敗: ${res.message}`;
         }
@@ -3041,7 +3093,7 @@ ${timelineEvents.slice(-8).join(" -> ")}
       });
     }
 
-// Chatbot 訊息發送邏輯 (完整注入 CSCS & ISSN 認證 AI 健身教練規範)
+    // Chatbot 訊息發送邏輯 (去除客套話 + 條列化 + 支援 Markdown 與自由選取)
     async function sendChatMessage() {
       const inputEl = document.getElementById('inputChatMessage');
       const text = inputEl.value.trim();
@@ -3050,10 +3102,9 @@ ${timelineEvents.slice(-8).join(" -> ")}
       const container = document.getElementById('chatMessagesContainer');
       const btn = document.getElementById('btnSendChat');
 
-      // 使用者訊息氣泡
       container.innerHTML += `
-        <div class="flex justify-end">
-          <div class="bg-indigo-600 text-white p-2.5 rounded-xl max-w-[85%] text-xs shadow-md">
+        <div class="flex justify-end select-text">
+          <div class="bg-indigo-600 text-white p-2.5 rounded-xl max-w-[85%] text-xs shadow-md select-text cursor-text">
             ${escapeHtml(text)}
           </div>
         </div>
@@ -3061,23 +3112,92 @@ ${timelineEvents.slice(-8).join(" -> ")}
       inputEl.value = "";
       btn.disabled = true;
 
-      // AI 等待氣泡
       const loadingId = "chat_loading_" + Date.now();
       container.innerHTML += `
-        <div id="${loadingId}" class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-400 max-w-[85%] text-xs flex items-center gap-1">
-          <span class="animate-spin text-sm">⏳</span> <span>CSCS & ISSN 教練分析中...</span>
+        <div id="${loadingId}" class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-400 max-w-[85%] text-xs flex items-center gap-1 select-none">
+          <span class="animate-spin text-sm">⏳</span> <span>CSCS & ISSN 教練深度分析中...</span>
         </div>
       `;
       container.scrollTop = container.scrollHeight;
 
-      // 取得即時生理數據與今日訓練狀態
-      const userWeightKg = getUserWeight(); // 基準 70.8 - 72.6 kg
+      // 1. 生理數據 (173cm, 156lb / 70.8kg)
+      const userWeightKg = getUserWeight();
       const userWeightLb = Math.round(userWeightKg * 2.20462262);
-      const totalMin = Math.round(getAccurateElapsedWorkoutSeconds() / 60);
-      const todaySummary = workoutLogs.map(l => `${l.exercise_name}: ${l.set_num}組 (${l.weight}${l.unit}×${l.reps})`).slice(-5).join(', ') || "今日尚無做組";
 
-      // 完整 AI 健身教練 CSCS + ISSN 專業 Prompt
-      const fullPrompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。你的職責是結合學員的個人生理數據與即時訓練進展，進行力量超負荷分析，並提供精確到「克數（g）」與「大卡（kcal）」的運動後飲食營養補充處方。
+      // 2. 獲取今日數據 (支援實時與已結算歸檔)
+      const todayStr = normalizeDateStr(document.getElementById('displayDate').innerText);
+      const histToday = historicalWorkouts[todayStr];
+      const todayLogs = (workoutLogs && workoutLogs.length > 0)
+        ? workoutLogs
+        : (histToday?.logs || []);
+
+      const machineSummaryMap = {};
+      let totalDayCalories = 0;
+      let totalStrengthSets = 0;
+      let totalCardioSets = 0;
+
+      todayLogs.forEach(l => {
+        const mName = l.exercise_name || "未知器材";
+        const isCardio = isCardioEquipment(mName, l.muscle_group, l);
+        const cal = parseFloat(l.calories) || 0;
+        totalDayCalories += cal;
+
+        if (!machineSummaryMap[mName]) {
+          machineSummaryMap[mName] = { sets: 0, volume: 0, isCardio: isCardio, maxWeight: 0, maxReps: 0 };
+        }
+        machineSummaryMap[mName].sets += 1;
+
+        if (isCardio) {
+          totalCardioSets += 1;
+        } else {
+          totalStrengthSets += 1;
+          const w = parseFloat(l.weight_kg || l.weight) || 0;
+          const r = parseInt(l.reps, 10) || 0;
+          machineSummaryMap[mName].volume += (w * r);
+          if (w > machineSummaryMap[mName].maxWeight) {
+            machineSummaryMap[mName].maxWeight = w;
+            machineSummaryMap[mName].maxReps = r;
+          }
+        }
+      });
+
+      const allMachinesOverview = Object.keys(machineSummaryMap).map(k => {
+        const item = machineSummaryMap[k];
+        return item.isCardio
+          ? `【${k}】${item.sets}段帶氧`
+          : `【${k}】${item.sets}組 (最高 ${item.maxWeight}kg×${item.maxReps}下, 總容量 ${item.volume}kg)`;
+      }).join('； ') || "今日尚無訓練組數";
+
+      const totalMin = histToday?.total_duration_min 
+        ? Math.round(histToday.total_duration_min) 
+        : Math.round(getAccurateElapsedWorkoutSeconds() / 60);
+
+      const muscleGroupToday = histToday?.muscle_group || currentMuscleGroup;
+
+      // 3. 聚合最近 14 天歷史數據庫
+      const sortedHistoryDates = Object.keys(historicalWorkouts).sort().reverse();
+      const recentHistoryList = sortedHistoryDates.slice(0, 14).map(d => {
+        const h = historicalWorkouts[d];
+        if (!h || !h.logs || h.logs.length === 0) return null;
+
+        let dCal = 0;
+        const dMachines = {};
+        h.logs.forEach(l => {
+          dCal += (parseFloat(l.calories) || 0);
+          const name = l.exercise_name || '動作';
+          dMachines[name] = (dMachines[name] || 0) + 1;
+        });
+
+        const mSummary = Object.entries(dMachines).map(([nm, cnt]) => `${nm} ${cnt}組/段`).join(', ');
+        return `• 【${d}】部位:${h.muscle_group || '綜合'} | 時長:${h.total_duration_min || '--'}分 | 總組數:${h.logs.length}組 | 消耗:約${Math.round(dCal)}kcal | 器材:[${mSummary}]`;
+      }).filter(Boolean).join('\n') || "暫無過往歷史紀錄";
+
+      // 4. 上一版本深度 CSCS & ISSN 核心 Prompt (長篇全面解析)
+      const fullPrompt = `你是一位具備 CSCS（肌力與體能訓練專家）及 ISSN（國際運動營養學會）認證的 AI 力量訓練科學教練兼運動營養數據分析師。你的職責是綜觀學員全場訓練數據，進行力量超負荷分析，並提供精確到「克數（g）」與「大卡（kcal）」的運動後飲食營養補充處方。
+
+### 格式與語氣核心要求：
+1. **嚴禁任何客氣寒暄語**（絕對禁止「你好！」、「我是你的...」、「收到你的問題」等無效開場白，第一句直接切入重點回答）。
+2. **輸出結構化且易讀**：大量使用小標題（##）、Point Form（條列清單 * ）、**粗體強調關鍵字與數值**、*斜體*、適量 Emoji 及清晰段落，若涉及多組數對照可適度使用 Markdown 表格。
 
 ### 學員固定個人生理檔案（已鎖定）：
 - 身高：173 cm
@@ -3085,38 +3205,49 @@ ${timelineEvents.slice(-8).join(" -> ")}
 - 核心目標：肌肥大（增肌 Hypertrophy，維持精瘦體態）
 - 基礎代謝率 BMR 約略值：約 1,650 - 1,700 kcal / 日
 
-### 當前訓練實時動態：
-- 當前操作器材/動作：${currentSelectedMachine || "一般肌力訓練"}
-- 今日訓練累計時長：約 ${totalMin} 分鐘
-- 近期組數摘要：${todaySummary}
+### 系統當前基準日期：
+- 今天日期是：${todayStr}
 
-### 核心指導準則：
-1. **力量與超負荷（Performance & Overload）**：
-   - 主力動作評估推比：[推比 = 組訓練重量(kg) / ${userWeightKg}kg]。
-   - 著重肌肥大有效刺激與動作生物力學安全，指出下次加重或增次的具體數值。
-2. **營養處方（Post-Workout Nutrition Prescription）**：
-   - 涉及飲食時，必須精確到「克數（g）」與「卡路里（kcal）」。
-   - 全日蛋白質：每公斤 1.6 - 2.0g (${Math.round(userWeightKg * 1.6)}g - ${Math.round(userWeightKg * 2.0)}g/日)。
-   - 練後 2 小時黃金窗口：建議 30g - 40g 高生物價蛋白質（如乳清蛋白 1.5 匙或熟雞胸肉 150g），觸發白胺酸（Leucine）MPS 門檻。
-   - 碳水化合物：0.8 - 1.2g/kg (${Math.round(userWeightKg * 0.8)}g - ${Math.round(userWeightKg * 1.2)}g 碳水)，給予白飯、香蕉、Bagel 等具體食物轉換範例。
-   - 水分：運動超過 60 分鐘提醒補充 500 - 750ml 水分與電解質。
+### 今日全場訓練實況匯總 (${todayStr})：
+- 訓練部位：${muscleGroupToday}
+- 總時長：約 ${totalMin} 分鐘 (重訓 ${totalStrengthSets} 組，帶氧 ${totalCardioSets} 段)
+- 系統累計總消耗：約 ${Math.round(totalDayCalories)} kcal
+- 完成器材及表現明細：${allMachinesOverview}
+
+### 過往歷史訓練資料庫 (最近紀錄)：
+${recentHistoryList}
+
+---
+### 核心指導準則（請嚴格遵守並作深度充分闡述）：
+1. **精準識別問題時間與全場表現**：
+   - 若學員詢問「今日」，依【今日全場訓練實況匯總】分析。
+   - 若學員詢問「昨日 / 前日 / 上次 / 某月某日 / 一星期規律」，請務必依【過往歷史訓練資料庫】中相應日期的資料回答。
+   - 不要只盯著單一動作！評估學員總容量與主力動作的推比水準 [組重量(kg) / ${userWeightKg}kg]，給予客觀深度的 CSCS 訓練強度與疲勞評估。
+2. **超負荷與痛症/弱點排查**：
+   - 若涉及痛症或疲勞，從動作解剖學、力竭程度與累積容量詳細排查可能誘發的項目。
+   - 指出哪些動作需要漸進超負荷（加重 2.5kg 或增加 1-2 下）。
+3. **ISSN 克數級營養補充處方**：
+   - 練後黃金窗口：建議攝入 **30g - 40g 高生物價蛋白質**（如乳清 1.5 匙或熟雞胸 150g），達白胺酸 Leucine 門檻以最大化肌肉蛋白質合成（MPS）。
+   - 碳水儲備：依消耗給予 **0.8 - 1.2g/kg**（約 ${Math.round(userWeightKg * 0.8)}g - ${Math.round(userWeightKg * 1.2)}g 碳水）補充指引，並詳細對照白飯、香蕉、Bagel 等具體食物。
+   - 水分與電解質補充提醒。
+4. **日常問題應對**：若學員提問非健身話題，以簡短生活常識自然應對即可，切勿生硬拒絕或報錯。
 
 ---
 學員提問：${text}
 
-請以繁體中文回答。口吻專業、科學、客觀且直接給出具體執行方案。格式條理分明，若涉及多個維度請適度分點條列。`;
+請以繁體中文回答，進行詳盡、專業且具備運動科學根據的深度解析：`;
 
       const res = await sendGasRequest("callGemini", { prompt: fullPrompt });
       const loadingEl = document.getElementById(loadingId);
 
       if (res.status === "success") {
         if (loadingEl) {
-          loadingEl.className = "bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-200 max-w-[85%] leading-relaxed";
-          loadingEl.innerHTML = escapeHtml(res.reply.trim());
+          loadingEl.className = "bg-slate-900 p-3 rounded-xl border border-slate-800 text-slate-200 max-w-[90%] prose-gym select-text cursor-text";
+          loadingEl.innerHTML = marked.parse(res.reply.trim());
         }
       } else {
         if (loadingEl) {
-          loadingEl.className = "bg-rose-950/60 p-2.5 rounded-xl border border-rose-800/60 text-rose-300 max-w-[85%]";
+          loadingEl.className = "bg-rose-950/60 p-2.5 rounded-xl border border-rose-800/60 text-rose-300 max-w-[85%] select-text";
           loadingEl.innerText = `無法取得教練回覆: ${res.message || '請檢查網路連線或 API Key 設定'}`;
         }
       }
