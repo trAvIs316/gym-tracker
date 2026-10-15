@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Gym Tracker Pro</title>
+
+  <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <link rel="shortcut icon" href="https://img.icons8.com/fluency/192/dumbbell.png">
+  <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gym Tracker">
+
+  <!-- 安全內容防護政策 -->
+	<meta http-equiv="Content-Security-Policy" content="
+	  default-src 'self';
+	  script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net;
+	  style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+	  img-src 'self' data: https://lh3.googleusercontent.com https://img.icons8.com;
+	  connect-src 'self' https://script.google.com https://script.googleusercontent.com https://cdn.jsdelivr.net;
+	">
+
+  <!-- 外部依賴 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- 自訂獨立樣式表 -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 pb-28 font-sans">
+
+  <!-- 全螢幕呼吸燈指示層 -->
+  <div id="screenBreathingOverlay" class="fixed inset-0 pointer-events-none z-50 transition-all duration-700"></div>
+
+  <!-- 全螢幕圖片放大 Lightbox -->
+  <div id="imageLightboxOverlay" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-3 hidden cursor-zoom-out transition-all">
+    <div class="relative max-w-full max-h-full flex flex-col items-center">
+      <img id="lightboxImage" src="" alt="器材高清大圖" class="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800">
+      <span class="text-slate-400 text-xs mt-3 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700/60 font-semibold">點擊任意位置關閉放大</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 頁面 1：訓練 (Tracker 主頁面)                                               -->
+  <!-- ========================================================================= -->
+  <div id="viewTrackerPage" class="space-y-3.5 select-none">
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl space-y-2">
+      <div class="flex items-center justify-between gap-1.5">
+        <div class="flex items-center gap-1.5 flex-1 min-w-0">
+          <button id="btnStartWorkout" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1 whitespace-nowrap">
+            <span>▶</span>
+            <span>開始訓練</span>
+          </button>
+          <button id="btnPauseWorkout" class="hidden bg-amber-600 hover:bg-amber-500 active:scale-95 text-white px-2.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-950/40 whitespace-nowrap">
+            暫停
+          </button>
+          
+<button id="btnFinishWorkout" class="bg-rose-950/40 text-rose-400/40 border border-rose-900/30 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap cursor-not-allowed">
+  <span>🏁</span>
+  <span id="btnFinishWorkoutText">結束訓練</span>
+</button>
+
+          <span id="badgeWorkoutEnded" class="hidden bg-slate-800 text-slate-400 border border-slate-700 px-2 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap">
+            🏁 已結算
+          </span>
+        </div>
+
+        <div class="text-right flex-shrink-0">
+          <span class="text-[9px] text-slate-500 uppercase tracking-wider block leading-none mb-0.5">訓練時間</span>
+          <span id="totalWorkoutTimer" class="text-2xl font-black font-mono text-emerald-400 leading-none">00:00:00</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-slate-800/80 text-[10px] font-mono text-slate-400 text-center">
+        <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate">
+          開始: <span id="startTimeStamp" class="text-slate-200 font-bold">--:--:--</span>
+        </div>
+        <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate">
+          結束: <span id="endTimeStamp" class="text-slate-200 font-bold">--:--:--</span>
+        </div>
+        <div class="bg-slate-950/60 py-1 px-1 rounded-lg border border-slate-800/60 truncate flex items-center justify-center gap-1">
+          <span id="displayDate" class="text-sky-400 font-bold">--</span>
+          <span id="displayDayName" class="text-slate-300">--</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="space-y-3.5">
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+        <div class="space-y-1.5 pb-1 border-b border-slate-800/80">
+          <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider flex justify-between items-center">
+            <span>對應訓練部位 (單選)</span>
+            <span id="activeMuscleLabel" class="text-indigo-400 font-bold">胸</span>
+          </div>
+          <div id="muscleButtonContainer" class="grid grid-cols-4 gap-1.5 pt-0.5"></div>
+        </div>
+
+        <div class="flex justify-between items-center pt-0.5">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">選擇器材機種</label>
+          <button onclick="window.trackerMod.openAddNewMachineModal()" class="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 px-3 py-1 rounded-lg border border-emerald-700/50 active:scale-95 font-bold">
+            <span>+ 新增器材</span>
+          </button>
+        </div>
+
+        <div id="machineCardsSlider" class="flex gap-3 overflow-x-auto no-scrollbar py-1 min-h-[140px]"></div>
+
+        <div id="lastWeightContainer" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+          <div class="flex items-center gap-2 pb-1.5 border-b border-slate-800/60">
+            <span class="text-slate-400 font-semibold">📋 上次訓練記錄:</span>
+            <div class="flex items-center gap-1.5">
+              <span id="lastWorkoutDateBadge" class="text-[11px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-bold">未連接</span>
+              <span id="lastWorkoutDaysAgo" class="text-[11px] text-amber-400 font-semibold"></span>
+            </div>
+          </div>
+          <div id="lastWorkoutSetsContainer" class="flex flex-col items-start gap-1.5 pt-0.5">
+            <span class="text-slate-600 text-[11px] italic" id="lastWorkoutPlaceholder">請至設定頁驗證 PIN 碼載入歷史</span>
+          </div>
+        </div>
+
+        <div id="activeMachineSettingBanner" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2 truncate">
+              <span class="text-slate-400 font-semibold">當前器材:</span>
+              <span id="currentMachineLabel" class="text-white font-bold text-sm truncate">未選擇</span>
+              <span id="currentMachineIdBadge" class="hidden text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-700/50 px-1.5 py-0.5 rounded font-bold">ID</span>
+              <span id="currentUnilateralBadge" class="hidden text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800/40 px-1.5 py-0.5 rounded">單邊模式</span>
+            </div>
+            <button id="btnEditCurrentSetting" class="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700 active:scale-95 transition-all font-semibold">
+              <span>⚙️</span>
+              <span>設定</span>
+            </button>
+          </div>
+          <div id="currentMachineSettingDetails" class="text-slate-400 text-[11px] flex flex-wrap gap-x-3 gap-y-0.5">
+            <span>💺 坐位: --</span>
+            <span>↔️ 扶手: --</span>
+            <span>📐 角度: --</span>
+            <span class="text-slate-500">📝 備註: --</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <div class="font-bold text-base flex items-center gap-2">
+            <span id="currentSetLabelPrefix">第 <span id="currentSetNum" class="text-indigo-400 text-lg">1</span> 組</span>
+            <span id="cardioModeTag" class="hidden text-[10px] font-bold bg-sky-950 text-sky-400 px-2 py-0.5 rounded border border-sky-800/40">帶氧分段計時</span>
+          </div>
+          
+          <div id="unitToggleTrack" class="relative w-24 h-8 bg-slate-950 rounded-full p-1 flex items-center cursor-pointer border border-slate-800 transition-opacity select-none shadow-inner">
+            <div id="unitSlider" class="absolute left-1 top-1 w-[calc(50%-4px)] h-6 bg-indigo-600 rounded-full transition-transform duration-200 shadow-md"></div>
+            <span id="labelKg" class="relative z-10 w-1/2 text-center text-[11px] font-black text-white">KG</span>
+            <span id="labelLb" class="relative z-10 w-1/2 text-center text-[11px] font-black text-slate-400">LB</span>
+          </div>
+        </div>
+
+        <div id="restStatusBanner" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between transition-all">
+          <div class="flex items-center gap-2">
+            <span id="restStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+            <span id="restStatusText" class="text-xs font-bold text-slate-400">組間狀態：就緒</span>
+          </div>
+          <span id="restStatusTimer" class="font-mono font-black text-sm text-slate-400">--:--</span>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2.5 items-stretch pt-1">
+          <div class="col-span-8 flex flex-col justify-between space-y-2.5">
+            <div id="weightRepsControlsContainer" class="space-y-2.5">
+              <div id="sideSelectorContainer" class="hidden p-2 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                  <span>單邊側別 (Side)</span>
+                  <span id="activeSideLabel" class="text-amber-400 font-bold">左手 (Left)</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" id="btnSideL" onclick="window.trackerMod.selectSide('L')" class="py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow">👈 左手 (L)</button>
+                  <button type="button" id="btnSideR" onclick="window.trackerMod.selectSide('R')" class="py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">👉 右手 (R)</button>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-[11px] text-slate-400 mb-1 font-semibold flex justify-between">
+                  <span>重量 (<span id="unitText">KG</span>)</span>
+                </div>
+                <div class="flex items-center gap-0.5 sm:gap-1">
+                  <button type="button" class="flex-1 h-9 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepValue('weight', -10)">-10</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepValue('weight', -2.5)">-2.5</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepValue('weight', -1)">-1</button>
+                  
+                  <input type="number" id="inputWeight" value="20" step="0.5" inputmode="decimal" pattern="[0-9]*" class="w-14 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono text-sm font-black text-white focus:outline-none focus:border-indigo-500 shadow-inner">
+                  
+                  <button type="button" class="flex-1 h-9 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="window.trackerMod.stepValue('weight', 1)">+1</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="window.trackerMod.stepValue('weight', 2.5)">+2.5</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="window.trackerMod.stepValue('weight', 10)">+10</button>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-[11px] text-slate-400 mb-1 font-semibold">次數 (Reps)</div>
+                <div class="flex items-center gap-0.5 sm:gap-1">
+                  <button type="button" class="flex-1 h-9 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepValue('reps', -10)">-10</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepValue('reps', -5)">-5</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepValue('reps', -1)">-1</button>
+                  
+                  <input type="number" id="inputReps" value="10" inputmode="numeric" pattern="[0-9]*" class="w-14 h-9 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono text-sm font-black text-white focus:outline-none focus:border-indigo-500 shadow-inner">
+                  
+                  <button type="button" class="flex-1 h-9 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="window.trackerMod.stepValue('reps', 1)">+1</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="window.trackerMod.stepValue('reps', 5)">+5</button>
+                  <button type="button" class="flex-1 h-9 rounded bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/40 active:scale-90 text-[10px] font-bold text-indigo-300" onclick="window.trackerMod.stepValue('reps', 10)">+10</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="cardioControlsContainer" class="hidden space-y-2.5">
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-sky-900/40 flex justify-between items-center text-xs">
+                <span class="text-slate-400 font-semibold">此分段時長:</span>
+                <span id="cardioSplitTimerDisplay" class="font-mono font-bold text-sky-300 text-sm">00:00</span>
+              </div>
+
+              <div>
+                <div class="text-[11px] text-sky-400 mb-1 font-semibold flex justify-between">
+                  <span>速度 / 檔位 (Speed / Level)</span>
+                  <span class="text-[10px] text-slate-500">km/h</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepCardioValue('speed', -1)">-1.0</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepCardioValue('speed', -0.5)">-0.5</button>
+                  <input type="number" id="inputCardioSpeed" value="6.0" step="0.1" inputmode="decimal" pattern="[0-9]*" class="w-14 h-8 text-center bg-slate-950 border border-sky-800/80 rounded font-mono text-xs font-bold text-sky-300 focus:outline-none focus:border-sky-500">
+                  <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-95 text-[10px] font-bold text-sky-300" onclick="window.trackerMod.stepCardioValue('speed', 0.5)">+0.5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-95 text-[10px] font-bold text-sky-300" onclick="window.trackerMod.stepCardioValue('speed', 1)">+1.0</button>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-[11px] text-sky-400 mb-1 font-semibold flex justify-between">
+                  <span>斜度 / 阻力 (Incline / Resistance)</span>
+                  <span class="text-[10px] text-slate-500">%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepCardioValue('incline', -1)">-1.0</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-slate-800 hover:bg-slate-700 active:scale-90 text-[10px] font-bold" onclick="window.trackerMod.stepCardioValue('incline', -0.5)">-0.5</button>
+                  <input type="number" id="inputCardioIncline" value="3.0" step="0.5" inputmode="decimal" pattern="[0-9]*" class="w-14 h-8 text-center bg-slate-950 border border-sky-800/80 rounded font-mono text-xs font-bold text-sky-300 focus:outline-none focus:border-sky-500">
+                  <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-95 text-[10px] font-bold text-sky-300" onclick="window.trackerMod.stepCardioValue('incline', 0.5)">+0.5</button>
+                  <button type="button" class="flex-1 h-8 rounded bg-sky-950 hover:bg-sky-900 border border-sky-700/40 active:scale-95 text-[10px] font-bold text-sky-300" onclick="window.trackerMod.stepCardioValue('incline', 1)">+1.0</button>
+                </div>
+              </div>
+            </div>
+
+            <button id="btnLogSet" disabled class="w-full bg-slate-800 text-slate-500 opacity-40 cursor-not-allowed py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5">
+              <span id="btnLogSetText">請先按右方「開始此機」</span>
+            </button>
+          </div>
+
+          <div class="col-span-4 flex flex-col justify-between pl-1">
+            <div class="text-center p-1.5 bg-slate-950 rounded-xl border border-slate-800 mb-2">
+              <span class="text-[10px] text-slate-400 block font-semibold">此機總使用:</span>
+              <span id="machineTimerDisplay" class="font-mono font-bold text-sky-400 text-base">00:00</span>
+            </div>
+
+            <button id="btnToggleMachine" class="flex-1 w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl font-bold text-xs shadow-md transition-all flex flex-col items-center justify-center p-2 gap-1 min-h-[90px]">
+              <span class="text-xl">⏱️</span>
+              <span id="btnToggleMachineText">開始此機</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
+          <span>今日已完成機種</span>
+          <span id="completedCountBadge" class="text-[11px] font-mono text-emerald-400 font-bold">0 部器材</span>
+        </div>
+        <ul id="completedMachinesList" class="space-y-2.5"></ul>
+      </section>
+
+      <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
+          <span>⏱️ 訓練時間線 (Timeline)</span>
+        </div>
+        <div id="workoutTimelineContainer" class="space-y-2 text-xs font-mono max-h-48 overflow-y-auto"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 頁面 2：歷史回顧與非訓練日管理                                             -->
+  <!-- ========================================================================= -->
+  <div id="viewCalendarPage" class="hidden space-y-3.5 select-none">
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+      <h2 class="text-sm font-bold text-white flex items-center gap-2">
+        <span>📅</span> <span>訓練與休養月曆</span>
+      </h2>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 text-[9px] font-mono text-slate-400 bg-slate-950/80 px-2 py-1 rounded-lg border border-slate-800">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span> 練
+          <span class="inline-block w-2 h-2 rounded-full bg-indigo-400"></span> 休
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span> 病
+          <span class="inline-block w-2 h-2 rounded-full bg-rose-400"></span> 事
+        </div>
+      </div>
+    </header>
+
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+<div class="flex items-center justify-between gap-2">
+        <button type="button" id="btnCalPrev" onclick="window.calendarMod && window.calendarMod.changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 active:scale-95">◀</button>
+        <div class="flex items-center gap-2">
+          <select id="calYearSelect" onchange="window.calendarMod && window.calendarMod.onCalendarSelectChange()" class="bg-slate-950 text-white border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono focus:outline-none focus:border-indigo-500"></select>
+          <select id="calMonthSelect" onchange="window.calendarMod && window.calendarMod.onCalendarSelectChange()" class="bg-slate-950 text-white border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold font-mono focus:outline-none focus:border-indigo-500"></select>
+        </div>
+        <button type="button" id="btnCalNext" onclick="window.calendarMod && window.calendarMod.changeMonth(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 active:scale-95">▶</button>
+      </div>
+
+      <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 uppercase">
+        <span class="text-rose-400">日</span>
+        <span>一</span>
+        <span>二</span>
+        <span>三</span>
+        <span>四</span>
+        <span>五</span>
+        <span class="text-sky-400">六</span>
+      </div>
+
+      <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1.5 text-xs"></div>
+    </section>
+
+    <!-- 當日詳細資訊區塊 -->
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3 min-h-[160px]">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-400">選擇日期:</span>
+          <span id="selectedDateTitle" class="text-sm font-bold text-indigo-400 font-mono">--</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span id="daySummaryBadge" class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-slate-800 text-slate-400">無紀錄</span>
+        </div>
+      </div>
+
+      <div id="selectedDateDetailsContainer" class="space-y-3">
+        <div class="text-slate-500 text-xs text-center py-6">請點擊上方日曆任意日期以查看訓練明細或登記休假</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 頁面 3：AI 分析                                                           -->
+  <!-- ========================================================================= -->
+  <div id="viewAiPage" class="hidden space-y-3.5">
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between select-none">
+      <h2 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+        <span>🤖</span> <span>CSCS & ISSN 力量與營養教練</span>
+      </h2>
+      <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Gemini AI 驅動</span>
+    </header>
+
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3 select-none">
+      <span class="text-xs font-bold text-slate-300 block">📊 智能診斷 (一鍵生成圖表 + 科學分析報告)</span>
+      
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="bg-indigo-950/80 border border-indigo-700/50 p-2.5 rounded-xl flex flex-col justify-between space-y-2">
+          <div class="space-y-1">
+            <span class="text-base block leading-none">📈</span>
+            <span class="text-xs font-bold text-white block">器材進度趨勢</span>
+            <span class="text-[10px] text-slate-400 block">總容量與 1RM 追蹤</span>
+          </div>
+
+          <div class="pt-1">
+            <select id="aiMachineSelector" class="w-full bg-slate-950 border border-indigo-500/50 rounded-lg px-2 py-1 text-[11px] font-bold text-indigo-200 focus:outline-none focus:border-indigo-400 truncate">
+              <option value="">載入器材中...</option>
+            </select>
+          </div>
+
+          <button onclick="window.triggerGeminiAnalysis('machine_progress')" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 py-1.5 rounded-lg text-xs font-bold text-white text-center transition-all shadow-md">
+            分析此器材
+          </button>
+        </div>
+
+        <div class="bg-indigo-950/80 border border-indigo-700/50 p-2.5 rounded-xl flex flex-col justify-between space-y-2">
+          <div class="space-y-1">
+            <span class="text-base block leading-none">🏋️</span>
+            <span class="text-xs font-bold text-white block">今日訓練分析</span>
+            <span class="text-[10px] text-slate-400 block">當日總評、能耗與處方</span>
+          </div>
+
+          <div class="text-[10px] text-emerald-400/90 font-mono py-1">
+            當日各機種容量對比
+          </div>
+
+          <button onclick="window.triggerGeminiAnalysis('today_workout')" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 py-1.5 rounded-lg text-xs font-bold text-white text-center transition-all shadow-md">
+            生成今日報告
+          </button>
+        </div>
+      </div>
+
+      <div id="aiChartContainer" class="hidden p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+        <div class="flex justify-between items-center pb-1 border-b border-slate-800/80">
+          <span id="aiChartTitle" class="text-xs font-bold text-indigo-300">進度圖表</span>
+          <span class="text-[10px] text-slate-500 font-mono">Chart.js 動態渲染</span>
+        </div>
+        <div class="relative h-44 w-full">
+          <canvas id="aiAnalyticsCanvas"></canvas>
+        </div>
+      </div>
+
+      <div id="aiAdviceBox" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1.5 select-text cursor-text">
+        <span class="text-xs font-bold text-emerald-400 flex items-center gap-1 select-none">
+          <span>💬</span> <span>CSCS & ISSN 教練專屬分析處方：</span>
+        </span>
+        <div id="aiAdviceContent" class="prose-gym select-text cursor-text">
+          點擊上方按鈕開始深度分析，或在下方直接向教練諮詢動作姿勢與飲食！
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+      <span class="text-xs font-bold text-slate-300 flex items-center justify-between select-none">
+        <span>💬 私人教練諮詢 (Chatbot)</span>
+        <span class="text-[10px] text-slate-500">CSCS / ISSN 力量與營養指導</span>
+      </span>
+
+      <div id="chatMessagesContainer" class="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-72 overflow-y-auto space-y-2.5 text-xs select-text cursor-text">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-slate-300 max-w-[90%] prose-gym select-text">
+          我是你的 <strong>CSCS & ISSN</strong> 力量與運動營養教練。隨時發問訓練動作、痛症排查或飲食克數建議。
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 select-none">
+        <input type="text" id="inputChatMessage" placeholder="例如: 我感冒停操3日，今日開操點調節容量？" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 select-text">
+        <button id="btnSendChat" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md">
+          發送
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 頁面 4：設定                                                               -->
+  <!-- ========================================================================= -->
+  <div id="viewSettingsPage" class="hidden space-y-3.5 select-none">
+    <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl">
+      <h2 class="text-sm font-bold text-white flex items-center gap-2">
+        <span>⚙️</span> <span>系統設定與個人體重</span>
+      </h2>
+    </header>
+
+    <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <div>
+          <span class="text-xs font-bold text-white block">⚖️ 個人體重</span>
+          <span class="text-[10px] text-slate-400">用作精確計算推比與每組卡路里 (kcal)</span>
+        </div>
+        
+        <div id="modalWeightUnitToggle" onclick="window.toggleModalWeightUnit()" class="relative w-24 h-7 bg-slate-950 rounded-full p-0.5 flex items-center cursor-pointer border border-slate-700 select-none shadow-inner">
+          <div id="modalWeightUnitSlider" class="absolute left-0.5 top-0.5 w-[calc(50%-2px)] h-6 bg-indigo-600 rounded-full transition-transform duration-200 shadow-md"></div>
+          <span id="modalWeightLabelKg" class="relative z-10 w-1/2 text-center text-[10px] font-black text-white">KG</span>
+          <span id="modalWeightLabelLb" class="relative z-10 w-1/2 text-center text-[10px] font-black text-slate-400">LB</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <button type="button" id="btnModalWeightMinus" onclick="window.stepUserWeight(-1)" class="w-12 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-sm active:scale-95 text-white">-1</button>
+        <input type="number" id="inputUserWeight" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-10 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono font-black text-amber-400 focus:outline-none focus:border-indigo-500 text-lg">
+        <button type="button" id="btnModalWeightPlus" onclick="window.stepUserWeight(1)" class="w-12 h-10 rounded-xl bg-indigo-950 hover:bg-indigo-900 border border-indigo-700/50 font-bold text-sm active:scale-95 text-indigo-300">+1</button>
+      </div>
+      <span class="text-[10px] text-slate-500 block leading-tight">切換單位(KG<->LB)計值會自動即時換算，儲存後影響往後記錄及 AI 推比計算。</span>
+    </section>
+
+    <section class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+      <div class="text-center space-y-1">
+        <span class="text-xs text-slate-300 block font-semibold">🔒 存取密鑰</span>
+        <div class="h-12 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center tracking-[0.4em] text-xl font-mono text-indigo-400 font-black px-3 select-none" id="pinDisplayMask">
+          ------
+        </div>
+        <span id="pinStatusHint" class="text-[10px] text-slate-500 block">輸入密碼以連接 Google Sheets</span>
+      </div>
+
+      <div class="space-y-1.5 pt-1 font-mono text-base font-bold text-slate-200">
+        <div class="grid grid-cols-3 gap-1.5">
+          <button type="button" onclick="window.pressPinDigit('1')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">1</button>
+          <button type="button" onclick="window.pressPinDigit('2')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">2</button>
+          <button type="button" onclick="window.pressPinDigit('3')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">3</button>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button type="button" onclick="window.pressPinDigit('4')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">4</button>
+          <button type="button" onclick="window.pressPinDigit('5')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">5</button>
+          <button type="button" onclick="window.pressPinDigit('6')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">6</button>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button type="button" onclick="window.pressPinDigit('7')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">7</button>
+          <button type="button" onclick="window.pressPinDigit('8')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">8</button>
+          <button type="button" onclick="window.pressPinDigit('9')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">9</button>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button type="button" onclick="window.clearPinInput()" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs font-bold text-amber-400">清空</button>
+          <button type="button" onclick="window.pressPinDigit('0')" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all">0</button>
+          <button type="button" onclick="window.backspacePinDigit()" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-base font-black text-rose-400">⌫</button>
+        </div>
+      </div>
+
+      <button type="button" onclick="window.saveSettingsPage()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 mt-2">
+        <span>✓</span> <span>儲存設定並同步資料</span>
+      </button>
+    </section>
+  </div>
+
+  <!-- 底部懸浮膠囊導航列 -->
+  <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none select-none">
+    <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2">
+      <button id="navTabTracker" onclick="window.switchMainView('tracker')" title="訓練" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center bg-indigo-600 text-white shadow-md shadow-indigo-950/60 active:scale-90">
+        🏋
+      </button>
+      <button id="navTabCalendar" onclick="window.switchMainView('calendar')" title="歷史回顧" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+        📅
+      </button>
+      <button id="navTabAi" onclick="window.switchMainView('ai')" title="AI 分析" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+        🤖
+      </button>
+      <button id="navTabSettings" onclick="window.switchMainView('settings')" title="設定" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+        ⚙️
+      </button>
+    </nav>
+  </div>
+
+  <!-- 單組數據修改 Modal -->
+  <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+        <h3 class="font-bold text-sm text-white flex items-center gap-1.5">
+          <span>✏️</span> <span id="editSetModalTitle">修改組數記錄</span>
+        </h3>
+        <button id="btnCloseEditSetModal" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+
+      <input type="hidden" id="editSetIndex">
+
+      <div id="editStrengthFields" class="space-y-3 text-xs">
+        <div id="editSideGroup" class="hidden">
+          <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnEditSideL" class="py-1 rounded bg-indigo-600 text-white font-bold">左手 (L)</button>
+            <button type="button" id="btnEditSideR" class="py-1 rounded bg-slate-800 text-slate-400 font-bold">右手 (R)</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">重量 (<span id="editUnitLabel">KG</span>)</label>
+          <div class="flex items-center gap-1">
+            <button type="button" class="w-9 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditWeightMinus25">-2.5</button>
+            <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditWeightMinus1">-1</button>
+            <input type="number" id="editSetWeightInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
+            <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditWeightPlus1">+1</button>
+            <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditWeightPlus25">+2.5</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">次數 (Reps)</label>
+          <div class="flex items-center gap-1">
+            <button type="button" class="w-9 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditRepsMinus5">-5</button>
+            <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditRepsMinus1">-1</button>
+            <input type="number" id="editSetRepsInput" inputmode="numeric" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
+            <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditRepsPlus1">+1</button>
+            <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditRepsPlus5">+5</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="editCardioFields" class="hidden space-y-3 text-xs">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-[11px] text-slate-400 font-semibold block">🏃 此段運動時間</label>
+            <span id="editCardioTimeText" class="text-sky-400 font-mono font-bold text-xs">0 分 0 秒</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pb-1.5">
+            <div>
+              <span class="text-[10px] text-slate-500 block mb-0.5">分鐘 (Minutes)</span>
+              <input type="number" id="editCardioMinutesInput" min="0" max="600" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500 select-text">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-500 block mb-0.5">秒數 (Seconds)</span>
+              <input type="number" id="editCardioSecondsInput" min="0" max="59" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500 select-text">
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1 pt-1">
+            <button type="button" id="btnEditCardioMinus5Min" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-5分</button>
+            <button type="button" id="btnEditCardioMinus1Min" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-1分</button>
+            <button type="button" id="btnEditCardioPlus1Min" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+1分</button>
+            <button type="button" id="btnEditCardioPlus5Min" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+5分</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+          <div>
+            <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">速度 (km/h)</label>
+            <input type="number" id="editCardioSpeedInput" step="0.1" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500 select-text">
+          </div>
+          <div>
+            <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">斜度 / 阻力 (%)</label>
+            <input type="number" id="editCardioInclineInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500 select-text">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-slate-800/80">
+        <button type="button" id="btnDeleteSetFromModal" class="w-1/3 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold py-2 rounded-xl text-xs active:scale-95 transition-all">刪除此段</button>
+        <button type="button" id="btnSaveEditSetModal" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs shadow-md active:scale-95 transition-all">確認修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 器材設定與拍照 Modal -->
+  <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="font-bold text-base text-white flex items-center gap-1.5">
+          <span id="modalTitleIcon">📷</span> <span id="modalMainTitle">器材設定與相片</span>
+        </h3>
+        <button id="btnCloseMachineSettingModal" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+
+      <input type="hidden" id="modalMachineIdInput">
+
+      <div class="space-y-1.5">
+        <div class="flex justify-between items-center">
+          <label class="text-[11px] text-slate-400 font-semibold block">對應訓練部位 (單選)</label>
+          <span id="modalMachineIdDisplay" class="text-[10px] font-mono text-indigo-400 font-bold">ID: 儲存時自動生成</span>
+        </div>
+        <div id="modalMuscleSelectContainer" class="grid grid-cols-4 gap-1.5"></div>
+      </div>
+
+      <div>
+        <label class="text-[11px] text-slate-400 block mb-1">器材名稱 (顯示別名)</label>
+        <input type="text" id="modalMachineNameInput" placeholder="例如: 跑步機 / 樓梯機 / 雙槓機" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 text-xs select-text">
+      </div>
+
+      <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="modalIsUnilateralCheckbox" class="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-700 focus:ring-0">
+          <div>
+            <span class="text-xs font-bold text-white block">啟用單手 / 單邊訓練模式</span>
+            <span class="text-[10px] text-slate-400 block">啟用後記錄時可切換左手 (L) 或右手 (R) 分開記重</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex justify-between items-center">
+          <label class="text-[11px] text-slate-400 font-semibold block">器材相片</label>
+          <span id="zoomHintText" class="text-[10px] text-indigo-400 font-bold hidden">🔍 點擊相片可全螢幕放大</span>
+        </div>
+        
+        <div id="modalImagePreviewBox" class="relative w-full h-32 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center cursor-pointer group">
+          <img id="modalMachineImgPreview" src="" class="w-full h-full object-contain p-1 hidden group-hover:scale-105 transition-transform duration-300">
+          <div id="modalMachineImgPlaceholder" class="text-slate-500 text-xs flex flex-col items-center">
+            <span class="text-2xl mb-1">🏋</span>
+            <span>尚未選取相片</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <label class="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-sky-400 py-2 rounded-xl text-xs font-bold cursor-pointer active:scale-95 border border-slate-700/80 transition-all">
+            <span>📷</span>
+            <span>即時拍照</span>
+            <input type="file" id="modalCameraInput" accept="image/*" capture="environment" class="hidden">
+          </label>
+
+          <label class="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-indigo-400 py-2 rounded-xl text-xs font-bold cursor-pointer active:scale-95 border border-slate-700/80 transition-all">
+            <span>🖼️</span>
+            <span>相簿選取</span>
+            <input type="file" id="modalGalleryInput" accept="image/*" class="hidden">
+          </label>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">💺 坐位高度 / 距離</label>
+          <input type="text" id="settingSeat" placeholder="例: 3號孔 / 刻度4 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">↔️ 扶手握距</label>
+          <input type="text" id="settingHandle" placeholder="例: 闊握第2格 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">📐 靠背角度</label>
+          <input type="text" id="settingBackrest" placeholder="例: 倒數第2段 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
+          <div>
+            <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">🏃 預設速度 (Speed)</label>
+            <input type="text" id="settingDefaultSpeed" placeholder="例: 6.5 (km/h)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500 select-text">
+          </div>
+          <div>
+            <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">📈 預設斜度 (Incline)</label>
+            <input type="text" id="settingDefaultIncline" placeholder="例: 3.0 (%)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500 select-text">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">📝 個人備註</label>
+          <input type="text" id="settingNotes" placeholder="例: 心率維持 135" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-slate-800/80">
+        <button id="btnDeleteMachine" class="hidden w-28 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold py-2.5 rounded-xl text-xs active:scale-95 transition-all">
+          🗑️ 刪除器材
+        </button>
+        <button id="btnCancelMachineModal" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">取消</button>
+        <button id="btnSaveMachineSetting" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-md">儲存並同步</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原生 ES Modules 進入點 -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

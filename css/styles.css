@@ -1,0 +1,126 @@
+/* 1. 隱藏原生滾動條但保持滾動功能 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 2. 組間休息提醒呼吸燈動畫 */
+@keyframes yellowBreath {
+  0%, 100% {
+    box-shadow: inset 0 0 35px 8px rgba(245, 158, 11, 0.22);
+  }
+  50% {
+    box-shadow: inset 0 0 95px 30px rgba(245, 158, 11, 0.55);
+  }
+}
+
+@keyframes redBreath {
+  0%, 100% {
+    box-shadow: inset 0 0 45px 12px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: inset 0 0 110px 38px rgba(239, 68, 68, 0.7);
+  }
+}
+
+.breath-yellow {
+  animation: yellowBreath 2.2s infinite ease-in-out;
+  border: 3px solid rgba(245, 158, 11, 0.75) !important;
+}
+
+.breath-red {
+  animation: redBreath 1.6s infinite ease-in-out;
+  border: 3px solid rgba(239, 68, 68, 0.85) !important;
+}
+
+/* 3. AI 教練 Markdown 解析排版專用 (prose-gym) */
+.prose-gym {
+  color: #cbd5e1;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.prose-gym h1,
+.prose-gym h2,
+.prose-gym h3 {
+  color: #f8fafc;
+  font-weight: 800;
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.prose-gym h2 {
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+  padding-bottom: 0.25rem;
+}
+
+.prose-gym h3 {
+  font-size: 0.875rem;
+  color: #a5b4fc;
+}
+
+.prose-gym strong {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.prose-gym em {
+  color: #38bdf8;
+  font-style: italic;
+}
+
+.prose-gym p {
+  margin-bottom: 0.6rem;
+}
+
+.prose-gym ul {
+  list-style-type: disc;
+  margin-left: 1.25rem;
+  margin-bottom: 0.65rem;
+}
+
+.prose-gym ol {
+  list-style-type: decimal;
+  margin-left: 1.25rem;
+  margin-bottom: 0.65rem;
+}
+
+.prose-gym li {
+  margin-bottom: 0.25rem;
+}
+
+.prose-gym hr {
+  border-color: rgba(51, 65, 85, 0.5);
+  margin: 0.75rem 0;
+}
+
+.prose-gym table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.65rem 0;
+  font-size: 0.75rem;
+}
+
+.prose-gym th,
+.prose-gym td {
+  border: 1px solid #334155;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.prose-gym th {
+  background-color: #1e293b;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.prose-gym tr:nth-child(even) {
+  background-color: rgba(15, 23, 42, 0.4);
+}
