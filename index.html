@@ -25,7 +25,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+  
+  <!-- 現代標準 Three.js ES Modules 映射表 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  
   <!-- 自訂獨立樣式表 -->
   <link rel="stylesheet" href="./css/styles.css">
 </head>
@@ -34,8 +44,8 @@
   <!-- 全螢幕呼吸燈指示層 -->
   <div id="screenBreathingOverlay" class="fixed inset-0 pointer-events-none z-50 transition-all duration-700"></div>
 
-  <!-- 全螢幕圖片放大 Lightbox -->
-  <div id="imageLightboxOverlay" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-3 hidden cursor-zoom-out transition-all">
+<!-- 全螢幕圖片放大 Lightbox -->
+  <div id="imageLightboxOverlay" onclick="window.trackerMod.closeImageLightbox()" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-3 hidden cursor-zoom-out transition-all">
     <div class="relative max-w-full max-h-full flex flex-col items-center">
       <img id="lightboxImage" src="" alt="器材高清大圖" class="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800">
       <span class="text-slate-400 text-xs mt-3 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700/60 font-semibold">點擊任意位置關閉放大</span>
@@ -422,9 +432,9 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 select-none">
+<div class="flex items-center gap-2 select-none">
         <input type="text" id="inputChatMessage" placeholder="例如: 我感冒停操3日，今日開操點調節容量？" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 select-text">
-        <button id="btnSendChat" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md">
+        <button id="btnSendChat" onclick="window.sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md">
           發送
         </button>
       </div>
@@ -501,6 +511,22 @@
     </section>
   </div>
 
+<!-- ========================================================================= -->
+  <!-- 頁面 5：3D Digital Twin 數位孿生人體                                         -->
+  <!-- ========================================================================= -->
+  <div id="viewTwinPage" class="hidden space-y-3.5 select-none">
+<header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+      <h2 class="text-sm font-bold text-cyan-400 flex items-center gap-2">
+        <span>🧍</span> <span>3D Digital Twin 肌肉數位孿生</span>
+      </h2>
+    </header>
+
+    <!-- 孿生人體與評分渲染容器 -->
+    <div id="twinContainer" class="space-y-3.5">
+      <div class="text-slate-500 text-xs text-center py-10">載入人體模型中...</div>
+    </div>
+  </div>
+
   <!-- 底部懸浮膠囊導航列 -->
   <div class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none select-none">
     <nav class="pointer-events-auto bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2">
@@ -513,6 +539,9 @@
       <button id="navTabAi" onclick="window.switchMainView('ai')" title="AI 分析" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
         🤖
       </button>
+	  <button id="navTabTwin" onclick="window.switchMainView('twin')" title="3D Digital Twin" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
+		🧍
+	</button>
       <button id="navTabSettings" onclick="window.switchMainView('settings')" title="設定" class="w-12 h-12 rounded-full text-xl transition-all flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-90">
         ⚙️
       </button>
@@ -520,13 +549,13 @@
   </div>
 
   <!-- 單組數據修改 Modal -->
-  <div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
+<div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
         <h3 class="font-bold text-sm text-white flex items-center gap-1.5">
           <span>✏️</span> <span id="editSetModalTitle">修改組數記錄</span>
         </h3>
-        <button id="btnCloseEditSetModal" class="text-slate-400 hover:text-white text-lg">&times;</button>
+        <button type="button" onclick="window.trackerMod.closeEditSetModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
       </div>
 
       <input type="hidden" id="editSetIndex">
@@ -535,30 +564,30 @@
         <div id="editSideGroup" class="hidden">
           <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="btnEditSideL" class="py-1 rounded bg-indigo-600 text-white font-bold">左手 (L)</button>
-            <button type="button" id="btnEditSideR" class="py-1 rounded bg-slate-800 text-slate-400 font-bold">右手 (R)</button>
+            <button type="button" id="btnEditSideL" onclick="window.trackerMod.setEditModalSide('L')" class="py-1 rounded bg-indigo-600 text-white font-bold">左手 (L)</button>
+            <button type="button" id="btnEditSideR" onclick="window.trackerMod.setEditModalSide('R')" class="py-1 rounded bg-slate-800 text-slate-400 font-bold">右手 (R)</button>
           </div>
         </div>
 
         <div>
           <label class="text-[11px] text-slate-400 block mb-1">重量 (<span id="editUnitLabel">KG</span>)</label>
           <div class="flex items-center gap-1">
-            <button type="button" class="w-9 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditWeightMinus25">-2.5</button>
-            <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditWeightMinus1">-1</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', -2.5)" class="w-9 h-8 rounded bg-slate-800 text-white font-bold">-2.5</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', -1)" class="w-8 h-8 rounded bg-slate-800 text-white font-bold">-1</button>
             <input type="number" id="editSetWeightInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
-            <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditWeightPlus1">+1</button>
-            <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditWeightPlus25">+2.5</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', 1)" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+1</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', 2.5)" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+2.5</button>
           </div>
         </div>
 
         <div>
           <label class="text-[11px] text-slate-400 block mb-1">次數 (Reps)</label>
           <div class="flex items-center gap-1">
-            <button type="button" class="w-9 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditRepsMinus5">-5</button>
-            <button type="button" class="w-8 h-8 rounded bg-slate-800 text-white font-bold" id="btnEditRepsMinus1">-1</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', -5)" class="w-9 h-8 rounded bg-slate-800 text-white font-bold">-5</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', -1)" class="w-8 h-8 rounded bg-slate-800 text-white font-bold">-1</button>
             <input type="number" id="editSetRepsInput" inputmode="numeric" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
-            <button type="button" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditRepsPlus1">+1</button>
-            <button type="button" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold" id="btnEditRepsPlus5">+5</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', 1)" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+1</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', 5)" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+5</button>
           </div>
         </div>
       </div>
@@ -580,10 +609,10 @@
             </div>
           </div>
           <div class="grid grid-cols-4 gap-1 pt-1">
-            <button type="button" id="btnEditCardioMinus5Min" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-5分</button>
-            <button type="button" id="btnEditCardioMinus1Min" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-1分</button>
-            <button type="button" id="btnEditCardioPlus1Min" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+1分</button>
-            <button type="button" id="btnEditCardioPlus5Min" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+5分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(-300)" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-5分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(-60)" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-1分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(60)" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+1分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(300)" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+5分</button>
           </div>
         </div>
 
@@ -600,113 +629,95 @@
       </div>
 
       <div class="flex gap-2 pt-2 border-t border-slate-800/80">
-        <button type="button" id="btnDeleteSetFromModal" class="w-1/3 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold py-2 rounded-xl text-xs active:scale-95 transition-all">刪除此段</button>
-        <button type="button" id="btnSaveEditSetModal" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs shadow-md active:scale-95 transition-all">確認修改</button>
+        <button type="button" onclick="window.trackerMod.deleteSetFromModal()" class="w-1/3 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold py-2 rounded-xl text-xs active:scale-95 transition-all">刪除此段</button>
+        <button type="button" onclick="window.trackerMod.saveEditSetModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs shadow-md active:scale-95 transition-all">確認修改</button>
       </div>
     </div>
   </div>
 
   <!-- 器材設定與拍照 Modal -->
-  <div id="machineSettingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-        <h3 class="font-bold text-base text-white flex items-center gap-1.5">
-          <span id="modalTitleIcon">📷</span> <span id="modalMainTitle">器材設定與相片</span>
+<div id="editSetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden select-none">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+        <h3 class="font-bold text-sm text-white flex items-center gap-1.5">
+          <span>✏️</span> <span id="editSetModalTitle">修改組數記錄</span>
         </h3>
-        <button id="btnCloseMachineSettingModal" class="text-slate-400 hover:text-white text-xl">&times;</button>
+        <button type="button" onclick="window.trackerMod.closeEditSetModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
       </div>
 
-      <input type="hidden" id="modalMachineIdInput">
+      <input type="hidden" id="editSetIndex">
 
-      <div class="space-y-1.5">
-        <div class="flex justify-between items-center">
-          <label class="text-[11px] text-slate-400 font-semibold block">對應訓練部位 (單選)</label>
-          <span id="modalMachineIdDisplay" class="text-[10px] font-mono text-indigo-400 font-bold">ID: 儲存時自動生成</span>
-        </div>
-        <div id="modalMuscleSelectContainer" class="grid grid-cols-4 gap-1.5"></div>
-      </div>
-
-      <div>
-        <label class="text-[11px] text-slate-400 block mb-1">器材名稱 (顯示別名)</label>
-        <input type="text" id="modalMachineNameInput" placeholder="例如: 跑步機 / 樓梯機 / 雙槓機" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 text-xs select-text">
-      </div>
-
-      <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" id="modalIsUnilateralCheckbox" class="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-700 focus:ring-0">
-          <div>
-            <span class="text-xs font-bold text-white block">啟用單手 / 單邊訓練模式</span>
-            <span class="text-[10px] text-slate-400 block">啟用後記錄時可切換左手 (L) 或右手 (R) 分開記重</span>
-          </div>
-        </label>
-      </div>
-
-      <div class="space-y-1.5">
-        <div class="flex justify-between items-center">
-          <label class="text-[11px] text-slate-400 font-semibold block">器材相片</label>
-          <span id="zoomHintText" class="text-[10px] text-indigo-400 font-bold hidden">🔍 點擊相片可全螢幕放大</span>
-        </div>
-        
-        <div id="modalImagePreviewBox" class="relative w-full h-32 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center cursor-pointer group">
-          <img id="modalMachineImgPreview" src="" class="w-full h-full object-contain p-1 hidden group-hover:scale-105 transition-transform duration-300">
-          <div id="modalMachineImgPlaceholder" class="text-slate-500 text-xs flex flex-col items-center">
-            <span class="text-2xl mb-1">🏋</span>
-            <span>尚未選取相片</span>
+      <div id="editStrengthFields" class="space-y-3 text-xs">
+        <div id="editSideGroup" class="hidden">
+          <label class="text-[11px] text-slate-400 block mb-1">側別 (Side)</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btnEditSideL" onclick="window.trackerMod.setEditModalSide('L')" class="py-1 rounded bg-indigo-600 text-white font-bold">左手 (L)</button>
+            <button type="button" id="btnEditSideR" onclick="window.trackerMod.setEditModalSide('R')" class="py-1 rounded bg-slate-800 text-slate-400 font-bold">右手 (R)</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <label class="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-sky-400 py-2 rounded-xl text-xs font-bold cursor-pointer active:scale-95 border border-slate-700/80 transition-all">
-            <span>📷</span>
-            <span>即時拍照</span>
-            <input type="file" id="modalCameraInput" accept="image/*" capture="environment" class="hidden">
-          </label>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">重量 (<span id="editUnitLabel">KG</span>)</label>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', -2.5)" class="w-9 h-8 rounded bg-slate-800 text-white font-bold">-2.5</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', -1)" class="w-8 h-8 rounded bg-slate-800 text-white font-bold">-1</button>
+            <input type="number" id="editSetWeightInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', 1)" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+1</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('weight', 2.5)" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+2.5</button>
+          </div>
+        </div>
 
-          <label class="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-indigo-400 py-2 rounded-xl text-xs font-bold cursor-pointer active:scale-95 border border-slate-700/80 transition-all">
-            <span>🖼️</span>
-            <span>相簿選取</span>
-            <input type="file" id="modalGalleryInput" accept="image/*" class="hidden">
-          </label>
+        <div>
+          <label class="text-[11px] text-slate-400 block mb-1">次數 (Reps)</label>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', -5)" class="w-9 h-8 rounded bg-slate-800 text-white font-bold">-5</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', -1)" class="w-8 h-8 rounded bg-slate-800 text-white font-bold">-1</button>
+            <input type="number" id="editSetRepsInput" inputmode="numeric" pattern="[0-9]*" class="flex-1 h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-indigo-500 select-text">
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', 1)" class="w-8 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+1</button>
+            <button type="button" onclick="window.trackerMod.stepEditValue('reps', 5)" class="w-9 h-8 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 font-bold">+5</button>
+          </div>
         </div>
       </div>
 
-      <div class="space-y-2 text-xs">
+      <div id="editCardioFields" class="hidden space-y-3 text-xs">
         <div>
-          <label class="text-[11px] text-slate-400 block mb-1">💺 坐位高度 / 距離</label>
-          <input type="text" id="settingSeat" placeholder="例: 3號孔 / 刻度4 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
-        </div>
-        <div>
-          <label class="text-[11px] text-slate-400 block mb-1">↔️ 扶手握距</label>
-          <input type="text" id="settingHandle" placeholder="例: 闊握第2格 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
-        </div>
-        <div>
-          <label class="text-[11px] text-slate-400 block mb-1">📐 靠背角度</label>
-          <input type="text" id="settingBackrest" placeholder="例: 倒數第2段 (無則留空)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-[11px] text-slate-400 font-semibold block">🏃 此段運動時間</label>
+            <span id="editCardioTimeText" class="text-sky-400 font-mono font-bold text-xs">0 分 0 秒</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pb-1.5">
+            <div>
+              <span class="text-[10px] text-slate-500 block mb-0.5">分鐘 (Minutes)</span>
+              <input type="number" id="editCardioMinutesInput" min="0" max="600" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500 select-text">
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-500 block mb-0.5">秒數 (Seconds)</span>
+              <input type="number" id="editCardioSecondsInput" min="0" max="59" inputmode="numeric" pattern="[0-9]*" class="w-full h-9 text-center bg-slate-950 border border-slate-700 rounded-xl font-mono text-sm font-bold text-white focus:outline-none focus:border-sky-500 select-text">
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1 pt-1">
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(-300)" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-5分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(-60)" class="py-1 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">-1分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(60)" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+1分</button>
+            <button type="button" onclick="window.trackerMod.stepCardioEditTime(300)" class="py-1 rounded bg-sky-950 text-sky-300 border border-sky-800/40 text-[10px] font-bold">+5分</button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
           <div>
-            <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">🏃 預設速度 (Speed)</label>
-            <input type="text" id="settingDefaultSpeed" placeholder="例: 6.5 (km/h)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500 select-text">
+            <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">速度 (km/h)</label>
+            <input type="number" id="editCardioSpeedInput" step="0.1" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500 select-text">
           </div>
           <div>
-            <label class="text-[10px] text-sky-400 block mb-0.5 font-semibold">📈 預設斜度 (Incline)</label>
-            <input type="text" id="settingDefaultIncline" placeholder="例: 3.0 (%)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-sky-500 select-text">
+            <label class="text-[11px] text-sky-400 block mb-0.5 font-semibold">斜度 / 阻力 (%)</label>
+            <input type="number" id="editCardioInclineInput" step="0.5" inputmode="decimal" pattern="[0-9]*" class="w-full h-8 text-center bg-slate-950 border border-slate-700 rounded-lg font-mono font-bold text-white focus:outline-none focus:border-sky-500 select-text">
           </div>
-        </div>
-
-        <div>
-          <label class="text-[11px] text-slate-400 block mb-1">📝 個人備註</label>
-          <input type="text" id="settingNotes" placeholder="例: 心率維持 135" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 select-text">
         </div>
       </div>
 
       <div class="flex gap-2 pt-2 border-t border-slate-800/80">
-        <button id="btnDeleteMachine" class="hidden w-28 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold py-2.5 rounded-xl text-xs active:scale-95 transition-all">
-          🗑️ 刪除器材
-        </button>
-        <button id="btnCancelMachineModal" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">取消</button>
-        <button id="btnSaveMachineSetting" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-md">儲存並同步</button>
+        <button type="button" onclick="window.trackerMod.deleteSetFromModal()" class="w-1/3 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold py-2 rounded-xl text-xs active:scale-95 transition-all">刪除此段</button>
+        <button type="button" onclick="window.trackerMod.saveEditSetModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs shadow-md active:scale-95 transition-all">確認修改</button>
       </div>
     </div>
   </div>

@@ -1,23 +1,26 @@
-// js/app.js - 總入口調度
+// js/app.js - 總入口調度 (已修正物件語法逗號與 Twin 分頁綁定)
 import { initApiKeyFromUrl } from './api.js';
 import { initTrackerView } from './modules/tracker.js';
 import { initCalendarView } from './modules/calendar.js';
 import { initAiView, populateAiMachineSelector } from './modules/ai.js';
 import { initSettingsPageView } from './modules/settings.js';
+import { initTwinView } from './modules/twin.js';
 
 export function switchMainView(viewName) {
   const views = {
     tracker: document.getElementById('viewTrackerPage'),
     calendar: document.getElementById('viewCalendarPage'),
     ai: document.getElementById('viewAiPage'),
-    settings: document.getElementById('viewSettingsPage')
+    settings: document.getElementById('viewSettingsPage'),
+    twin: document.getElementById('viewTwinPage')
   };
 
   const tabs = {
     tracker: document.getElementById('navTabTracker'),
     calendar: document.getElementById('navTabCalendar'),
     ai: document.getElementById('navTabAi'),
-    settings: document.getElementById('navTabSettings')
+    settings: document.getElementById('navTabSettings'),
+    twin: document.getElementById('navTabTwin')
   };
 
   Object.keys(views).forEach(k => {
@@ -37,9 +40,12 @@ export function switchMainView(viewName) {
   } else if (viewName === 'ai') {
     initAiView();
     populateAiMachineSelector();
+  } else if (viewName === 'twin') {
+    initTwinView();
   }
 }
 
+// 掛載至全域
 window.switchMainView = switchMainView;
 
 window.addEventListener('DOMContentLoaded', () => {
