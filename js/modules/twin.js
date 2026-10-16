@@ -162,25 +162,86 @@ export function calculateMuscleScores() {
 
     const finalScore = Math.round(baseScore * decayFactor);
     scores[m].score = finalScore;
-    scores[m].status = `${scores[m].ratio}x 推比`; });  return scores; }  export function calculateOverallTitle(scores) { const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 }; let totalWeightedScore = 0; let totalW = 0; let maxDaysAgo = 0;  Object.keys(weights).forEach(m => { const s = scores && scores[m] ? scores[m].score : 40; const w = weights[m]; totalWeightedScore += s * w; totalW += w; const dAgo = scores && scores[m] ? scores[m].daysAgo : 99; if (dAgo < 90 && dAgo > maxDaysAgo) maxDaysAgo = dAgo; });  const overallScore = totalW > 0 ? Math.round(totalWeightedScore / totalW) : 40; const isDormant = maxDaysAgo >= 28; const statusPrefix = isDormant ? '沉睡中的・' : '';  let title = '鍛鍊原石'; let tier = '起點級'; let badgeStyle = ''; let textInlineStyle = ''; let scoreColorStyle = '';  if (overallScore >= 94) { title = `${statusPrefix}終焉的破壞神・絕對強者`;
+    scores[m].status = `${scores[m].ratio}x 推比`; });  
+	return scores; 
+	}  
+	
+export function calculateOverallTitle(scores) {
+  const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 };
+  let totalWeightedScore = 0;
+  let totalW = 0;
+  let minDaysAgo = 99;
+  let maxDaysAgo = 0;
+
+  // 計算綜合戰力及找出最近/最久遠的操練日數
+  Object.keys(weights).forEach(m => {
+    const s = scores && scores[m] ? scores[m].score : 40;
+    const w = weights[m];
+    totalWeightedScore += s * w;
+    totalW += w;
+    const dAgo = scores && scores[m] ? scores[m].daysAgo : 99;
+    if (dAgo < minDaysAgo) minDaysAgo = dAgo;
+    if (dAgo < 90 && dAgo > maxDaysAgo) maxDaysAgo = dAgo;
+  });
+
+  const overallScore = totalW > 0 ? Math.round(totalWeightedScore / totalW) : 40;
+
+  // 🎮 狀態與動態稱號判定引擎 (優先級由高至低)
+  let specialPrefix = '';
+
+  if (minDaysAgo === 0 && maxDaysAgo >= 14) {
+    specialPrefix = '沉睡甦醒・破封而出的巨獸'; // 久休復出 (今日剛練)
+  } 
+  else if (minDaysAgo === 0 && maxDaysAgo >= 3 && maxDaysAgo < 14) {
+    specialPrefix = '浴火重生・跨越極限的不死鳥'; // 大病初癒 (今日剛練)
+  } 
+  // 🆕 新增：正在停訓 / 生病休養中的狀態 (今日無練，且最近一次操練已是 3-13 天前)
+  else if (minDaysAgo >= 3 && minDaysAgo < 14) {
+    specialPrefix = '閉關休養・正在蓄力的小休期'; 
+  }
+  else if (minDaysAgo >= 14) {
+    specialPrefix = '長期沈睡・等待喚醒的封印'; 
+  }
+
+  // 基礎戰力階級與稱號配置
+  let title = '鍛鍊原石';
+  let tier = '起點級';
+  let badgeStyle = '';
+  let textInlineStyle = '';
+  let scoreColorStyle = '';
+
+  if (overallScore >= 94) {
+    title = specialPrefix ? `${specialPrefix}` : '終焉的破壞神・絕對強者';
     tier = '神域級';
     scoreColorStyle = 'background: linear-gradient(90deg, #ff007f, #ffff00, #00f0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;';
     textInlineStyle = 'background: linear-gradient(90deg, #ff007f, #ff7f00, #ffff00, #00ff7f, #00f0ff, #7f00ff, #ff007f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(255,127,0,0.4);';
     badgeStyle = 'border-pink-500/60 bg-gradient-to-r from-purple-950/40 via-cyan-950/40 to-pink-950/40 shadow-[0_0_22px_rgba(244,114,182,0.5)]';
   } else if (overallScore >= 88) {
-    title = `${statusPrefix}超越極限的・金屬霸王`; tier = '精英級'; scoreColorStyle = 'color: #fbbf24; text-shadow: 0 0 12px rgba(251,191,36,0.6);'; textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(251,191,36,0.5);'; badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]'; } else if (overallScore >= 80) { title = `${statusPrefix}千錘百煉的・深淵狂戰士`;
+    title = specialPrefix ? `${specialPrefix}` : '超越極限的・金屬霸王';
+    tier = '精英級';
+    scoreColorStyle = 'color: #fbbf24; text-shadow: 0 0 12px rgba(251,191,36,0.6);';
+    textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(251,191,36,0.5);';
+    badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]';
+  } else if (overallScore >= 80) {
+    title = specialPrefix ? `${specialPrefix}` : '千錘百煉的・深淵狂戰士';
     tier = '頂尖級';
     scoreColorStyle = 'color: #f1f5f9; text-shadow: 0 0 10px rgba(241,245,249,0.5);';
     textInlineStyle = 'background: linear-gradient(90deg, #ffffff, #e2e8f0, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(226,232,240,0.4);';
     badgeStyle = 'border-slate-300/60 bg-slate-900/60 shadow-[0_0_15px_rgba(226,232,240,0.35)]';
   } else if (overallScore >= 70) {
-    title = `${statusPrefix}突破界限的・鋼鐵格鬥家`; tier = '強者級'; scoreColorStyle = 'color: #fb923c; text-shadow: 0 0 10px rgba(251,146,60,0.5);'; textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);'; badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]'; } else if (overallScore >= 60) { title = `${statusPrefix}覺醒之姿的・超新星`;
+    title = specialPrefix ? `${specialPrefix}` : '突破界限的・鋼鐵格鬥家';
+    tier = '強者級';
+    scoreColorStyle = 'color: #fb923c; text-shadow: 0 0 10px rgba(251,146,60,0.5);';
+    textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);';
+    badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]';
+  } else if (overallScore >= 60) {
+    title = specialPrefix ? `${specialPrefix}` : '覺醒之姿的・超新星';
     tier = '銳進級';
     scoreColorStyle = 'color: #38bdf8;';
     textInlineStyle = 'color: #38bdf8; text-shadow: 0 0 8px rgba(56,189,248,0.5);';
     badgeStyle = 'border-cyan-500/40 bg-cyan-950/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]';
   } else {
-    title = '蓄勢待發的・鍛鍊原石';
+    title = specialPrefix ? `${specialPrefix}` : '蓄勢待發的・鍛鍊原石';
     tier = '初階級';
     scoreColorStyle = 'color: #94a3b8;';
     textInlineStyle = 'color: #94a3b8;';
