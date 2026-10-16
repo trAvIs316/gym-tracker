@@ -1,4 +1,4 @@
-// js/app.js - 總入口調度 (已修正物件語法逗號與 Twin 分頁綁定)
+// js/app.js - 總入口調度 (全域容錯防禦版)
 import { initApiKeyFromUrl } from './api.js';
 import { initTrackerView } from './modules/tracker.js';
 import { initCalendarView } from './modules/calendar.js';
@@ -33,15 +33,20 @@ export function switchMainView(viewName) {
     }
   });
 
-  if (viewName === 'calendar') {
-    initCalendarView();
-  } else if (viewName === 'settings') {
-    initSettingsPageView();
-  } else if (viewName === 'ai') {
-    initAiView();
-    populateAiMachineSelector();
-  } else if (viewName === 'twin') {
-    initTwinView();
+  // 獨立 Try-Catch 保護：確保任何單一頁面錯誤絕不影響其他按鈕！
+  try {
+    if (viewName === 'calendar') {
+      initCalendarView();
+    } else if (viewName === 'settings') {
+      initSettingsPageView();
+    } else if (viewName === 'ai') {
+      initAiView();
+      populateAiMachineSelector();
+    } else if (viewName === 'twin') {
+      initTwinView();
+    }
+  } catch (err) {
+    console.error(`切換至 ${viewName} 時發生異常:`, err);
   }
 }
 
@@ -49,6 +54,10 @@ export function switchMainView(viewName) {
 window.switchMainView = switchMainView;
 
 window.addEventListener('DOMContentLoaded', () => {
-  initApiKeyFromUrl();
-  initTrackerView();
+  try {
+    initApiKeyFromUrl();
+    initTrackerView();
+  } catch (err) {
+    console.error("Tracker 初始化異常:", err);
+  }
 });
