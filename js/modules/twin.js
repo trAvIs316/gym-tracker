@@ -1,4 +1,4 @@
-// js/modules/twin.js - 3D Digital Twin 模組 (模型絕對居中 + 百分比解剖著色 + 彩虹神域金銀銅 + 統一排版)
+// js/modules/twin.js - 3D Digital Twin 模組 (加固防崩潰 + 局部百分比著色 + 彩虹神域金銀銅 + 統一先部位後分數)
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -13,14 +13,11 @@ let animationFrameId = null;
 let customShaderMaterials = [];
 let clock = new THREE.Clock();
 
-// 模型高度與中心點的真實測量數據 (用作百分比著色)
+// 模型高度與中心點的真實測量數據 (預設安全數值，防 0 除崩潰)
 let modelBoundsData = {
-  minY: -0.85,
-  maxY: 0.85,
-  height: 1.70,
-  minX: -0.4,
-  maxX: 0.4,
-  width: 0.8
+  minY: -0.75,
+  maxY: 0.75,
+  height: 1.50
 };
 
 // 預設正面最佳視角：相機直視 (0, 0, 0)
@@ -29,23 +26,26 @@ const DEFAULT_VIEW = {
   target: new THREE.Vector3(0, 0.05, 0)
 };
 
-// 以「人體百分比 (0.0 ~ 1.0)」定義的解剖區域 (不受模型大小平移影響，永遠精確)
-// Y 比率：0.0 = 腳底, 1.0 = 頭頂
+// 百分比解剖區域 (0.0 腳底 ~ 1.0 頭頂)
 const MUSCLE_PERCENT_BOUNDS = {
   '胸': { yMinPct: 0.65, yMaxPct: 0.82, zMin: 0.01, zMax: 5.0, xPctMax: 0.28, color: new THREE.Color(0x22d3ee) },
   '背': { yMinPct: 0.60, yMaxPct: 0.84, zMin: -5.0, zMax: -0.01, xPctMax: 0.28, color: new THREE.Color(0xa78bfa) },
   '腹': { yMinPct: 0.48, yMaxPct: 0.65, zMin: 0.01, zMax: 5.0, xPctMax: 0.18, color: new THREE.Color(0x06b6d4) },
-  '膊': { yMinPct: 0.72, yMaxPct: 0.88, zMin: -5.0, zMax: 5.0, xPctMin: 0.22, xPctMax: 0.55, color: new THREE.Color(0x38bdf8) },
-  '二頭': { yMinPct: 0.54, yMaxPct: 0.72, zMin: 0.00, zMax: 5.0, xPctMin: 0.25, xPctMax: 0.58, color: new THREE.Color(0x22d3ee) },
-  '三頭': { yMinPct: 0.54, yMaxPct: 0.72, zMin: -5.0, zMax: 0.00, xPctMin: 0.25, xPctMax: 0.58, color: new THREE.Color(0xa78bfa) },
+  '膊': { yMinPct: 0.72, yMaxPct: 0.88, zMin: -5.0, zMax: 5.0, xPctMin: 0.20, xPctMax: 0.55, color: new THREE.Color(0x38bdf8) },
+  '二頭': { yMinPct: 0.54, yMaxPct: 0.72, zMin: 0.00, zMax: 5.0, xPctMin: 0.24, xPctMax: 0.58, color: new THREE.Color(0x22d3ee) },
+  '三頭': { yMinPct: 0.54, yMaxPct: 0.72, zMin: -5.0, zMax: 0.00, xPctMin: 0.24, xPctMax: 0.58, color: new THREE.Color(0xa78bfa) },
   '腳': { yMinPct: 0.00, yMaxPct: 0.48, zMin: -5.0, zMax: 5.0, xPctMax: 0.35, color: new THREE.Color(0x3b82f6) },
   '帶氧': { yMinPct: -1.0, yMaxPct: 2.0, zMin: -10.0, zMax: 10.0, xPctMax: 2.0, color: new THREE.Color(0x10b981), isWholeBody: true }
 };
 
 export function initTwinView() {
-  activeSelectedMuscle = null;
-  renderTwinInterface();
-  setTimeout(initThreeScene, 60);
+  try {
+    activeSelectedMuscle = null;
+    renderTwinInterface();
+    setTimeout(initThreeScene, 60);
+  } catch (err) {
+    console.error("Twin 初始化異常:", err);
+  }
 }
 
 function safeGetUserWeight() {
@@ -149,7 +149,6 @@ export function calculateMuscleScores() {
       baseScore = Math.max(45, Math.min(98, Math.round(baseScore)));
     }
 
-    // 生理衰退演算法 (14天後每天0.7%，上限25%)
     let decayFactor = 1.0;
     if (daysAgo > 14) {
       const extraDays = daysAgo - 14;
@@ -158,19 +157,59 @@ export function calculateMuscleScores() {
 
     const finalScore = Math.round(baseScore * decayFactor);
     scores[m].score = finalScore;
-    scores[m].status = `${scores[m].ratio}x 推比`; });  return scores; }  // 加權計算總戰力與彩色神域/金銀銅封號 export function calculateOverallTitle(scores) { const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 }; let totalWeightedScore = 0; let totalW = 0; let maxDaysAgo = 0;  Object.keys(weights).forEach(m => { totalWeightedScore += (scores[m]?.score \vert{}\vert{} 40) * weights[m]; totalW += weights[m]; if (scores[m]?.daysAgo < 90 && scores[m]?.daysAgo > maxDaysAgo) maxDaysAgo = scores[m].daysAgo; });  const overallScore = Math.round(totalWeightedScore / totalW); const isDormant = maxDaysAgo >= 28; const statusPrefix = isDormant ? '沉睡中的・' : '';  let title = '鍛鍊原石'; let tier = '起點級'; let badgeStyle = ''; let textInlineStyle = '';  if (overallScore >= 94) { title = `${statusPrefix}終焉的破壞神・絕對強者`;
+    scores[m].status = `${scores[m].ratio}x 推比`;
+  });
+
+  return scores;
+}
+
+// 加權計算總戰力與彩色神域/金銀銅封號
+export function calculateOverallTitle(scores) {
+  const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 };
+  let totalWeightedScore = 0;
+  let totalW = 0;
+  let maxDaysAgo = 0;
+
+  Object.keys(weights).forEach(m => {
+    const scoreVal = (scores && scores[m] && typeof scores[m].score === 'number') ? scores[m].score : 40;
+    const w = weights[m];
+    totalWeightedScore += scoreVal * w;
+    totalW += w;
+    const dAgo = scores && scores[m] ? scores[m].daysAgo : 99;
+    if (dAgo < 90 && dAgo > maxDaysAgo) maxDaysAgo = dAgo;
+  });
+
+  const overallScore = totalW > 0 ? Math.round(totalWeightedScore / totalW) : 40;
+  const isDormant = maxDaysAgo >= 28;
+  const statusPrefix = isDormant ? '沉睡中的・' : '';
+
+  let title = '鍛鍊原石';
+  let tier = '起點級';
+  let badgeStyle = '';
+  let textInlineStyle = '';
+
+  if (overallScore >= 94) {
+    title = `${statusPrefix}終焉的破壞神・絕對強者`;
     tier = '神域級';
-    // 🌈 強制 WebKit 彩虹漸變行內樣式，保證 iPhone 上完美呈現七彩動態霓虹
     textInlineStyle = 'background: linear-gradient(90deg, #ff007f, #ff7f00, #ffff00, #00ff7f, #00f0ff, #7f00ff, #ff007f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(255,127,0,0.4);';
     badgeStyle = 'border-pink-500/60 bg-gradient-to-r from-purple-950/40 via-cyan-950/40 to-pink-950/40 shadow-[0_0_22px_rgba(244,114,182,0.5)]';
   } else if (overallScore >= 88) {
-    title = `${statusPrefix}超越極限的・金屬霸王`; tier = '精英級'; // 🏆 純金流光 textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(245,158,11,0.5);'; badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]'; } else if (overallScore >= 80) { title = `${statusPrefix}千錘百煉的・深淵狂戰士`;
+    title = `${statusPrefix}超越極限的・金屬霸王`;
+    tier = '精英級';
+    textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(245,158,11,0.5);';
+    badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]';
+  } else if (overallScore >= 80) {
+    title = `${statusPrefix}千錘百煉的・深淵狂戰士`;
     tier = '頂尖級';
-    // 🥈 白銀流光
     textInlineStyle = 'background: linear-gradient(90deg, #ffffff, #e2e8f0, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(226,232,240,0.4);';
     badgeStyle = 'border-slate-300/60 bg-slate-900/60 shadow-[0_0_15px_rgba(226,232,240,0.35)]';
   } else if (overallScore >= 70) {
-    title = `${statusPrefix}突破界限的・鋼鐵格鬥家`; tier = '強者級'; // 🥉 琥珀青銅 textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);'; badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]'; } else if (overallScore >= 60) { title = `${statusPrefix}覺醒之姿的・超新星`;
+    title = `${statusPrefix}突破界限的・鋼鐵格鬥家`;
+    tier = '強者級';
+    textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);';
+    badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]';
+  } else if (overallScore >= 60) {
+    title = `${statusPrefix}覺醒之姿的・超新星`;
     tier = '銳進級';
     textInlineStyle = 'color: #38bdf8; text-shadow: 0 0 8px rgba(56,189,248,0.5);';
     badgeStyle = 'border-cyan-500/40 bg-cyan-950/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]';
@@ -243,15 +282,14 @@ function onWindowResize() {
   renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
 }
 
-// 採用百分比高度 (0.0 ~ 1.0) 進行頂點著色，徹底解決任何模型縮放/位移導致的著色偏差
 function createCyberGlowShaderMaterial() {
   const uniforms = {
     baseColor: { value: new THREE.Color(0x06b6d4) },
     glowColor: { value: new THREE.Color(0x22d3ee) },
     highlightActive: { value: 0.0 },
     isWholeBody: { value: 0.0 },
-    modelMinY: { value: -0.75 },
-    modelHeight: { value: 1.50 },
+    modelMinY: { value: modelBoundsData.minY },
+    modelHeight: { value: modelBoundsData.height },
     yMinPct: { value: -1.0 },
     yMaxPct: { value: 2.0 },
     zMin: { value: -10.0 },
@@ -290,7 +328,6 @@ function createCyberGlowShaderMaterial() {
     varying vec3 vNormal;
 
     void main() {
-      // 轉換為標準化人體百分比 (0.0 腳底 ~ 1.0 頭頂)
       float yPct = clamp((vLocalPosition.y - modelMinY) / max(modelHeight, 0.01), 0.0, 1.0);
       float absX = abs(vLocalPosition.x);
 
@@ -345,31 +382,26 @@ function loadModel() {
         action.play();
       }
 
-      // 1. 強制重置人體姿態角度為正前方直視
       humanModel.rotation.set(0, 0, 0);
 
-      // 2. 精確計算包圍盒
       const box = new THREE.Box3().setFromObject(humanModel);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
-      // 3. 適當縮小比例 (高 1.50m)，確保直屏手機上下邊界留空
       const targetHeight = 1.50;
       const scaleFactor = targetHeight / (size.y || 1);
       humanModel.scale.setScalar(scaleFactor);
 
-      // 4. 移動幾何中心點，強制完全落於 (0, 0, 0)
       box.setFromObject(humanModel);
       box.getCenter(center);
       humanModel.position.x += (0 - center.x);
       humanModel.position.y += (0 - center.y);
       humanModel.position.z += (0 - center.z);
 
-      // 5. 記錄測量結果供百分比著色器使用
       const finalBox = new THREE.Box3().setFromObject(humanModel);
       modelBoundsData.minY = finalBox.min.y;
       modelBoundsData.maxY = finalBox.max.y;
-      modelBoundsData.height = finalBox.max.y - finalBox.min.y;
+      modelBoundsData.height = Math.max(0.1, finalBox.max.y - finalBox.min.y);
 
       humanModel.traverse((child) => {
         if (child.isMesh) {
@@ -391,6 +423,9 @@ function loadModel() {
 
 function generateProceduralCyberBody() {
   humanModel = new THREE.Group();
+  modelBoundsData.minY = -0.75;
+  modelBoundsData.maxY = 0.75;
+  modelBoundsData.height = 1.50;
 
   const parts = [
     { geo: new THREE.BoxGeometry(0.44, 0.26, 0.20), pos: [0, 0.35, 0] },
@@ -406,13 +441,18 @@ function generateProceduralCyberBody() {
 
   parts.forEach(p => {
     const mat = createCyberGlowShaderMaterial();
+    mat.uniforms.modelMinY.value = modelBoundsData.minY;
+    mat.uniforms.modelHeight.value = modelBoundsData.height;
     const mesh = new THREE.Mesh(p.geo, mat);
     mesh.position.set(...p.pos);
     humanModel.add(mesh);
   });
 
   const headGeo = new THREE.SphereGeometry(0.13, 20, 20);
-  const headMesh = new THREE.Mesh(headGeo, createCyberGlowShaderMaterial());
+  const headMat = createCyberGlowShaderMaterial();
+  headMat.uniforms.modelMinY.value = modelBoundsData.minY;
+  headMat.uniforms.modelHeight.value = modelBoundsData.height;
+  const headMesh = new THREE.Mesh(headGeo, headMat);
   headMesh.position.set(0, 0.67, 0);
   humanModel.add(headMesh);
 
@@ -430,7 +470,7 @@ function animate(timestamp) {
     mixer.update(delta);
   } else if (humanModel) {
     const breath = Math.sin((timestamp || 0) * 0.0025);
-    humanModel.position.y = breath * 0.012; // 居中位置微動
+    humanModel.position.y = breath * 0.012;
   }
 
   const timeVal = (timestamp || 0) * 0.001;
@@ -504,7 +544,7 @@ function updateSidebarAndBottomUI() {
   const bottomBar = document.getElementById('twinBottomInfoBar');
   if (bottomBar) {
     if (activeSelectedMuscle) {
-      const info = scores[activeSelectedMuscle];
+      const info = scores[activeSelectedMuscle] || { best1RM: 0, ratio: 0, bestLoadText: '--', daysAgo: 0 };
       bottomBar.innerHTML = `
         <div class="w-full bg-slate-900/90 border border-cyan-500/40 rounded-xl px-3 py-1.5 flex items-center justify-between text-xs backdrop-blur-md animate-fadeIn">
           <div class="truncate flex items-center gap-1.5">
@@ -532,20 +572,17 @@ export function renderTwinInterface() {
   const leftMuscles = ['胸', '膊', '二頭', '腹'];
   const rightMuscles = ['背', '三頭', '腳', '帶氧'];
 
-  // 卡片數值色彩體系：神域七彩霓虹、精英純金、頂尖白銀、強者琥珀、銳進青藍
   const getScoreStyle = (score) => {
     if (score >= 94) {
-      // 🌈 彩虹七彩流光
       return 'background: linear-gradient(90deg, #ff007f, #ff7f00, #ffff00, #00ff7f, #00f0ff, #7f00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;';
     }
-    if (score >= 88) return 'color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.6);'; // 純金
-    if (score >= 80) return 'color: #f1f5f9; text-shadow: 0 0 8px rgba(241,245,249,0.5);';  // 白銀
-    if (score >= 70) return 'color: #fb923c; text-shadow: 0 0 8px rgba(251,146,60,0.5);';   // 琥珀銅
-    if (score >= 60) return 'color: #38bdf8;'; // 科技藍
-    return 'color: #94a3b8;'; // 初階灰
+    if (score >= 88) return 'color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.6);';
+    if (score >= 80) return 'color: #f1f5f9; text-shadow: 0 0 8px rgba(241,245,249,0.5);';
+    if (score >= 70) return 'color: #fb923c; text-shadow: 0 0 8px rgba(251,146,60,0.5);';
+    if (score >= 60) return 'color: #38bdf8;';
+    return 'color: #94a3b8;';
   };
 
-  // 統一排版：左右兩欄皆為「先部位、後分數」，字體放大
   const renderCard = (m) => {
     const item = scores[m] || { score: 40 };
     const scoreStyle = getScoreStyle(item.score);
@@ -630,7 +667,7 @@ export function renderTwinInterface() {
 
       </div>
 
-      <!-- 底部就地資訊列 (點擊卡片時浮現) -->
+      <!-- 底部就地資訊列 -->
       <div onclick="event.stopPropagation()" id="twinBottomInfoBar" class="relative z-10 min-h-[36px] flex items-center justify-between"></div>
 
     </div>
