@@ -732,9 +732,9 @@ export function renderTwinInterface() {
             </span>
 
             <!-- 第 4 行：霸氣封號 -->
-            <span class="text-xs sm:text-sm font-black tracking-wider truncate max-w-full px-1 mt-0.5 leading-snug" style="${overall.textInlineStyle}">
-              ${overall.title}
-            </span>
+<span class="text-[11px] sm:text-xs font-black tracking-wider whitespace-normal break-words w-full px-3 mt-1 leading-tight" style="${overall.textInlineStyle}">
+  ${overall.title}
+</span>
 
           </div>
 
