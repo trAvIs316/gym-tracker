@@ -1,4 +1,4 @@
-// js/modules/twin.js - 3D Digital Twin 模組 (終極加固防崩潰版)
+// js/modules/twin.js - 3D Digital Twin 模組 (正面0度對齊 + 對稱解剖座標校準 + 呼吸同步著色)
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AppState, ALL_MUSCLE_ITEMS } from '../config.js';
 
 let scene, camera, renderer, controls;
+let pivotGroup = null;
 let humanModel = null;
 let mixer = null;
 let activeSelectedMuscle = null;
@@ -13,29 +14,34 @@ let animationFrameId = null;
 let customShaderMaterials = [];
 let clock = new THREE.Clock();
 
-// 模型安全尺寸
+// 🎯 修正為 0：保持模型原始正面朝向鏡頭，同時讓 X軸(左右) 與 Z軸(前後) 100% 恢復對稱！
+const MODEL_FACING_ROTATION_Y = 0;
+
+// 動態測量的模型真實世界邊界
 let modelBoundsData = {
-  minY: -0.70,
-  maxY: 0.70,
-  height: 1.40
+  minY: -0.75,
+  maxY: 0.75,
+  height: 1.50,
+  maxAbsX: 0.45
 };
 
-// 相機下調並拉闊，確保全身入鏡不貼頂
+// 預設最佳視角
 const DEFAULT_VIEW = {
-  camPos: new THREE.Vector3(0, 0.0, 3.35),
+  camPos: new THREE.Vector3(0, 0.0, 2.35),
   target: new THREE.Vector3(0, 0.0, 0)
 };
 
-// 各部位百分比範圍 (0.0 腳底 ~ 1.0 頭頂)
+// 🎯 校準後的對稱解剖百分比 (0.0 = 腳底, 1.0 = 頭頂；xRatio: 0.0 = 脊椎中線, 1.0 = 手指最外側)
+
 const MUSCLE_PERCENT_BOUNDS = {
-  '胸': { yMinPct: 0.65, yMaxPct: 0.82, zMin: 0.01, zMax: 5.0, xPctMax: 0.28, color: new THREE.Color(0x22d3ee) },
-  '背': { yMinPct: 0.60, yMaxPct: 0.84, zMin: -5.0, zMax: -0.01, xPctMax: 0.28, color: new THREE.Color(0xa78bfa) },
-  '腹': { yMinPct: 0.48, yMaxPct: 0.65, zMin: 0.01, zMax: 5.0, xPctMax: 0.18, color: new THREE.Color(0x06b6d4) },
-  '膊': { yMinPct: 0.72, yMaxPct: 0.88, zMin: -5.0, zMax: 5.0, xPctMin: 0.20, xPctMax: 0.55, color: new THREE.Color(0x38bdf8) },
-  '二頭': { yMinPct: 0.54, yMaxPct: 0.72, zMin: 0.00, zMax: 5.0, xPctMin: 0.24, xPctMax: 0.58, color: new THREE.Color(0x22d3ee) },
-  '三頭': { yMinPct: 0.54, yMaxPct: 0.72, zMin: -5.0, zMax: 0.00, xPctMin: 0.24, xPctMax: 0.58, color: new THREE.Color(0xa78bfa) },
-  '腳': { yMinPct: 0.00, yMaxPct: 0.48, zMin: -5.0, zMax: 5.0, xPctMax: 0.35, color: new THREE.Color(0x3b82f6) },
-  '帶氧': { yMinPct: -1.0, yMaxPct: 2.0, zMin: -10.0, zMax: 10.0, xPctMax: 2.0, color: new THREE.Color(0x10b981), isWholeBody: true }
+  '胸': { yMinPct: 0.65, yMaxPct: 0.83, zMin: 0.01, zMax: 5.0, xMinRatio: 0.00, xMaxRatio: 0.36, color: new THREE.Color(0x22d3ee) },
+  '背': { yMinPct: 0.58, yMaxPct: 0.85, zMin: -5.0, zMax: -0.01, xMinRatio: 0.00, xMaxRatio: 0.38, color: new THREE.Color(0xa78bfa) },
+  '腹': { yMinPct: 0.46, yMaxPct: 0.63, zMin: 0.01, zMax: 5.0, xMinRatio: 0.00, xMaxRatio: 0.25, color: new THREE.Color(0x06b6d4) },
+  '膊': { yMinPct: 0.75, yMaxPct: 0.90, zMin: -5.0, zMax: 5.0, xMinRatio: 0.34, xMaxRatio: 0.62, color: new THREE.Color(0x38bdf8) },
+  '二頭': { yMinPct: 0.70, yMaxPct: 0.85, zMin: -1, zMax: -0.01, xMinRatio: 0.35, xMaxRatio: 0.75, color: new THREE.Color(0x22d3ee) }, // 👈 上移至上手臂前側
+  '三頭': { yMinPct: 0.70, yMaxPct: 0.85, zMin: -5.0, zMax: -0.01, xMinRatio: 0.35, xMaxRatio: 0.75, color: new THREE.Color(0xa78bfa) }, // 👈 上移至上手臂後側
+  '腳': { yMinPct: 0.00, yMaxPct: 0.48, zMin: -5.0, zMax: 5.0, xMinRatio: 0.00, xMaxRatio: 0.65, color: new THREE.Color(0x3b82f6) },
+  '帶氧': { yMinPct: -1.0, yMaxPct: 2.0, zMin: -10.0, zMax: 10.0, xMinRatio: 0.0, xMaxRatio: 2.0, color: new THREE.Color(0x10b981), isWholeBody: true }
 };
 
 export function initTwinView() {
@@ -44,7 +50,7 @@ export function initTwinView() {
     renderTwinInterface();
     setTimeout(initThreeScene, 60);
   } catch (err) {
-    console.error("Twin 初始化失敗，已安全隔離:", err);
+    console.error("Twin 初始化異常:", err);
   }
 }
 
@@ -156,63 +162,19 @@ export function calculateMuscleScores() {
 
     const finalScore = Math.round(baseScore * decayFactor);
     scores[m].score = finalScore;
-    scores[m].status = `${scores[m].ratio}x 推比`;
-  });
-
-  return scores;
-}
-
-export function calculateOverallTitle(scores) {
-  const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 };
-  let totalWeightedScore = 0;
-  let totalW = 0;
-  let maxDaysAgo = 0;
-
-  Object.keys(weights).forEach(m => {
-    const s = scores && scores[m] ? scores[m].score : 40;
-    const w = weights[m];
-    totalWeightedScore += s * w;
-    totalW += w;
-    const dAgo = scores && scores[m] ? scores[m].daysAgo : 99;
-    if (dAgo < 90 && dAgo > maxDaysAgo) maxDaysAgo = dAgo;
-  });
-
-  const overallScore = totalW > 0 ? Math.round(totalWeightedScore / totalW) : 40;
-  const isDormant = maxDaysAgo >= 28;
-  const statusPrefix = isDormant ? '沉睡中的・' : '';
-
-  let title = '鍛鍊原石';
-  let tier = '起點級';
-  let badgeStyle = '';
-  let textInlineStyle = '';
-  let scoreColorStyle = '';
-
-  if (overallScore >= 94) {
-    title = `${statusPrefix}終焉的破壞神・絕對強者`;
+    scores[m].status = `${scores[m].ratio}x 推比`; });  return scores; }  export function calculateOverallTitle(scores) { const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 }; let totalWeightedScore = 0; let totalW = 0; let maxDaysAgo = 0;  Object.keys(weights).forEach(m => { const s = scores && scores[m] ? scores[m].score : 40; const w = weights[m]; totalWeightedScore += s * w; totalW += w; const dAgo = scores && scores[m] ? scores[m].daysAgo : 99; if (dAgo < 90 && dAgo > maxDaysAgo) maxDaysAgo = dAgo; });  const overallScore = totalW > 0 ? Math.round(totalWeightedScore / totalW) : 40; const isDormant = maxDaysAgo >= 28; const statusPrefix = isDormant ? '沉睡中的・' : '';  let title = '鍛鍊原石'; let tier = '起點級'; let badgeStyle = ''; let textInlineStyle = ''; let scoreColorStyle = '';  if (overallScore >= 94) { title = `${statusPrefix}終焉的破壞神・絕對強者`;
     tier = '神域級';
     scoreColorStyle = 'background: linear-gradient(90deg, #ff007f, #ffff00, #00f0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;';
     textInlineStyle = 'background: linear-gradient(90deg, #ff007f, #ff7f00, #ffff00, #00ff7f, #00f0ff, #7f00ff, #ff007f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(255,127,0,0.4);';
     badgeStyle = 'border-pink-500/60 bg-gradient-to-r from-purple-950/40 via-cyan-950/40 to-pink-950/40 shadow-[0_0_22px_rgba(244,114,182,0.5)]';
   } else if (overallScore >= 88) {
-    title = `${statusPrefix}超越極限的・金屬霸王`;
-    tier = '精英級';
-    scoreColorStyle = 'color: #fbbf24; text-shadow: 0 0 12px rgba(251,191,36,0.6);';
-    textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(251,191,36,0.5);';
-    badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]';
-  } else if (overallScore >= 80) {
-    title = `${statusPrefix}千錘百煉的・深淵狂戰士`;
+    title = `${statusPrefix}超越極限的・金屬霸王`; tier = '精英級'; scoreColorStyle = 'color: #fbbf24; text-shadow: 0 0 12px rgba(251,191,36,0.6);'; textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(251,191,36,0.5);'; badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]'; } else if (overallScore >= 80) { title = `${statusPrefix}千錘百煉的・深淵狂戰士`;
     tier = '頂尖級';
     scoreColorStyle = 'color: #f1f5f9; text-shadow: 0 0 10px rgba(241,245,249,0.5);';
     textInlineStyle = 'background: linear-gradient(90deg, #ffffff, #e2e8f0, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(226,232,240,0.4);';
     badgeStyle = 'border-slate-300/60 bg-slate-900/60 shadow-[0_0_15px_rgba(226,232,240,0.35)]';
   } else if (overallScore >= 70) {
-    title = `${statusPrefix}突破界限的・鋼鐵格鬥家`;
-    tier = '強者級';
-    scoreColorStyle = 'color: #fb923c; text-shadow: 0 0 10px rgba(251,146,60,0.5);';
-    textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);';
-    badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]';
-  } else if (overallScore >= 60) {
-    title = `${statusPrefix}覺醒之姿的・超新星`;
+    title = `${statusPrefix}突破界限的・鋼鐵格鬥家`; tier = '強者級'; scoreColorStyle = 'color: #fb923c; text-shadow: 0 0 10px rgba(251,146,60,0.5);'; textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);'; badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]'; } else if (overallScore >= 60) { title = `${statusPrefix}覺醒之姿的・超新星`;
     tier = '銳進級';
     scoreColorStyle = 'color: #38bdf8;';
     textInlineStyle = 'color: #38bdf8; text-shadow: 0 0 8px rgba(56,189,248,0.5);';
@@ -238,10 +200,10 @@ function initThreeScene() {
   clock = new THREE.Clock();
 
   const width = canvasContainer.clientWidth || 240;
-  const height = canvasContainer.clientHeight || 420;
+  const height = canvasContainer.clientHeight || 360;
 
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(42, width / height, 0.05, 100);
   camera.position.copy(DEFAULT_VIEW.camPos);
 
   renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -258,11 +220,12 @@ function initThreeScene() {
   controls.zoomSpeed = 0.7;
   controls.enablePan = true;
   controls.panSpeed = 0.8;
-  controls.minDistance = 1.0;
-  controls.maxDistance = 5.0;
-  controls.maxPolarAngle = Math.PI * 0.80;
-  controls.minPolarAngle = Math.PI * 0.20;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 15.0;
+  controls.maxPolarAngle = Math.PI * 0.85;
+  controls.minPolarAngle = Math.PI * 0.15;
   controls.target.copy(DEFAULT_VIEW.target);
+  controls.update();
 
   const ambientLight = new THREE.AmbientLight(0x06b6d4, 1.4);
   scene.add(ambientLight);
@@ -287,6 +250,7 @@ function onWindowResize() {
   renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
 }
 
+// 著色器：扣除呼吸位移，維持對稱世界座標判定
 function createCyberGlowShaderMaterial() {
   const uniforms = {
     baseColor: { value: new THREE.Color(0x06b6d4) },
@@ -295,22 +259,25 @@ function createCyberGlowShaderMaterial() {
     isWholeBody: { value: 0.0 },
     modelMinY: { value: modelBoundsData.minY },
     modelHeight: { value: modelBoundsData.height },
+    modelMaxAbsX: { value: modelBoundsData.maxAbsX },
+    breathOffset: { value: 0.0 },
     yMinPct: { value: -1.0 },
     yMaxPct: { value: 2.0 },
     zMin: { value: -10.0 },
     zMax: { value: 10.0 },
-    xPctMin: { value: -1.0 },
-    xPctMax: { value: 2.0 },
+    xMinRatio: { value: 0.0 },
+    xMaxRatio: { value: 2.0 },
     time: { value: 0.0 }
   };
 
   const vertexShader = `
-    varying vec3 vLocalPosition;
+    varying vec3 vWorldPosition;
     varying vec3 vNormal;
     void main() {
       vNormal = normalize(normalMatrix * normal);
-      vLocalPosition = position;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
+      gl_Position = projectionMatrix * viewMatrix * worldPos;
     }
   `;
 
@@ -321,24 +288,27 @@ function createCyberGlowShaderMaterial() {
     uniform float isWholeBody;
     uniform float modelMinY;
     uniform float modelHeight;
+    uniform float modelMaxAbsX;
+    uniform float breathOffset;
     uniform float yMinPct;
     uniform float yMaxPct;
     uniform float zMin;
     uniform float zMax;
-    uniform float xPctMin;
-    uniform float xPctMax;
+    uniform float xMinRatio;
+    uniform float xMaxRatio;
     uniform float time;
 
-    varying vec3 vLocalPosition;
+    varying vec3 vWorldPosition;
     varying vec3 vNormal;
 
     void main() {
-      float yPct = clamp((vLocalPosition.y - modelMinY) / max(modelHeight, 0.01), 0.0, 1.0);
-      float absX = abs(vLocalPosition.x);
+      float staticY = vWorldPosition.y - breathOffset;
+      float yPct = clamp((staticY - modelMinY) / max(modelHeight, 0.001), 0.0, 1.0);
+      float xRatio = abs(vWorldPosition.x) / max(modelMaxAbsX, 0.001);
 
       bool inY = (yPct >= yMinPct && yPct <= yMaxPct);
-      bool inZ = (vLocalPosition.z >= zMin && vLocalPosition.z <= zMax);
-      bool inX = (xPctMin < 0.0) ? (absX <= xPctMax) : (absX >= xPctMin && absX <= xPctMax);
+      bool inZ = (vWorldPosition.z >= zMin && vWorldPosition.z <= zMax);
+      bool inX = (xRatio >= xMinRatio && xRatio <= xMaxRatio);
 
       bool isTargetMuscle = (highlightActive > 0.5) && (isWholeBody > 0.5 || (inY && inZ && inX));
 
@@ -387,39 +357,58 @@ function loadModel() {
         action.play();
       }
 
-      humanModel.rotation.set(0, 0, 0);
+      pivotGroup = new THREE.Group();
+      pivotGroup.position.set(0, 0, 0);
+      scene.add(pivotGroup);
 
-      const box = new THREE.Box3().setFromObject(humanModel);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
+      // 保持 0 度正面向前
+      humanModel.position.set(0, 0, 0);
+      humanModel.rotation.set(0, MODEL_FACING_ROTATION_Y, 0);
+      humanModel.scale.set(1, 1, 1);
+      humanModel.updateMatrixWorld(true);
 
-      const targetHeight = 1.40;
-      const scaleFactor = targetHeight / (size.y || 1);
+      const rawBox = new THREE.Box3().setFromObject(humanModel);
+      const rawSize = rawBox.getSize(new THREE.Vector3());
+
+      const targetHeight = 1.50;
+      const scaleFactor = targetHeight / Math.max(rawSize.y, 0.001);
       humanModel.scale.setScalar(scaleFactor);
+      humanModel.updateMatrixWorld(true);
 
-      box.setFromObject(humanModel);
-      box.getCenter(center);
+      const scaledBox = new THREE.Box3().setFromObject(humanModel);
+      const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
 
-      // 居中對齊
-      humanModel.position.x += (0 - center.x);
-      humanModel.position.y += (0 - center.y);
-      humanModel.position.z += (0 - center.z);
+      humanModel.position.x = -scaledCenter.x;
+      humanModel.position.y = -scaledCenter.y;
+      humanModel.position.z = -scaledCenter.z;
+      humanModel.updateMatrixWorld(true);
 
-      const finalBox = new THREE.Box3().setFromObject(humanModel);
+      pivotGroup.add(humanModel);
+      pivotGroup.updateMatrixWorld(true);
+
+      const finalBox = new THREE.Box3().setFromObject(pivotGroup);
+      const finalSize = finalBox.getSize(new THREE.Vector3());
       modelBoundsData.minY = finalBox.min.y;
       modelBoundsData.maxY = finalBox.max.y;
-      modelBoundsData.height = Math.max(0.1, finalBox.max.y - finalBox.min.y);
+      modelBoundsData.height = Math.max(0.1, finalSize.y);
+      modelBoundsData.maxAbsX = Math.max(0.1, finalSize.x * 0.5);
 
       humanModel.traverse((child) => {
         if (child.isMesh) {
           const mat = createCyberGlowShaderMaterial();
           mat.uniforms.modelMinY.value = modelBoundsData.minY;
           mat.uniforms.modelHeight.value = modelBoundsData.height;
+          mat.uniforms.modelMaxAbsX.value = modelBoundsData.maxAbsX;
           child.material = mat;
         }
       });
 
-      scene.add(humanModel);
+      const fovRad = THREE.MathUtils.degToRad(camera.fov);
+      const idealDistance = (modelBoundsData.height * 0.5) / Math.tan(fovRad * 0.5) * 1.22;
+      DEFAULT_VIEW.camPos.set(0, 0, idealDistance);
+      DEFAULT_VIEW.target.set(0, 0, 0);
+
+      resetCameraView();
     },
     undefined,
     () => {
@@ -429,39 +418,41 @@ function loadModel() {
 }
 
 function generateProceduralCyberBody() {
+  pivotGroup = new THREE.Group();
   humanModel = new THREE.Group();
-  modelBoundsData.minY = -0.70;
-  modelBoundsData.maxY = 0.70;
-  modelBoundsData.height = 1.40;
+
+  modelBoundsData.minY = -0.75;
+  modelBoundsData.maxY = 0.75;
+  modelBoundsData.height = 1.50;
+  modelBoundsData.maxAbsX = 0.35;
 
   const parts = [
-    { geo: new THREE.BoxGeometry(0.44, 0.26, 0.20), pos: [0, 0.25, 0] },
-    { geo: new THREE.BoxGeometry(0.34, 0.28, 0.16), pos: [0, 0.00, 0] },
-    { geo: new THREE.BoxGeometry(0.44, 0.38, 0.12), pos: [0, 0.23, -0.05] },
-    { geo: new THREE.SphereGeometry(0.11, 16, 16), pos: [-0.30, 0.33, 0] },
-    { geo: new THREE.SphereGeometry(0.11, 16, 16), pos: [0.30, 0.33, 0] },
-    { geo: new THREE.CylinderGeometry(0.07, 0.06, 0.26, 16), pos: [-0.32, 0.13, 0] },
-    { geo: new THREE.CylinderGeometry(0.07, 0.06, 0.26, 16), pos: [0.32, 0.13, 0] },
-    { geo: new THREE.CylinderGeometry(0.11, 0.08, 0.60, 16), pos: [-0.15, -0.42, 0] },
-    { geo: new THREE.CylinderGeometry(0.11, 0.08, 0.60, 16), pos: [0.15, -0.42, 0] }
+    { geo: new THREE.BoxGeometry(0.40, 0.26, 0.18), pos: [0, 0.35, 0] },
+    { geo: new THREE.BoxGeometry(0.32, 0.28, 0.15), pos: [0, 0.05, 0] },
+    { geo: new THREE.BoxGeometry(0.40, 0.36, 0.12), pos: [0, 0.32, -0.05] },
+    { geo: new THREE.SphereGeometry(0.10, 16, 16), pos: [-0.28, 0.42, 0] },
+    { geo: new THREE.SphereGeometry(0.10, 16, 16), pos: [0.28, 0.42, 0] },
+    { geo: new THREE.CylinderGeometry(0.06, 0.05, 0.26, 16), pos: [-0.30, 0.20, 0] },
+    { geo: new THREE.CylinderGeometry(0.06, 0.05, 0.26, 16), pos: [0.30, 0.20, 0] },
+    { geo: new THREE.CylinderGeometry(0.10, 0.07, 0.60, 16), pos: [-0.14, -0.40, 0] },
+    { geo: new THREE.CylinderGeometry(0.10, 0.07, 0.60, 16), pos: [0.14, -0.40, 0] }
   ];
 
   parts.forEach(p => {
     const mat = createCyberGlowShaderMaterial();
-    mat.uniforms.modelMinY.value = modelBoundsData.minY;
-    mat.uniforms.modelHeight.value = modelBoundsData.height;
     const mesh = new THREE.Mesh(p.geo, mat);
     mesh.position.set(...p.pos);
     humanModel.add(mesh);
   });
 
-  const headGeo = new THREE.SphereGeometry(0.13, 20, 20);
+  const headGeo = new THREE.SphereGeometry(0.12, 20, 20);
   const headMesh = new THREE.Mesh(headGeo, createCyberGlowShaderMaterial());
-  headMesh.position.set(0, 0.52, 0);
+  headMesh.position.set(0, 0.63, 0);
   humanModel.add(headMesh);
 
-  humanModel.position.set(0, 0, 0);
-  scene.add(humanModel);
+  pivotGroup.add(humanModel);
+  scene.add(pivotGroup);
+  resetCameraView();
 }
 
 function animate(timestamp) {
@@ -470,16 +461,21 @@ function animate(timestamp) {
 
   if (controls) controls.update();
 
+  let currentBreathOffset = 0.0;
   if (mixer) {
     mixer.update(delta);
-  } else if (humanModel) {
+  } else if (pivotGroup) {
     const breath = Math.sin((timestamp || 0) * 0.0025);
-    humanModel.position.y = breath * 0.012;
+    currentBreathOffset = breath * 0.015;
+    pivotGroup.position.y = currentBreathOffset;
   }
 
   const timeVal = (timestamp || 0) * 0.001;
   customShaderMaterials.forEach(m => {
-    if (m.uniforms?.time) m.uniforms.time.value = timeVal;
+    if (m.uniforms) {
+      m.uniforms.time.value = timeVal;
+      m.uniforms.breathOffset.value = currentBreathOffset;
+    }
   });
 
   if (renderer && scene && camera) {
@@ -491,6 +487,7 @@ export function resetCameraView() {
   if (camera && controls) {
     camera.position.copy(DEFAULT_VIEW.camPos);
     controls.target.copy(DEFAULT_VIEW.target);
+    camera.lookAt(DEFAULT_VIEW.target);
     controls.update();
   }
 }
@@ -509,8 +506,8 @@ export function toggleSelectMuscle(muscle) {
       mat.uniforms.yMaxPct.value = config.yMaxPct !== undefined ? config.yMaxPct : 2.0;
       mat.uniforms.zMin.value = config.zMin !== undefined ? config.zMin : -10.0;
       mat.uniforms.zMax.value = config.maxZ !== undefined ? config.maxZ : 10.0;
-      mat.uniforms.xPctMin.value = config.xPctMin !== undefined ? config.xPctMin : -1.0;
-      mat.uniforms.xPctMax.value = config.xPctMax !== undefined ? config.xPctMax : 2.0;
+      mat.uniforms.xMinRatio.value = config.xMinRatio !== undefined ? config.xMinRatio : 0.0;
+      mat.uniforms.xMaxRatio.value = config.xMaxRatio !== undefined ? config.xMaxRatio : 2.0;
     } else {
       mat.uniforms.highlightActive.value = 0.0;
       mat.uniforms.isWholeBody.value = 0.0;
@@ -629,12 +626,12 @@ export function renderTwinInterface() {
       <!-- 手機直屏 HUD：左欄 (23%) | 3D 人體畫布 (54%) | 右欄 (23%) -->
       <div class="relative z-10 flex items-center justify-between gap-1 sm:gap-2 my-auto py-1 w-full">
         
-        <!-- 左側資訊卡欄 -->
+        <!-- 左側資訊卡欄 (先部位、後分數) -->
         <div class="w-[23%] flex flex-col gap-2.5 flex-shrink-0">
           ${leftMuscles.map(m => renderCard(m)).join('')}
         </div>
 
-        <!-- 中間 3D 視窗 -->
+        <!-- 中間 3D 視窗 (垂直與水平完全居中) -->
         <div onclick="event.stopPropagation()" class="w-[54%] flex flex-col items-center justify-center mx-auto relative">
           
           <div class="w-full h-84 sm:h-96 relative flex items-center justify-center cursor-grab active:cursor-grabbing">
@@ -651,25 +648,25 @@ export function renderTwinInterface() {
             </button>
           </div>
 
-          <!-- 🏆 人體正下方：四層縱向霸氣戰力徽章 -->
+          <!-- 🏆 人體正下方：四層縱向霸氣戰力徽章 (保留你自訂的 4 行字體排版) -->
           <div class="w-full mt-1 px-2 py-2 rounded-xl border backdrop-blur-md flex flex-col items-center justify-center text-center transition-all ${overall.badgeStyle}">
             
             <!-- 第 1 行：*綜合戰力* -->
-            <span class="text-[9px] font-mono tracking-widest text-slate-400 uppercase leading-none mb-1">
+            <span class="text-[12px] font-mono tracking-widest text-slate-400 uppercase leading-none mb-1">
               *綜合戰力*
             </span>
 
             <!-- 第 2 行：［分數］- 置中、大字、霓虹高亮 -->
             <div class="flex items-center justify-center gap-1 leading-none my-0.5">
-              <span class="text-xs font-mono text-cyan-400/80">［</span>
+              <span class="text-xs font-mono text-cyan-400/80"></span>
               <span class="text-2xl sm:text-3xl font-black font-mono tracking-tight" style="${overall.scoreColorStyle}">
                 ${overall.overallScore}
               </span>
-              <span class="text-xs font-mono text-cyan-400/80">］</span>
+              <span class="text-xs font-mono text-cyan-400/80"></span>
             </div>
 
             <!-- 第 3 行：《級別》 -->
-            <span class="text-[10px] font-mono tracking-wider text-cyan-300/90 leading-tight my-0.5">
+            <span class="text-xs sm:text-sm font-black tracking-wider truncate max-w-full px-1 mt-0.5 leading-snug" style="${overall.textInlineStyle}">
               《 ${overall.tier} 》
             </span>
 
@@ -682,7 +679,7 @@ export function renderTwinInterface() {
 
         </div>
 
-        <!-- 右側資訊卡欄 -->
+        <!-- 右側資訊卡欄 (先部位、後分數) -->
         <div class="w-[23%] flex flex-col gap-2.5 flex-shrink-0">
           ${rightMuscles.map(m => renderCard(m)).join('')}
         </div>
