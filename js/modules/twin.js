@@ -197,7 +197,7 @@ export function calculateOverallTitle(scores) {
   } 
   // 🆕 新增：正在停訓 / 生病休養中的狀態 (今日無練，且最近一次操練已是 3-13 天前)
   else if (minDaysAgo >= 3 && minDaysAgo < 14) {
-    specialPrefix = '閉關休養・正在蓄力的小休期'; 
+    specialPrefix = '正在蓄力的小休期'; 
   }
   else if (minDaysAgo >= 14) {
     specialPrefix = '長期沈睡・等待喚醒的封印'; 
