@@ -1,11 +1,11 @@
-// js/modules/twin.js - 3D Digital Twin 模組 (加固防崩潰 + 局部百分比著色 + 彩虹神域金銀銅 + 統一先部位後分數)
+// js/modules/twin.js - 3D Digital Twin 模組 (終極加固防崩潰版)
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { AppState, ALL_MUSCLE_ITEMS } from '../config.js';
 
-let scene, camera, renderer, controls, raycaster, mouse;
+let scene, camera, renderer, controls;
 let humanModel = null;
 let mixer = null;
 let activeSelectedMuscle = null;
@@ -13,20 +13,20 @@ let animationFrameId = null;
 let customShaderMaterials = [];
 let clock = new THREE.Clock();
 
-// 模型高度與中心點的真實測量數據 (預設安全數值，防 0 除崩潰)
+// 模型安全尺寸
 let modelBoundsData = {
-  minY: -0.75,
-  maxY: 0.75,
-  height: 1.50
+  minY: -0.70,
+  maxY: 0.70,
+  height: 1.40
 };
 
-// 預設正面最佳視角：相機直視 (0, 0, 0)
+// 相機下調並拉闊，確保全身入鏡不貼頂
 const DEFAULT_VIEW = {
-  camPos: new THREE.Vector3(0, 0.05, 2.75),
-  target: new THREE.Vector3(0, 0.05, 0)
+  camPos: new THREE.Vector3(0, 0.0, 3.35),
+  target: new THREE.Vector3(0, 0.0, 0)
 };
 
-// 百分比解剖區域 (0.0 腳底 ~ 1.0 頭頂)
+// 各部位百分比範圍 (0.0 腳底 ~ 1.0 頭頂)
 const MUSCLE_PERCENT_BOUNDS = {
   '胸': { yMinPct: 0.65, yMaxPct: 0.82, zMin: 0.01, zMax: 5.0, xPctMax: 0.28, color: new THREE.Color(0x22d3ee) },
   '背': { yMinPct: 0.60, yMaxPct: 0.84, zMin: -5.0, zMax: -0.01, xPctMax: 0.28, color: new THREE.Color(0xa78bfa) },
@@ -44,7 +44,7 @@ export function initTwinView() {
     renderTwinInterface();
     setTimeout(initThreeScene, 60);
   } catch (err) {
-    console.error("Twin 初始化異常:", err);
+    console.error("Twin 初始化失敗，已安全隔離:", err);
   }
 }
 
@@ -57,7 +57,6 @@ function safeGetUserWeight() {
   }
 }
 
-// 力量推比 + 生理衰退評分模型
 export function calculateMuscleScores() {
   const userWeightKg = safeGetUserWeight();
   const scores = {};
@@ -163,7 +162,6 @@ export function calculateMuscleScores() {
   return scores;
 }
 
-// 加權計算總戰力與彩色神域/金銀銅封號
 export function calculateOverallTitle(scores) {
   const weights = { '腳': 0.25, '胸': 0.20, '背': 0.20, '膊': 0.12, '二頭': 0.08, '三頭': 0.08, '腹': 0.07 };
   let totalWeightedScore = 0;
@@ -171,9 +169,9 @@ export function calculateOverallTitle(scores) {
   let maxDaysAgo = 0;
 
   Object.keys(weights).forEach(m => {
-    const scoreVal = (scores && scores[m] && typeof scores[m].score === 'number') ? scores[m].score : 40;
+    const s = scores && scores[m] ? scores[m].score : 40;
     const w = weights[m];
-    totalWeightedScore += scoreVal * w;
+    totalWeightedScore += s * w;
     totalW += w;
     const dAgo = scores && scores[m] ? scores[m].daysAgo : 99;
     if (dAgo < 90 && dAgo > maxDaysAgo) maxDaysAgo = dAgo;
@@ -187,40 +185,47 @@ export function calculateOverallTitle(scores) {
   let tier = '起點級';
   let badgeStyle = '';
   let textInlineStyle = '';
+  let scoreColorStyle = '';
 
   if (overallScore >= 94) {
     title = `${statusPrefix}終焉的破壞神・絕對強者`;
     tier = '神域級';
+    scoreColorStyle = 'background: linear-gradient(90deg, #ff007f, #ffff00, #00f0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;';
     textInlineStyle = 'background: linear-gradient(90deg, #ff007f, #ff7f00, #ffff00, #00ff7f, #00f0ff, #7f00ff, #ff007f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(255,127,0,0.4);';
     badgeStyle = 'border-pink-500/60 bg-gradient-to-r from-purple-950/40 via-cyan-950/40 to-pink-950/40 shadow-[0_0_22px_rgba(244,114,182,0.5)]';
   } else if (overallScore >= 88) {
     title = `${statusPrefix}超越極限的・金屬霸王`;
     tier = '精英級';
-    textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(245,158,11,0.5);';
+    scoreColorStyle = 'color: #fbbf24; text-shadow: 0 0 12px rgba(251,191,36,0.6);';
+    textInlineStyle = 'background: linear-gradient(90deg, #fef08a, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 12px rgba(251,191,36,0.5);';
     badgeStyle = 'border-amber-400/60 bg-amber-950/40 shadow-[0_0_18px_rgba(251,191,36,0.4)]';
   } else if (overallScore >= 80) {
     title = `${statusPrefix}千錘百煉的・深淵狂戰士`;
     tier = '頂尖級';
+    scoreColorStyle = 'color: #f1f5f9; text-shadow: 0 0 10px rgba(241,245,249,0.5);';
     textInlineStyle = 'background: linear-gradient(90deg, #ffffff, #e2e8f0, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(226,232,240,0.4);';
     badgeStyle = 'border-slate-300/60 bg-slate-900/60 shadow-[0_0_15px_rgba(226,232,240,0.35)]';
   } else if (overallScore >= 70) {
     title = `${statusPrefix}突破界限的・鋼鐵格鬥家`;
     tier = '強者級';
+    scoreColorStyle = 'color: #fb923c; text-shadow: 0 0 10px rgba(251,146,60,0.5);';
     textInlineStyle = 'background: linear-gradient(90deg, #fed7aa, #f97316, #c2410c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(249,115,22,0.4);';
     badgeStyle = 'border-orange-500/50 bg-orange-950/40 shadow-[0_0_14px_rgba(249,115,22,0.3)]';
   } else if (overallScore >= 60) {
     title = `${statusPrefix}覺醒之姿的・超新星`;
     tier = '銳進級';
+    scoreColorStyle = 'color: #38bdf8;';
     textInlineStyle = 'color: #38bdf8; text-shadow: 0 0 8px rgba(56,189,248,0.5);';
     badgeStyle = 'border-cyan-500/40 bg-cyan-950/40 shadow-[0_0_12px_rgba(6,182,212,0.25)]';
   } else {
     title = '蓄勢待發的・鍛鍊原石';
     tier = '初階級';
+    scoreColorStyle = 'color: #94a3b8;';
     textInlineStyle = 'color: #94a3b8;';
     badgeStyle = 'border-slate-800 bg-slate-950/60';
   }
 
-  return { overallScore, title, tier, badgeStyle, textInlineStyle };
+  return { overallScore, title, tier, badgeStyle, textInlineStyle, scoreColorStyle };
 }
 
 function initThreeScene() {
@@ -388,12 +393,14 @@ function loadModel() {
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
-      const targetHeight = 1.50;
+      const targetHeight = 1.40;
       const scaleFactor = targetHeight / (size.y || 1);
       humanModel.scale.setScalar(scaleFactor);
 
       box.setFromObject(humanModel);
       box.getCenter(center);
+
+      // 居中對齊
       humanModel.position.x += (0 - center.x);
       humanModel.position.y += (0 - center.y);
       humanModel.position.z += (0 - center.z);
@@ -423,20 +430,20 @@ function loadModel() {
 
 function generateProceduralCyberBody() {
   humanModel = new THREE.Group();
-  modelBoundsData.minY = -0.75;
-  modelBoundsData.maxY = 0.75;
-  modelBoundsData.height = 1.50;
+  modelBoundsData.minY = -0.70;
+  modelBoundsData.maxY = 0.70;
+  modelBoundsData.height = 1.40;
 
   const parts = [
-    { geo: new THREE.BoxGeometry(0.44, 0.26, 0.20), pos: [0, 0.35, 0] },
-    { geo: new THREE.BoxGeometry(0.34, 0.28, 0.16), pos: [0, 0.10, 0] },
-    { geo: new THREE.BoxGeometry(0.44, 0.38, 0.12), pos: [0, 0.33, -0.05] },
-    { geo: new THREE.SphereGeometry(0.11, 16, 16), pos: [-0.30, 0.43, 0] },
-    { geo: new THREE.SphereGeometry(0.11, 16, 16), pos: [0.30, 0.43, 0] },
-    { geo: new THREE.CylinderGeometry(0.07, 0.06, 0.26, 16), pos: [-0.32, 0.23, 0] },
-    { geo: new THREE.CylinderGeometry(0.07, 0.06, 0.26, 16), pos: [0.32, 0.23, 0] },
-    { geo: new THREE.CylinderGeometry(0.11, 0.08, 0.60, 16), pos: [-0.15, -0.37, 0] },
-    { geo: new THREE.CylinderGeometry(0.11, 0.08, 0.60, 16), pos: [0.15, -0.37, 0] }
+    { geo: new THREE.BoxGeometry(0.44, 0.26, 0.20), pos: [0, 0.25, 0] },
+    { geo: new THREE.BoxGeometry(0.34, 0.28, 0.16), pos: [0, 0.00, 0] },
+    { geo: new THREE.BoxGeometry(0.44, 0.38, 0.12), pos: [0, 0.23, -0.05] },
+    { geo: new THREE.SphereGeometry(0.11, 16, 16), pos: [-0.30, 0.33, 0] },
+    { geo: new THREE.SphereGeometry(0.11, 16, 16), pos: [0.30, 0.33, 0] },
+    { geo: new THREE.CylinderGeometry(0.07, 0.06, 0.26, 16), pos: [-0.32, 0.13, 0] },
+    { geo: new THREE.CylinderGeometry(0.07, 0.06, 0.26, 16), pos: [0.32, 0.13, 0] },
+    { geo: new THREE.CylinderGeometry(0.11, 0.08, 0.60, 16), pos: [-0.15, -0.42, 0] },
+    { geo: new THREE.CylinderGeometry(0.11, 0.08, 0.60, 16), pos: [0.15, -0.42, 0] }
   ];
 
   parts.forEach(p => {
@@ -449,11 +456,8 @@ function generateProceduralCyberBody() {
   });
 
   const headGeo = new THREE.SphereGeometry(0.13, 20, 20);
-  const headMat = createCyberGlowShaderMaterial();
-  headMat.uniforms.modelMinY.value = modelBoundsData.minY;
-  headMat.uniforms.modelHeight.value = modelBoundsData.height;
-  const headMesh = new THREE.Mesh(headGeo, headMat);
-  headMesh.position.set(0, 0.67, 0);
+  const headMesh = new THREE.Mesh(headGeo, createCyberGlowShaderMaterial());
+  headMesh.position.set(0, 0.52, 0);
   humanModel.add(headMesh);
 
   humanModel.position.set(0, 0, 0);
@@ -504,7 +508,7 @@ export function toggleSelectMuscle(muscle) {
       mat.uniforms.yMinPct.value = config.yMinPct !== undefined ? config.yMinPct : -1.0;
       mat.uniforms.yMaxPct.value = config.yMaxPct !== undefined ? config.yMaxPct : 2.0;
       mat.uniforms.zMin.value = config.zMin !== undefined ? config.zMin : -10.0;
-      mat.uniforms.zMax.value = config.zMax !== undefined ? config.zMax : 10.0;
+      mat.uniforms.zMax.value = config.maxZ !== undefined ? config.maxZ : 10.0;
       mat.uniforms.xPctMin.value = config.xPctMin !== undefined ? config.xPctMin : -1.0;
       mat.uniforms.xPctMax.value = config.xPctMax !== undefined ? config.xPctMax : 2.0;
     } else {
@@ -598,7 +602,7 @@ export function renderTwinInterface() {
 
   container.innerHTML = `
     <!-- 全景科技掃描背景容器 -->
-    <div onclick="window.twinMod.resetSelection()" class="relative w-full rounded-2xl border border-cyan-500/30 bg-slate-950/95 overflow-hidden shadow-2xl p-2.5 sm:p-3 select-none flex flex-col justify-between" style="min-height: 530px;">
+    <div onclick="window.twinMod.resetSelection()" class="relative w-full rounded-2xl border border-cyan-500/30 bg-slate-950/95 overflow-hidden shadow-2xl p-2.5 sm:p-3 select-none flex flex-col justify-between" style="min-height: 540px;">
       
       <div class="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:1.2rem_1.2rem] pointer-events-none"></div>
       <div class="absolute inset-x-6 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80 animate-pulse pointer-events-none"></div>
@@ -625,12 +629,12 @@ export function renderTwinInterface() {
       <!-- 手機直屏 HUD：左欄 (23%) | 3D 人體畫布 (54%) | 右欄 (23%) -->
       <div class="relative z-10 flex items-center justify-between gap-1 sm:gap-2 my-auto py-1 w-full">
         
-        <!-- 左側資訊卡欄 (先部位、後分數) -->
+        <!-- 左側資訊卡欄 -->
         <div class="w-[23%] flex flex-col gap-2.5 flex-shrink-0">
           ${leftMuscles.map(m => renderCard(m)).join('')}
         </div>
 
-        <!-- 中間 3D 視窗 (垂直與水平完全居中) -->
+        <!-- 中間 3D 視窗 -->
         <div onclick="event.stopPropagation()" class="w-[54%] flex flex-col items-center justify-center mx-auto relative">
           
           <div class="w-full h-84 sm:h-96 relative flex items-center justify-center cursor-grab active:cursor-grabbing">
@@ -647,20 +651,38 @@ export function renderTwinInterface() {
             </button>
           </div>
 
-          <!-- 🏆 人體正下方：個人封號徽章 (七彩神域 / 金銀銅階級) -->
-          <div class="w-full mt-1 px-2 py-1.5 rounded-xl border backdrop-blur-md flex flex-col items-center justify-center text-center transition-all ${overall.badgeStyle}">
-            <div class="flex items-center gap-1.5 leading-none mb-0.5">
-              <span class="text-[9px] font-mono tracking-widest uppercase opacity-85">${overall.tier}</span>
-              <span class="text-[9px] font-mono font-bold text-cyan-300">★ 總合戰力 ${overall.overallScore}</span>
+          <!-- 🏆 人體正下方：四層縱向霸氣戰力徽章 -->
+          <div class="w-full mt-1 px-2 py-2 rounded-xl border backdrop-blur-md flex flex-col items-center justify-center text-center transition-all ${overall.badgeStyle}">
+            
+            <!-- 第 1 行：*綜合戰力* -->
+            <span class="text-[9px] font-mono tracking-widest text-slate-400 uppercase leading-none mb-1">
+              *綜合戰力*
+            </span>
+
+            <!-- 第 2 行：［分數］- 置中、大字、霓虹高亮 -->
+            <div class="flex items-center justify-center gap-1 leading-none my-0.5">
+              <span class="text-xs font-mono text-cyan-400/80">［</span>
+              <span class="text-2xl sm:text-3xl font-black font-mono tracking-tight" style="${overall.scoreColorStyle}">
+                ${overall.overallScore}
+              </span>
+              <span class="text-xs font-mono text-cyan-400/80">］</span>
             </div>
-            <span class="text-xs sm:text-sm font-black tracking-wider truncate max-w-full px-1" style="${overall.textInlineStyle}">
+
+            <!-- 第 3 行：《級別》 -->
+            <span class="text-[10px] font-mono tracking-wider text-cyan-300/90 leading-tight my-0.5">
+              《 ${overall.tier} 》
+            </span>
+
+            <!-- 第 4 行：霸氣封號 -->
+            <span class="text-xs sm:text-sm font-black tracking-wider truncate max-w-full px-1 mt-0.5 leading-snug" style="${overall.textInlineStyle}">
               ${overall.title}
             </span>
+
           </div>
 
         </div>
 
-        <!-- 右側資訊卡欄 (先部位、後分數) -->
+        <!-- 右側資訊卡欄 -->
         <div class="w-[23%] flex flex-col gap-2.5 flex-shrink-0">
           ${rightMuscles.map(m => renderCard(m)).join('')}
         </div>
