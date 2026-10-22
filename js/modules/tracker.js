@@ -731,6 +731,13 @@ export function openAddNewMachineModal() {
 }
 
 export function openEditMachineModal(name) {
+  // 若未傳入 name，優先取目前選中的器材
+  name = name || AppState.currentSelectedMachine;
+  if (!name) {
+    openAddNewMachineModal();
+    return;
+  }
+
   targetModalMachine = name;
   const s = AppState.customMachineSettings[name] || {};
   tempModalImgBase64 = s.image_url || "";
@@ -1346,9 +1353,27 @@ function bindTrackerEvents() {
   const btnToggleMachine = document.getElementById('btnToggleMachine');
   const btnToggleMachineText = document.getElementById('btnToggleMachineText');
 
-  document.getElementById('btnEditCurrentSetting')?.addEventListener('click', () => {
-    if (AppState.currentSelectedMachine) openEditMachineModal(AppState.currentSelectedMachine);
-  });
+  // 修復 1：明確綁定「+ 新增器材」按鈕點擊事件
+  const btnAddNewMachine = document.getElementById('btnAddNewMachine');
+  if (btnAddNewMachine) {
+    btnAddNewMachine.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAddNewMachineModal();
+    });
+  }
+
+  // 修復 2：明確綁定「⚙️ 設定」按鈕點擊事件（若當前未選器材，則自動打開新增視窗）
+  const btnEditCurrentSetting = document.getElementById('btnEditCurrentSetting');
+  if (btnEditCurrentSetting) {
+    btnEditCurrentSetting.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (AppState.currentSelectedMachine) {
+        openEditMachineModal(AppState.currentSelectedMachine);
+      } else {
+        openAddNewMachineModal();
+      }
+    });
+  }
 
   document.getElementById('modalCameraInput')?.addEventListener('change', (e) => handleImageFileSelection(e.target.files[0]));
   document.getElementById('modalGalleryInput')?.addEventListener('change', (e) => handleImageFileSelection(e.target.files[0]));
@@ -1358,7 +1383,7 @@ function bindTrackerEvents() {
     setUnit(targetUnit, true);
   });
 
-btnStartWorkout?.addEventListener('click', () => {
+  btnStartWorkout?.addEventListener('click', () => {
     if (AppState.isWorkoutEnded) { alert("今日訓練已經結束並存檔！若要重新記錄請重新整理。"); return; }
     if (!AppState.isWorkoutStarted) {
       AppState.isWorkoutStarted = true;
@@ -1570,8 +1595,7 @@ btnStartWorkout?.addEventListener('click', () => {
     if ('vibrate' in navigator) navigator.vibrate(50);
   });
 
-document.getElementById('btnFinishWorkout')?.addEventListener('click', async () => {
-    // 1. 若根本未開始訓練，按了直接無視或提示
+  document.getElementById('btnFinishWorkout')?.addEventListener('click', async () => {
     if (!AppState.isWorkoutStarted) {
       alert("尚未開始訓練！請先點擊綠色「▶ 開始訓練」按鈕。");
       return;
@@ -1579,13 +1603,11 @@ document.getElementById('btnFinishWorkout')?.addEventListener('click', async () 
 
     if (AppState.isWorkoutEnded) return;
 
-    // 2. 若開始了訓練，但尚未做任何組數（允許直接放棄重設，不產生多餘空白資料）
     if (AppState.workoutLogs.length === 0) {
       if (!confirm("⚠️ 尚未進行任何組數記錄，是否直接取消並重設本次訓練？\n（不會在 Google Sheets 留下空紀錄）")) {
         return;
       }
 
-      // 重設所有狀態
       AppState.isWorkoutStarted = false;
       AppState.isWorkoutPaused = false;
       AppState.workoutStartEpoch = null;
@@ -1615,7 +1637,6 @@ document.getElementById('btnFinishWorkout')?.addEventListener('click', async () 
       return;
     }
 
-    // 3. 有做組數時，正常結算存檔
     if (!confirm("確定結束今日訓練並儲存至 Google Sheet？結束後將鎖定今日記錄。")) return;
 
     if (AppState.isMachineActive) {
@@ -1762,5 +1783,6 @@ const trackerExports = {
   deleteSetFromModal
 };
 
-window.trackerMod = trackerExports;
+window.trackerMod = window.trackerMod || {};
+Object.assign(window.trackerMod, trackerExports);
 Object.assign(window, trackerExports);
