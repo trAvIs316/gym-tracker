@@ -710,16 +710,28 @@ export function selectModalMuscle(muscle) {
 export function openAddNewMachineModal() {
   targetModalMachine = "";
   tempModalImgBase64 = "";
-  document.getElementById('modalMainTitle').innerText = "新增器材與相片";
-  document.getElementById('modalTitleIcon').innerText = "➕";
-  document.getElementById('modalMachineIdInput').value = "";
-  document.getElementById('modalMachineIdDisplay').innerText = "ID: 儲存時自動生成";
+
+  const titleEl = document.getElementById('modalMainTitle');
+  if (titleEl) titleEl.innerText = "新增器材與相片";
+
+  const iconEl = document.getElementById('modalTitleIcon');
+  if (iconEl) iconEl.innerText = "➕";
+
+  const idInput = document.getElementById('modalMachineIdInput');
+  if (idInput) idInput.value = "";
+
+  const idDisplay = document.getElementById('modalMachineIdDisplay');
+  if (idDisplay) idDisplay.innerText = "ID: 儲存時自動生成";
 
   AppState.modalSelectedMuscle = AppState.currentMuscleGroup;
   renderModalMuscleButtons();
 
-  document.getElementById('modalMachineNameInput').value = "";
-  document.getElementById('modalIsUnilateralCheckbox').checked = false;
+  const nameInput = document.getElementById('modalMachineNameInput');
+  if (nameInput) nameInput.value = "";
+
+  const uniCheck = document.getElementById('modalIsUnilateralCheckbox');
+  if (uniCheck) uniCheck.checked = false;
+
   ['settingSeat', 'settingHandle', 'settingBackrest', 'settingDefaultSpeed', 'settingDefaultIncline', 'settingNotes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
@@ -727,11 +739,16 @@ export function openAddNewMachineModal() {
 
   document.getElementById('btnDeleteMachine')?.classList.add('hidden');
   resetModalImgPreview("");
-  document.getElementById('machineSettingModal')?.classList.remove('hidden');
+
+  const modal = document.getElementById('machineSettingModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  } else {
+    console.error("找不到 #machineSettingModal 元素！請檢查 index.html");
+  }
 }
 
 export function openEditMachineModal(name) {
-  // 若未傳入 name，優先取目前選中的器材
   name = name || AppState.currentSelectedMachine;
   if (!name) {
     openAddNewMachineModal();
@@ -742,26 +759,46 @@ export function openEditMachineModal(name) {
   const s = AppState.customMachineSettings[name] || {};
   tempModalImgBase64 = s.image_url || "";
 
-  document.getElementById('modalMainTitle').innerText = "修改器材設定與相片";
-  document.getElementById('modalTitleIcon').innerText = "⚙️";
-  document.getElementById('modalMachineIdInput').value = s.machine_id || "";
-  document.getElementById('modalMachineIdDisplay').innerText = `ID: ${s.machine_id || '自動補齊'}`;
+  const titleEl = document.getElementById('modalMainTitle');
+  if (titleEl) titleEl.innerText = "修改器材設定與相片";
+
+  const iconEl = document.getElementById('modalTitleIcon');
+  if (iconEl) iconEl.innerText = "⚙️";
+
+  const idInput = document.getElementById('modalMachineIdInput');
+  if (idInput) idInput.value = s.machine_id || "";
+
+  const idDisplay = document.getElementById('modalMachineIdDisplay');
+  if (idDisplay) idDisplay.innerText = `ID: ${s.machine_id || '自動補齊'}`;
 
   AppState.modalSelectedMuscle = s.muscle_group || AppState.currentMuscleGroup;
   renderModalMuscleButtons();
 
-  document.getElementById('modalMachineNameInput').value = name;
-  document.getElementById('modalIsUnilateralCheckbox').checked = !!s.is_unilateral;
-  document.getElementById('settingSeat').value = s.seat || "";
-  document.getElementById('settingHandle').value = s.handle || "";
-  document.getElementById('settingBackrest').value = s.backrest || "";
-  document.getElementById('settingDefaultSpeed').value = s.default_speed || "";
-  document.getElementById('settingDefaultIncline').value = s.default_incline || "";
-  document.getElementById('settingNotes').value = s.notes || "";
+  const nameInput = document.getElementById('modalMachineNameInput');
+  if (nameInput) nameInput.value = name;
+
+  const uniCheck = document.getElementById('modalIsUnilateralCheckbox');
+  if (uniCheck) uniCheck.checked = !!s.is_unilateral;
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || "";
+  };
+
+  setVal('settingSeat', s.seat);
+  setVal('settingHandle', s.handle);
+  setVal('settingBackrest', s.backrest);
+  setVal('settingDefaultSpeed', s.default_speed);
+  setVal('settingDefaultIncline', s.default_incline);
+  setVal('settingNotes', s.notes);
 
   document.getElementById('btnDeleteMachine')?.classList.remove('hidden');
   resetModalImgPreview(tempModalImgBase64);
-  document.getElementById('machineSettingModal')?.classList.remove('hidden');
+
+  const modal = document.getElementById('machineSettingModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
 }
 
 export function closeMachineSettingModal() {
